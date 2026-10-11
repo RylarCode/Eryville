@@ -133,12 +133,12 @@ public class UIManager : MonoBehaviour
         foreach (CharacterType character in CharacterManager.Instance.AllCharacters)
         {
             GameObject buttonGO = Instantiate(buttonPrefab, hireButtonContainer);
-            buttonGO.name = $"{character.name}Button";
+            buttonGO.name = $"{character.Name}Button";
             Button button = buttonGO.GetComponent<Button>();
 
             // Assuming you have an Image and Text on the button prefab
             buttonGO.GetComponent<Image>().sprite = character.sprite;
-            buttonGO.GetComponentInChildren<TMP_Text>().text = character.name;
+            buttonGO.GetComponentInChildren<TMP_Text>().text = character.Name;
 
             // Capture the variable for the listener
             button.onClick.AddListener(() => CharacterManager.Instance.hireCharacter(character, new Vector3(0,0,0)));
@@ -147,7 +147,8 @@ public class UIManager : MonoBehaviour
 
     public void showCharacterDetails(Character character)
     {
-        TogglePanel(characterPanel);
+        // Open the panel only if it is closed; clicking another character just switches the selection
+        if (!characterPanel.activeInHierarchy) TogglePanel(characterPanel);
         characterText.text = $"Name: {character.characterName}\nLoyalty: {character.Loyalty}\nWorking Location: {character.WorkBuilding?.DisplayName}\nHome: {character.HomeBuilding?.DisplayName}";
         clickedCharacter = character;
     }

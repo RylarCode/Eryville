@@ -1,4 +1,3 @@
-using NUnit.Framework;
 using UnityEngine;
 using System.Collections.Generic;
 
@@ -161,7 +160,7 @@ public class Character : MonoBehaviour
 
         GetComponent<SpriteRenderer>().sprite = characterType.sprite;
 
-        Schedule = characterType.defaultSchedule;
+        Schedule = new List<WaypointEntry>(characterType.defaultSchedule); // own copy, so we never edit the asset's list
         Building potentialHome = CharacterManager.Instance.FindHomeWithSpace();
         if (potentialHome != null)
         {
