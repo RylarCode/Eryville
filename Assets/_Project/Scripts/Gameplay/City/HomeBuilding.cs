@@ -16,11 +16,12 @@ public class HomeBuilding : MonoBehaviour
 
     public void Initialize(BuildingType type)
     {
-        Character potentialHomeless = CharacterManager.Instance.getHomeless();
-        if (potentialHomeless != null)
+        // Fill the new home with homeless characters, up to its housing capacity
+        Building building = GetComponent<Building>();
+        while (building.HasHousingSlot)
         {
-            potentialHomeless.AssignedHome(this.gameObject.GetComponent<Building>());
-            this.gameObject.GetComponent<Building>().registerCharacter(potentialHomeless);
+            Character homeless = CharacterManager.Instance.getHomeless();
+            if (homeless == null || !CharacterManager.Instance.assignCharacterHouse(homeless, building)) break;
         }
     }
 

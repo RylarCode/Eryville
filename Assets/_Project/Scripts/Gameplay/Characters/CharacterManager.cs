@@ -67,16 +67,15 @@ public class CharacterManager : MonoBehaviour
         AllHiredCharacters.Remove(character);
     }
 
-    public void assignCharacter(Character character, Building building)
+    // Returns false if the building is full (or the character already works there)
+    public bool assignCharacter(Character character, Building building)
     {
-        building.registerCharacter(character);
-        character.AssignedWork(building);
+        return building != null && building.TryAssignWorker(character);
     }
 
     public void unassignCharacter(Character character, Building building)
     {
-        building.unregisterCharacter(character);
-        character.UnassignedWork(building);
+        building?.RemoveWorker(character);
     }
 
     public void CharacterStartsWorkinginBuilding (Character character, Building building)
@@ -91,28 +90,25 @@ public class CharacterManager : MonoBehaviour
         building?.WorkerLeft(character);
     }
 
-    public void assignCharacterHouse(Character character, Building building)
+    // Returns false if the building has no free housing (or the character already lives there)
+    public bool assignCharacterHouse(Character character, Building building)
     {
-        building.registerCharacter(character);
-        character.AssignedHome(building);
+        return building != null && building.TryAssignResident(character);
     }
 
     public void unassignCharacterHouse(Character character, Building building)
     {
-        building.unregisterCharacter(character);
-        character.UnassignedHome(building);
+        building?.RemoveResident(character);
     }
 
     public void CharacterStartsRestinginBuilding(Character character, Building building)
     {
         character.StartResting(building);
-        building?.WorkerArrived(character);
     }
 
     public void CharacterStopsRestinginBuilding(Character character, Building building)
     {
         character.StopResting(building);
-        building?.WorkerLeft(character);
     }
 
 
@@ -121,8 +117,8 @@ public class CharacterManager : MonoBehaviour
     {
         foreach (Character character in AllHiredCharacters)
         {
-            CharacterStopsWorkinginBuilding(character, character.workingBuilding);
-            CharacterStopsRestinginBuilding(character, character.homeBuilding);
+            CharacterStopsWorkinginBuilding(character, character.WorkBuilding);
+            CharacterStopsRestinginBuilding(character, character.HomeBuilding);
             CharacterStopsRestinginBuilding(character, character.rest1Building);
             CharacterStopsRestinginBuilding(character, character.rest2Building);
 
@@ -130,11 +126,11 @@ public class CharacterManager : MonoBehaviour
         }
     }
 
-    public Building getHome()
+    public Building FindHomeWithSpace()
     {
         foreach(Building building in BuildingPlacer.Instance.AllPlacedBuildings)
         {
-            if (building.role == BuildingType.Role.Home)
+            if (building.role == BuildingType.Role.Home && building.HasHousingSlot)
             {
                 return building;
             }
@@ -147,7 +143,7 @@ public class CharacterManager : MonoBehaviour
     {
         foreach (Character character in AllHiredCharacters)
         {
-            if (character.homeBuilding == null)
+            if (character.HomeBuilding == null)
             {
                 return character;
             }

@@ -20,3 +20,5 @@ MonoBehaviour:
   buildingcategoryprefab: {fileID: 8735228474764763001, guid: 4e17966a91236304b84b7d83934a3934, type: 3}
   goldGenerationPerSec: 0
   woodGenerationPerSec: 5
+  workerSlots: 3
+  housingSlots: 0

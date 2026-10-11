@@ -17,11 +17,23 @@ public class Building : MonoBehaviour
     [FormerlySerializedAs("buildingclass")]
     public BuildingType.Role role;
 
-    public List<Character> workingCharacters = new List<Character>();
-    public List<Character> assignedCharacters = new List<Character>();
-    public int maxCharacters;
+    // Occupants. Only the Assign/Remove methods below change these lists (and the matching
+    // Character.WorkBuilding / HomeBuilding), so both sides always agree.
+    [SerializeField] private List<Character> workers = new List<Character>();         // assigned to work here
+    [SerializeField] private List<Character> residents = new List<Character>();       // assigned to live here
+    [SerializeField] private List<Character> workersOnSite = new List<Character>();   // workers physically here right now
 
-    // Add other properties: resource generation rate, capacity, health, etc.
+    public IReadOnlyList<Character> Workers => workers;
+    public IReadOnlyList<Character> Residents => residents;
+    public IReadOnlyList<Character> WorkersOnSite => workersOnSite;
+
+    // Capacity comes from the BuildingType
+    public int WorkerSlots => buildingType != null ? buildingType.workerSlots : 0;
+    public int HousingSlots => buildingType != null ? buildingType.housingSlots : 0;
+    public bool HasWorkerSlot => workers.Count < WorkerSlots;
+    public bool HasHousingSlot => residents.Count < HousingSlots;
+
+    // Add other properties: health, level, etc.
 
     // Optional: Called when placed
     public void OnPlaced()
@@ -72,18 +84,18 @@ public class Building : MonoBehaviour
         // Resource Generation (If applicable)
         baseWoodGeneration = buildingType.woodGenerationPerSec;
         baseGoldGeneration = buildingType.goldGenerationPerSec;
-        maxCharacters = buildingType.maxCharacters;
-        updateResourceGeneration();
+        RecalculateOutput();
         ResourceManager.Instance.RegisterBuilding(this);
 
-
+        // Homes immediately take in any homeless characters
+        GetComponent<HomeBuilding>()?.Initialize(type);
     }
 
-    public void updateResourceGeneration()
+    public void RecalculateOutput()
     {
         float totalMultiplier = 1f; // Start at 1 because it's multiplication
 
-        foreach (Character character in workingCharacters)
+        foreach (Character character in workersOnSite)
         {
             totalMultiplier *= character.resourceMultiplier;
         }
@@ -92,33 +104,61 @@ public class Building : MonoBehaviour
         goldGeneration = (int)(baseGoldGeneration*totalMultiplier);//rounds down
     }
 
+    // --- Workers ---
 
-    public void registerCharacter(Character character)
+    // Returns false if the building has no free worker slot or the character already works here.
+    // If the character works somewhere else, they are moved (only after a slot here is confirmed).
+    public bool TryAssignWorker(Character character)
     {
-        if (assignedCharacters.Contains(character))
-        {
-            Debug.Log("Already Registered!");
-        }
-        assignedCharacters.Add(character);
-        updateResourceGeneration();
+        if (character == null || workers.Contains(character) || !HasWorkerSlot) return false;
+
+        if (character.WorkBuilding != null) character.WorkBuilding.RemoveWorker(character);
+
+        workers.Add(character);
+        character.SetWorkBuilding(this);
+        return true;
     }
 
-    public void unregisterCharacter(Character character)
+    public void RemoveWorker(Character character)
     {
-        assignedCharacters.Remove(character);
-        workingCharacters.Remove(character);
-        updateResourceGeneration();
+        if (!workers.Remove(character)) return;
+
+        workersOnSite.Remove(character);
+        if (character.WorkBuilding == this) character.SetWorkBuilding(null);
+        RecalculateOutput();
     }
 
+    // A worker physically reached / left the building. Only assigned workers count towards output.
     public void WorkerArrived(Character character)
     {
-        workingCharacters.Add(character);
-        updateResourceGeneration();
+        if (!workers.Contains(character) || workersOnSite.Contains(character)) return;
+
+        workersOnSite.Add(character);
+        RecalculateOutput();
     }
 
     public void WorkerLeft(Character character)
     {
-        workingCharacters.Remove(character);
-        updateResourceGeneration();
+        if (workersOnSite.Remove(character)) RecalculateOutput();
+    }
+
+    // --- Residents ---
+
+    public bool TryAssignResident(Character character)
+    {
+        if (character == null || residents.Contains(character) || !HasHousingSlot) return false;
+
+        if (character.HomeBuilding != null) character.HomeBuilding.RemoveResident(character);
+
+        residents.Add(character);
+        character.SetHomeBuilding(this);
+        return true;
+    }
+
+    public void RemoveResident(Character character)
+    {
+        if (!residents.Remove(character)) return;
+
+        if (character.HomeBuilding == this) character.SetHomeBuilding(null);
     }
 }

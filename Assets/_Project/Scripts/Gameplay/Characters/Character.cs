@@ -9,8 +9,11 @@ public class Character : MonoBehaviour
     public CharacterType characterType;
     public float resourceMultiplier = 1.2f;
     public float Loyalty = 0f;
-    public Building workingBuilding;
-    public Building homeBuilding;
+    // Changed only through Building.TryAssign*/Remove* so the building lists stay in sync
+    [SerializeField] private Building workingBuilding;
+    [SerializeField] private Building homeBuilding;
+    public Building WorkBuilding => workingBuilding;
+    public Building HomeBuilding => homeBuilding;
     public Building rest1Building;
     public Building rest2Building;
     public List<WaypointEntry> Schedule;
@@ -86,28 +89,22 @@ public class Character : MonoBehaviour
         transform.position = Vector3.MoveTowards(transform.position, targetPosition, moveSpeed * Time.deltaTime);
     }
 
-    public void AssignedWork(Building targetBuilding)
+    // Called only by Building (TryAssignWorker / RemoveWorker); pass null to clear.
+    internal void SetWorkBuilding(Building building)
     {
-        Debug.Log($"{characterName} assigned work at {targetBuilding.buildingName}");
-        workingBuilding = targetBuilding;
+        workingBuilding = building;
+        Debug.Log(building != null
+            ? $"{characterName} assigned work at {building.buildingName}"
+            : $"{characterName} unassigned from work");
     }
 
-    public void UnassignedWork(Building targetBuilding)
+    // Called only by Building (TryAssignResident / RemoveResident); pass null to clear.
+    internal void SetHomeBuilding(Building building)
     {
-        Debug.Log($"{characterName} unassigned work from {targetBuilding.buildingName}");
-        workingBuilding = null;
-    }
-
-    public void AssignedHome(Building targetBuilding)
-    {
-        homeBuilding = targetBuilding;
-        Debug.Log($"House went to {this.name}");
-    }
-
-    public void UnassignedHome(Building targetBuilding)
-    {
-        homeBuilding = null;
-        Debug.Log($"House unassigned from {this.name}");
+        homeBuilding = building;
+        Debug.Log(building != null
+            ? $"{characterName} now lives at {building.buildingName}"
+            : $"{characterName} is now homeless");
     }
 
 
@@ -151,7 +148,7 @@ public class Character : MonoBehaviour
     {
         if (currentState == State.Resting)
         {
-            Debug.Log($"{characterName} stopped resting at {building.buildingName}");
+            Debug.Log($"{characterName} stopped resting at {building?.buildingName}");
             currentState = State.Idle;
         }
 
@@ -165,10 +162,10 @@ public class Character : MonoBehaviour
         GetComponent<SpriteRenderer>().sprite = characterType.sprite;
 
         Schedule = characterType.defaultSchedule;
-        Building potentialHome = CharacterManager.Instance.getHome();
+        Building potentialHome = CharacterManager.Instance.FindHomeWithSpace();
         if (potentialHome != null)
         {
-            AssignedHome(potentialHome);
+            CharacterManager.Instance.assignCharacterHouse(this, potentialHome);
         }
         else
         {

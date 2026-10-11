@@ -21,4 +21,5 @@ MonoBehaviour:
   buildingclass: 2
   goldGenerationPerSec: 0
   woodGenerationPerSec: 0
-  maxCharacters: 0
+  workerSlots: 0
+  housingSlots: 0

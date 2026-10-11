@@ -148,7 +148,7 @@ public class UIManager : MonoBehaviour
     public void showCharacterDetails(Character character)
     {
         TogglePanel(characterPanel);
-        characterText.text = $"Name: {character.characterName}\nLoyalty: {character.Loyalty}\nWorking Location: {character.workingBuilding?.buildingName}";
+        characterText.text = $"Name: {character.characterName}\nLoyalty: {character.Loyalty}\nWorking Location: {character.WorkBuilding?.buildingName}\nHome: {character.HomeBuilding?.buildingName}";
         clickedCharacter = character;
     }
 
@@ -157,15 +157,23 @@ public class UIManager : MonoBehaviour
         
         foreach (Building building in BuildingPlacer.Instance.AllPlacedBuildings)
         {
+            if (building.WorkerSlots <= 0) continue; // nobody can work here (homes, city hall...)
+
             GameObject buttonGO = Instantiate(buttonPrefab, assignButtonContainer);
             buttonGO.name = $"{building.name}AssignButton";
             Button button = buttonGO.GetComponent<Button>();
 
             // Assuming you have an Image and Text on the button prefab
             buttonGO.GetComponent<Image>().sprite = building.buildingType.sprite;
-            buttonGO.GetComponentInChildren<TMP_Text>().text = building.buildingName;
+            buttonGO.GetComponentInChildren<TMP_Text>().text = $"{building.buildingName} ({building.Workers.Count}/{building.WorkerSlots})";
 
-            button.onClick.AddListener(() => CharacterManager.Instance.assignCharacter(clickedCharacter, building));
+            button.onClick.AddListener(() =>
+            {
+                if (!CharacterManager.Instance.assignCharacter(clickedCharacter, building))
+                {
+                    Debug.Log($"Could not assign {clickedCharacter.characterName} to {building.buildingName} (full or already working there).");
+                }
+            });
         }
 
         TogglePanel(assignPanel);

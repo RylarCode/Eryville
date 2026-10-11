@@ -20,6 +20,7 @@ public class BuildingType : ScriptableObject
 
     public int goldGenerationPerSec;
     public int woodGenerationPerSec;
-    public int maxCharacters;
+    public int workerSlots;   // how many characters can be assigned to work here
+    public int housingSlots;  // how many characters can live here
 }
 
