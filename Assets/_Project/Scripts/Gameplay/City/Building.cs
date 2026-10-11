@@ -22,19 +22,23 @@ public class Building : MonoBehaviour, IClickable
     [FormerlySerializedAs("startingCell")]
     public Vector2Int cell = new Vector2Int(0, 0); // anchor cell (in grid cell space)
 
+    // Stable identity, for saving and for referring to a building without holding a reference
+    public string Id { get; private set; } = System.Guid.NewGuid().ToString("N");
+
     public string DisplayName => buildingType != null ? buildingType.buildingName : name;
 
     // Present only on buildings that produce resources (see ResourceProducer)
     public ResourceProducer Producer { get; private set; }
 
-    // Occupants. Only the Assign/Remove methods below change these lists (and the matching
-    // Character.WorkBuilding / HomeBuilding), so both sides always agree.
-    [SerializeField] private List<Character> workers = new List<Character>();         // assigned to work here
-    [SerializeField] private List<Character> residents = new List<Character>();       // assigned to live here
-    [SerializeField] private List<Character> workersOnSite = new List<Character>();   // workers physically here right now
+    // Occupants. Only the Assign/Remove methods below change workers / residents (and the matching
+    // OwnedCharacter.WorkBuilding / HomeBuilding), so both sides always agree.
+    private readonly List<OwnedCharacter> workers = new List<OwnedCharacter>();     // assigned to work here
+    private readonly List<OwnedCharacter> residents = new List<OwnedCharacter>();   // assigned to live here
+    // Avatars of assigned workers who are physically here right now. Only these add to the output.
+    [SerializeField] private List<Character> workersOnSite = new List<Character>();
 
-    public IReadOnlyList<Character> Workers => workers;
-    public IReadOnlyList<Character> Residents => residents;
+    public IReadOnlyList<OwnedCharacter> Workers => workers;
+    public IReadOnlyList<OwnedCharacter> Residents => residents;
     public IReadOnlyList<Character> WorkersOnSite => workersOnSite;
 
     // Capacity comes from the BuildingType
@@ -110,7 +114,7 @@ public class Building : MonoBehaviour, IClickable
 
     // Returns false if the building has no free worker slot or the character already works here.
     // If the character works somewhere else, they are moved (only after a slot here is confirmed).
-    public bool TryAssignWorker(Character character)
+    public bool TryAssignWorker(OwnedCharacter character)
     {
         if (character == null || workers.Contains(character) || !HasWorkerSlot) return false;
 
@@ -121,30 +125,30 @@ public class Building : MonoBehaviour, IClickable
         return true;
     }
 
-    public void RemoveWorker(Character character)
+    public void RemoveWorker(OwnedCharacter character)
     {
         if (!workers.Remove(character)) return;
 
-        workersOnSite.Remove(character);
+        workersOnSite.RemoveAll(avatar => avatar == null || avatar.Owned == character);
         if (character.WorkBuilding == this) character.SetWorkBuilding(null);
     }
 
-    // A worker physically reached / left the building. Only assigned workers count towards output.
-    public void WorkerArrived(Character character)
+    // A worker's avatar physically reached / left the building. Only assigned workers count towards output.
+    public void WorkerArrived(Character avatar)
     {
-        if (!workers.Contains(character) || workersOnSite.Contains(character)) return;
+        if (!workers.Contains(avatar.Owned) || workersOnSite.Contains(avatar)) return;
 
-        workersOnSite.Add(character);
+        workersOnSite.Add(avatar);
     }
 
-    public void WorkerLeft(Character character)
+    public void WorkerLeft(Character avatar)
     {
-        workersOnSite.Remove(character);
+        workersOnSite.Remove(avatar);
     }
 
     // --- Residents ---
 
-    public bool TryAssignResident(Character character)
+    public bool TryAssignResident(OwnedCharacter character)
     {
         if (character == null || residents.Contains(character) || !HasHousingSlot) return false;
 
@@ -155,7 +159,7 @@ public class Building : MonoBehaviour, IClickable
         return true;
     }
 
-    public void RemoveResident(Character character)
+    public void RemoveResident(OwnedCharacter character)
     {
         if (!residents.Remove(character)) return;
 

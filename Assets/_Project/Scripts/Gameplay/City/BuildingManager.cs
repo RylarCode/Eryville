@@ -127,8 +127,8 @@ public class BuildingManager : MonoBehaviour
             }
         }
 
-        foreach (Character worker in new List<Character>(building.Workers)) building.RemoveWorker(worker);
-        foreach (Character resident in new List<Character>(building.Residents)) building.RemoveResident(resident);
+        foreach (OwnedCharacter worker in new List<OwnedCharacter>(building.Workers)) building.RemoveWorker(worker);
+        foreach (OwnedCharacter resident in new List<OwnedCharacter>(building.Residents)) building.RemoveResident(resident);
 
         BuildingRemoved?.Invoke(building);
         Destroy(building.gameObject);

@@ -1,13 +1,16 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-// The roster: who has been hired, and the rules for hiring, dismissing and assigning them.
+// The roster: the characters the player owns, and the rules for hiring, dismissing and assigning them.
+// Owned characters exist as data; each one may also have a visible Character (avatar) in the world.
 public class CharacterManager : MonoBehaviour
 {
     public static CharacterManager Instance { get; private set; }
 
-    public List<CharacterType> AllCharacters; // Drag all ScriptableObjects here OR load them dynamically
-    public List<Character> AllHiredCharacters;
+    public List<CharacterType> AllCharacters; // The character types that can be hired (drag the ScriptableObjects here)
+
+    private readonly List<OwnedCharacter> roster = new List<OwnedCharacter>();
+    public IReadOnlyList<OwnedCharacter> Roster => roster;
 
     private void Awake()
     {
@@ -32,63 +35,102 @@ public class CharacterManager : MonoBehaviour
 
     // --- Hiring and dismissing ---
 
-    // Creates a character of the given type at spawnPoint and adds it to the roster.
-    // Costs are the caller's business (e.g. the future gacha).
-    public Character Hire(CharacterType type, Vector3 spawnPoint)
+    // Adds a new owned character of the given type to the roster, gives it a home if one has space,
+    // and puts its avatar in the world at spawnPoint. Costs are the caller's business (e.g. the future gacha).
+    public OwnedCharacter Hire(CharacterType type, Vector3 spawnPoint)
     {
-        if (type == null || type.characterPrefab == null)
+        if (type == null)
         {
-            Debug.LogError("CharacterManager.Hire: character type or its prefab is missing.");
+            Debug.LogError("CharacterManager.Hire: character type is missing.");
             return null;
         }
 
-        GameObject newCharGO = Instantiate(type.characterPrefab, spawnPoint, Quaternion.identity);
-        newCharGO.name = type.displayName;
+        OwnedCharacter owned = new OwnedCharacter(type);
+        roster.Add(owned);
 
-        Character character = newCharGO.GetComponent<Character>();
-        if (character == null)
+        Building home = FindHomeWithSpace();
+        if (home != null)
         {
-            Debug.LogError($"Prefab for {type.displayName} has no Character component.");
-            Destroy(newCharGO);
-            return null;
+            AssignResident(owned, home);
+        }
+        else
+        {
+            Debug.Log("No Home");
         }
 
-        character.Initialize(type);
-        AllHiredCharacters.Add(character);
-        return character;
+        SpawnAvatar(owned, spawnPoint);
+        return owned;
     }
 
     // Removes a character from the game: frees their job and home first, so no building keeps a stale reference.
-    public void Dismiss(Character character)
+    public void Dismiss(OwnedCharacter character)
     {
         if (character == null) return;
 
         character.WorkBuilding?.RemoveWorker(character);
         character.HomeBuilding?.RemoveResident(character);
-        AllHiredCharacters.Remove(character);
-        Destroy(character.gameObject);
+        DespawnAvatar(character);
+        roster.Remove(character);
+    }
+
+    // --- Avatars ---
+
+    // Puts the character's visible body in the world (does nothing if it already has one)
+    public Character SpawnAvatar(OwnedCharacter owned, Vector3 position)
+    {
+        if (owned.HasAvatar) return owned.Avatar;
+
+        if (owned.Type.characterPrefab == null)
+        {
+            Debug.LogError($"{owned.Type.displayName} has no character prefab.");
+            return null;
+        }
+
+        GameObject go = Instantiate(owned.Type.characterPrefab, position, Quaternion.identity);
+        go.name = owned.DisplayName;
+
+        Character avatar = go.GetComponent<Character>();
+        if (avatar == null)
+        {
+            Debug.LogError($"Prefab for {owned.Type.displayName} has no Character component.");
+            Destroy(go);
+            return null;
+        }
+
+        avatar.Bind(owned);
+        return avatar;
+    }
+
+    // Takes the character's body out of the world; the owned character itself stays on the roster
+    public void DespawnAvatar(OwnedCharacter owned)
+    {
+        if (!owned.HasAvatar) return;
+
+        Character avatar = owned.Avatar;
+        owned.Avatar = null;
+        Destroy(avatar.gameObject);
     }
 
     // --- Assigning ---
 
     // Returns false if the building is full (or the character already works there)
-    public bool AssignWorker(Character character, Building building)
+    public bool AssignWorker(OwnedCharacter character, Building building)
     {
         return building != null && building.TryAssignWorker(character);
     }
 
-    public void UnassignWorker(Character character, Building building)
+    public void UnassignWorker(OwnedCharacter character, Building building)
     {
         building?.RemoveWorker(character);
     }
 
     // Returns false if the building has no free housing (or the character already lives there)
-    public bool AssignResident(Character character, Building building)
+    public bool AssignResident(OwnedCharacter character, Building building)
     {
         return building != null && building.TryAssignResident(character);
     }
 
-    public void UnassignResident(Character character, Building building)
+    public void UnassignResident(OwnedCharacter character, Building building)
     {
         building?.RemoveResident(character);
     }
@@ -98,9 +140,9 @@ public class CharacterManager : MonoBehaviour
     // Every character re-reads its schedule when the time of day changes
     public void OnTimeOfDayChanged(TimeOfDay newTime)
     {
-        foreach (Character character in AllHiredCharacters)
+        foreach (OwnedCharacter owned in roster)
         {
-            character.ApplySchedule(newTime);
+            if (owned.HasAvatar) owned.Avatar.ApplySchedule(newTime);
         }
     }
 
@@ -110,7 +152,7 @@ public class CharacterManager : MonoBehaviour
     public Building ResolveRestPlace(Character character, ScheduleSlot slot)
     {
         WorldState state = GameManager.Instance != null ? GameManager.Instance.worldState : WorldState.Peace;
-        CharacterType type = character.characterType;
+        CharacterType type = character.Type;
 
         Building best = null;
         float bestDistance = float.MaxValue;
@@ -150,9 +192,9 @@ public class CharacterManager : MonoBehaviour
         return null;
     }
 
-    public Character FindHomeless()
+    public OwnedCharacter FindHomeless()
     {
-        foreach (Character character in AllHiredCharacters)
+        foreach (OwnedCharacter character in roster)
         {
             if (character.HomeBuilding == null)
             {

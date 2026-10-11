@@ -1,21 +1,20 @@
 using UnityEngine;
 
+// The visible body of an OwnedCharacter: walks around, follows the schedule and turns up at buildings.
+// Identity, stats and assignments live on the OwnedCharacter (Owned); this only handles the world side.
 [RequireComponent(typeof(CharacterMovement))]
 public class Character : MonoBehaviour, IClickable
 {
     public enum Activity { Idle, Traveling, Working, Resting }
 
-    public string characterName = "Villager";
-    public CharacterType characterType;
-    public float Loyalty = 0f;
+    // The character this body belongs to
+    public OwnedCharacter Owned { get; private set; }
 
-    public float Productivity => characterType != null ? characterType.productivity : 1f;
-
-    // Changed only through Building.TryAssign*/Remove* so the building lists stay in sync
-    [SerializeField] private Building workingBuilding;
-    [SerializeField] private Building homeBuilding;
-    public Building WorkBuilding => workingBuilding;
-    public Building HomeBuilding => homeBuilding;
+    public string DisplayName => Owned != null ? Owned.DisplayName : name;
+    public CharacterType Type => Owned?.Type;
+    public float Productivity => Owned != null ? Owned.Productivity : 1f;
+    public Building WorkBuilding => Owned?.WorkBuilding;
+    public Building HomeBuilding => Owned?.HomeBuilding;
 
     public Activity CurrentActivity { get; private set; } = Activity.Idle;
 
@@ -25,6 +24,9 @@ public class Character : MonoBehaviour, IClickable
     private Building currentPlace;        // the building we are Working / Resting at
     private Building destination;         // the building we are travelling to
     private Activity activityOnArrival;   // what we start doing when we get there
+
+    // Raised when the player clicks a character; the UI listens, so Character knows nothing about it
+    public static event System.Action<Character> Selected;
 
     private void Awake()
     {
@@ -37,70 +39,50 @@ public class Character : MonoBehaviour, IClickable
     {
         if (movement != null) movement.Arrived -= OnArrived;
         LeaveCurrentActivity(); // don't leave a ghost worker behind in a building
+        if (Owned != null && Owned.Avatar == this) Owned.Avatar = null;
     }
-
-    // Raised when the player clicks a character; the UI listens, so Character knows nothing about it
-    public static event System.Action<Character> Selected;
 
     public void OnClicked()
     {
         Selected?.Invoke(this);
     }
 
-    public void Initialize(CharacterType type)
+    // Gives this body to an owned character and starts it following its schedule
+    public void Bind(OwnedCharacter owned)
     {
-        characterType = type;
-        characterName = characterType.displayName;
+        Owned = owned;
+        owned.Avatar = this;
 
-        GetComponent<SpriteRenderer>().sprite = characterType.sprite;
-        movement.speed = characterType.moveSpeed;
-
-        schedule = new CharacterSchedule(characterType.defaultSchedule); // own copy, so we never edit the asset's list
-        Building potentialHome = CharacterManager.Instance.FindHomeWithSpace();
-        if (potentialHome != null)
-        {
-            CharacterManager.Instance.AssignResident(this, potentialHome);
-        }
-        else
-        {
-            Debug.Log($"No Home");
-        }
+        GetComponent<SpriteRenderer>().sprite = owned.Type.sprite;
+        movement.speed = owned.Type.moveSpeed;
+        schedule = new CharacterSchedule(owned.Type.defaultSchedule); // own copy, so we never edit the asset's list
 
         // Start by doing whatever the schedule says for the current time of day
         ReapplySchedule();
     }
 
-    // Called by Building (TryAssignWorker / RemoveWorker); pass null to clear.
-    internal void SetWorkBuilding(Building building)
+    // Called by OwnedCharacter when its job / home changes
+    internal void OnWorkBuildingChanged(Building building)
     {
-        workingBuilding = building;
         if (CurrentActivity == Activity.Working && currentPlace != building) LeaveCurrentActivity();
-        Debug.Log(building != null
-            ? $"{characterName} assigned work at {building.DisplayName}"
-            : $"{characterName} unassigned from work");
         if (building != null) ReapplySchedule();
     }
 
-    // Called by Building (TryAssignResident / RemoveResident); pass null to clear.
-    internal void SetHomeBuilding(Building building)
+    internal void OnHomeBuildingChanged(Building building)
     {
-        homeBuilding = building;
-        Debug.Log(building != null
-            ? $"{characterName} now lives at {building.DisplayName}"
-            : $"{characterName} is now homeless");
         if (building != null) ReapplySchedule();
     }
 
     // --- Schedule ---
 
-    // Decide where to be for this time of day and head there. If the schedule has no entry for it,
-    // the character just carries on with what it was doing.
     // A new job / home may change where we should be right now (e.g. hired mid-shift)
     private void ReapplySchedule()
     {
         ApplySchedule(GameClock.Instance != null ? GameClock.Instance.Current : TimeOfDay.Morning);
     }
 
+    // Decide where to be for this time of day and head there. If the schedule has no entry for it,
+    // the character just carries on with what it was doing.
     public void ApplySchedule(TimeOfDay time)
     {
         if (schedule == null || !schedule.TryGetSlot(time, out ScheduleSlot slot)) return;
@@ -109,7 +91,7 @@ public class Character : MonoBehaviour, IClickable
         if (place == null)
         {
             // Nowhere to go for this slot (no job, no home...): stop what we were doing and stay put
-            Debug.Log($"{characterName} has nowhere to go for {slot}.");
+            Debug.Log($"{DisplayName} has nowhere to go for {slot}.");
             movement.Stop();
             destination = null;
             LeaveCurrentActivity();
@@ -129,10 +111,10 @@ public class Character : MonoBehaviour, IClickable
         {
             case ScheduleSlot.Work:
                 activity = Activity.Working;
-                return workingBuilding;
+                return WorkBuilding;
             case ScheduleSlot.Home:
                 activity = Activity.Resting;
-                return homeBuilding;
+                return HomeBuilding;
             case ScheduleSlot.Rest1:
             case ScheduleSlot.Rest2:
                 activity = Activity.Resting;
@@ -153,7 +135,7 @@ public class Character : MonoBehaviour, IClickable
         activityOnArrival = activityWhenThere;
         CurrentActivity = Activity.Traveling;
         movement.MoveTo(place.transform.position);
-        Debug.Log($"{characterName} heading to {place.DisplayName} to {activityWhenThere}");
+        Debug.Log($"{DisplayName} heading to {place.DisplayName} to {activityWhenThere}");
     }
 
     // We know why we came here, so there is no need to work it out from our position
@@ -170,7 +152,7 @@ public class Character : MonoBehaviour, IClickable
 
         // The assignment may have changed on the way; only start work where we still work
         Activity activity = activityOnArrival;
-        if (activity == Activity.Working && place != workingBuilding) activity = Activity.Idle;
+        if (activity == Activity.Working && place != WorkBuilding) activity = Activity.Idle;
 
         EnterActivity(activity, place);
     }
@@ -180,7 +162,7 @@ public class Character : MonoBehaviour, IClickable
         CurrentActivity = activity;
         currentPlace = place;
         if (activity == Activity.Working) place.WorkerArrived(this);
-        Debug.Log($"{characterName} is now {activity} at {place.DisplayName}");
+        Debug.Log($"{DisplayName} is now {activity} at {place.DisplayName}");
     }
 
     private void LeaveCurrentActivity()

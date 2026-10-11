@@ -159,7 +159,7 @@ public class UIManager : MonoBehaviour
     {
         // Open the panel only if it is closed; clicking another character just switches the selection
         if (!characterPanel.activeInHierarchy) TogglePanel(characterPanel);
-        characterText.text = $"Name: {character.characterName}\nLoyalty: {character.Loyalty}\nWorking Location: {character.WorkBuilding?.DisplayName}\nHome: {character.HomeBuilding?.DisplayName}";
+        characterText.text = $"Name: {character.DisplayName}\nLoyalty: {character.Owned.Loyalty}\nWorking Location: {character.WorkBuilding?.DisplayName}\nHome: {character.HomeBuilding?.DisplayName}";
         clickedCharacter = character;
     }
 
@@ -180,9 +180,9 @@ public class UIManager : MonoBehaviour
 
             button.onClick.AddListener(() =>
             {
-                if (!CharacterManager.Instance.AssignWorker(clickedCharacter, building))
+                if (!CharacterManager.Instance.AssignWorker(clickedCharacter.Owned, building))
                 {
-                    Debug.Log($"Could not assign {clickedCharacter.characterName} to {building.DisplayName} (full or already working there).");
+                    Debug.Log($"Could not assign {clickedCharacter.DisplayName} to {building.DisplayName} (full or already working there).");
                 }
             });
         }

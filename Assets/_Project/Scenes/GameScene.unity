@@ -36732,7 +36732,6 @@ MonoBehaviour:
   AllCharacters:
   - {fileID: 11400000, guid: 021970b8cfe460b4095cda9e77f33239, type: 2}
   - {fileID: 11400000, guid: 230bcc466fc44df4d8dc8f4e78b9106c, type: 2}
-  AllHiredCharacters: []
 --- !u!1 &1717364183
 GameObject:
   m_ObjectHideFlags: 0
