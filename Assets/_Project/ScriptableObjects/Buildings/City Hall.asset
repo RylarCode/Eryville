@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ccebb1b78f542184b855cc34edfa43ca, type: 3}
+  m_Name: City Hall
+  m_EditorClassIdentifier: 
+  buildingName: City Hall
+  sprite: {fileID: -3140177698272573536, guid: ba288b07d0a3ca64895818a6cd1e8f9f, type: 3}
+  goldCost: 0
+  woodCost: 0
+  size: {x: 5, y: 5}
+  buildingcategoryprefab: {fileID: 135274970800363272, guid: 3cd9f8737380747449b115071fa0a9cb, type: 3}
+  buildingclass: 2
+  goldGenerationPerSec: 0
+  woodGenerationPerSec: 0
+  maxCharacters: 0
