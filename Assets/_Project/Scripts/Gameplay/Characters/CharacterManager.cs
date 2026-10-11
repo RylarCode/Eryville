@@ -58,8 +58,8 @@ public class CharacterManager : MonoBehaviour
 
     public void hireCharacter(CharacterType hiredCharacter, Vector3 spawnPoint)
     {
-        GameObject newCharGO = Instantiate(hiredCharacter.characterCategoryPrefab, spawnPoint, Quaternion.identity);
-        newCharGO.name = hiredCharacter.Name;
+        GameObject newCharGO = Instantiate(hiredCharacter.characterPrefab, spawnPoint, Quaternion.identity);
+        newCharGO.name = hiredCharacter.displayName;
         newCharGO.GetComponent<Character>()?.Initialize(hiredCharacter);
         registerCharacter(newCharGO.GetComponent<Character>());
     }

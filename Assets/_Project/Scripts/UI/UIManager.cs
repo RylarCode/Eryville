@@ -133,12 +133,12 @@ public class UIManager : MonoBehaviour
         foreach (CharacterType character in CharacterManager.Instance.AllCharacters)
         {
             GameObject buttonGO = Instantiate(buttonPrefab, hireButtonContainer);
-            buttonGO.name = $"{character.Name}Button";
+            buttonGO.name = $"{character.displayName}Button";
             Button button = buttonGO.GetComponent<Button>();
 
             // Assuming you have an Image and Text on the button prefab
             buttonGO.GetComponent<Image>().sprite = character.sprite;
-            buttonGO.GetComponentInChildren<TMP_Text>().text = character.Name;
+            buttonGO.GetComponentInChildren<TMP_Text>().text = character.displayName;
 
             // Capture the variable for the listener
             button.onClick.AddListener(() => CharacterManager.Instance.hireCharacter(character, new Vector3(0,0,0)));

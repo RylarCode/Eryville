@@ -1,30 +1,22 @@
 using System.Collections.Generic;
 using UnityEngine;
-// using System.Collections.Generic;
 
+// Template for a kind of character (a "John", a "Darkie"...). Static data only;
+// the live character is created from it.
 [CreateAssetMenu(fileName = "NewCharacter", menuName = "Scriptable Objects/Character")]
 public class CharacterType : ScriptableObject
 {
-    public string Name;
-    public int CharacterID;
+    public string displayName;
+    public int typeId;               // unique per CharacterType asset
     public Sprite sprite;
     public int initialWage = 10;
-    public GameObject characterCategoryPrefab;
-    public enum Type { Resource, Defense, Offense, Others }
-    public Type type = Type.Resource;
+    public GameObject characterPrefab;
+    public enum Role { Resource, Defense, Offense, Others }
+    public Role role = Role.Resource;
 
-    
-    
+    [Header("Stats")]
+    public float moveSpeed = 3f;       // world units per second
+    public float productivity = 1.2f;  // multiplies a building's output while this character works there
 
-    public List<WaypointEntry> defaultSchedule;
-
-}
-
-[System.Serializable]
-public class WaypointEntry
-{
-    public enum personalLocation { Home, Work, Rest1, Rest2, Others }
-    public TimeOfDay time;
-    public personalLocation destination;
-
+    public List<ScheduleEntry> defaultSchedule;
 }

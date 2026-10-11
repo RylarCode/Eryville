@@ -4,9 +4,9 @@ using System.Collections.Generic;
 public class Character : MonoBehaviour
 {
     public string characterName = "Villager";
-    public float moveSpeed = 3f;
     public CharacterType characterType;
-    public float resourceMultiplier = 1.2f;
+    public float MoveSpeed => characterType != null ? characterType.moveSpeed : 3f;
+    public float Productivity => characterType != null ? characterType.productivity : 1f;
     public float Loyalty = 0f;
     // Changed only through Building.TryAssign*/Remove* so the building lists stay in sync
     [SerializeField] private Building workingBuilding;
@@ -15,7 +15,7 @@ public class Character : MonoBehaviour
     public Building HomeBuilding => homeBuilding;
     public Building rest1Building;
     public Building rest2Building;
-    public List<WaypointEntry> Schedule;
+    private CharacterSchedule schedule;
 
     // State machine or simple state variable could go here
     public enum State { Idle, Moving, Working, Resting}
@@ -85,7 +85,7 @@ public class Character : MonoBehaviour
         }
 
         // Move towards the target position
-        transform.position = Vector3.MoveTowards(transform.position, targetPosition, moveSpeed * Time.deltaTime);
+        transform.position = Vector3.MoveTowards(transform.position, targetPosition, MoveSpeed * Time.deltaTime);
     }
 
     // Called only by Building (TryAssignWorker / RemoveWorker); pass null to clear.
@@ -156,11 +156,11 @@ public class Character : MonoBehaviour
     public void Initialize(CharacterType type)
     {
         characterType = type;
-        characterName = characterType.Name;
+        characterName = characterType.displayName;
 
         GetComponent<SpriteRenderer>().sprite = characterType.sprite;
 
-        Schedule = new List<WaypointEntry>(characterType.defaultSchedule); // own copy, so we never edit the asset's list
+        schedule = new CharacterSchedule(characterType.defaultSchedule); // own copy, so we never edit the asset's list
         Building potentialHome = CharacterManager.Instance.FindHomeWithSpace();
         if (potentialHome != null)
         {
@@ -177,31 +177,24 @@ public class Character : MonoBehaviour
 
     public void ScheduleMoving(TimeOfDay newTime)
     {
-        foreach (WaypointEntry waypoint in Schedule)
+        if (schedule == null || !schedule.TryGetSlot(newTime, out ScheduleSlot slot)) return;
+
+        Vector3? targetLocation = slot switch
         {
-            if (waypoint.time == newTime)
-            {
-                WaypointEntry.personalLocation newLocation =  waypoint.destination;
+            ScheduleSlot.Home => homeBuilding != null ? homeBuilding.transform.position : (Vector3?)null,
+            ScheduleSlot.Work => workingBuilding != null ? workingBuilding.transform.position : (Vector3?)null,
+            ScheduleSlot.Rest1 => rest1Building != null ? rest1Building.transform.position : (Vector3?)null,
+            ScheduleSlot.Rest2 => rest2Building != null ? rest2Building.transform.position : (Vector3?)null,
+            _ => null
+        };
 
-                Vector3? targetLocation = newLocation switch
-                {
-                    WaypointEntry.personalLocation.Home => homeBuilding != null ? homeBuilding.transform.position : (Vector3?)null,
-                    WaypointEntry.personalLocation.Work => workingBuilding != null ? workingBuilding.transform.position : (Vector3?)null,
-                    WaypointEntry.personalLocation.Rest1 => rest1Building != null ? rest1Building.transform.position : (Vector3?)null,
-                    WaypointEntry.personalLocation.Rest2 => rest2Building != null ? rest2Building.transform.position : (Vector3?)null,
-                    _ => null
-                };
-
-                if (targetLocation.HasValue)
-                {
-                    SetDestination(targetLocation.Value);
-                }
-                else
-                {
-                    Debug.LogWarning("No valid building found for: " + newLocation);
-                }
-
-            }
+        if (targetLocation.HasValue)
+        {
+            SetDestination(targetLocation.Value);
+        }
+        else
+        {
+            Debug.LogWarning("No valid building found for: " + slot);
         }
     }
 

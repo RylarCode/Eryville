@@ -12,12 +12,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f7eb774a1211d4241baf0aa68613f860, type: 3}
   m_Name: 01
   m_EditorClassIdentifier: 
-  Name: Darkie
-  CharacterID: 1
+  displayName: Darkie
+  typeId: 1
   sprite: {fileID: -3164809056393425246, guid: c573041da7b1f7f4186212b1f970dbd1, type: 3}
   initialWage: 10
-  characterCategoryPrefab: {fileID: 4720973192394993719, guid: 5f208e7ad7396264eacf7f9357b581a8, type: 3}
-  type: 0
+  characterPrefab: {fileID: 4720973192394993719, guid: 5f208e7ad7396264eacf7f9357b581a8, type: 3}
+  role: 0
+  moveSpeed: 3
+  productivity: 1.2
   defaultSchedule:
   - time: 0
     destination: 0
