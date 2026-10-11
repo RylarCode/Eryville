@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 public class Building : MonoBehaviour
 {
@@ -7,12 +8,14 @@ public class Building : MonoBehaviour
     public string buildingName = "Generic Building";
     public BuildingType buildingType;
     public Vector2Int size = new Vector2Int(1, 1); // Size in grid cells
-    public Vector2Int startingCell = new Vector2Int(0, 0); //starting cell (in grid cell space)
+    [FormerlySerializedAs("startingCell")]
+    public Vector2Int cell = new Vector2Int(0, 0); // anchor cell (in grid cell space)
     public float baseWoodGeneration = 0;
     public float baseGoldGeneration = 0;
     public int woodGeneration = 0;
     public int goldGeneration = 0;
-    public BuildingType.buildingClass buildingclass;
+    [FormerlySerializedAs("buildingclass")]
+    public BuildingType.Role role;
 
     public List<Character> workingCharacters = new List<Character>();
     public List<Character> assignedCharacters = new List<Character>();
@@ -26,11 +29,11 @@ public class Building : MonoBehaviour
         Debug.Log($"{buildingName} placed at {transform.position}");
     }
 
-    public void onClicked()
+    public void OnClicked()
     {
-        if ( buildingclass == BuildingType.buildingClass.Special)
+        if (role == BuildingType.Role.Special)
         {
-            gameObject.GetComponent<CityHall>().onClicked();
+            gameObject.GetComponent<CityHall>().OnClicked();
         }
         else
         {
@@ -39,11 +42,12 @@ public class Building : MonoBehaviour
             
     }
 
-    public void Initialize(BuildingType type)
+    public void Initialize(BuildingType type, Vector2Int anchorCell)
     {
         buildingType = type;
+        cell = anchorCell;
         buildingName = type.buildingName;
-        buildingclass = type.buildingclass;
+        role = type.role;
         GetComponent<SpriteRenderer>().sprite = buildingType.sprite;
         Vector2 spriteWorldSize = buildingType.sprite.bounds.size; // in Unity units
         Vector3 scale = new Vector3(
@@ -106,13 +110,13 @@ public class Building : MonoBehaviour
         updateResourceGeneration();
     }
 
-    public void ChracterStartWorking (Character character)
+    public void WorkerArrived(Character character)
     {
         workingCharacters.Add(character);
         updateResourceGeneration();
     }
 
-    public void ChracterStopWorking(Character character)
+    public void WorkerLeft(Character character)
     {
         workingCharacters.Remove(character);
         updateResourceGeneration();

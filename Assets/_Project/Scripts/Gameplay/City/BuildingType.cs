@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Serialization;
 
 [CreateAssetMenu(fileName = "NewBuildingType", menuName = "Scriptable Objects/BuildingType")]
 public class BuildingType : ScriptableObject
@@ -8,9 +9,11 @@ public class BuildingType : ScriptableObject
     public int goldCost;
     public int woodCost;
     public Vector2Int size = new Vector2Int(1, 1); // Size in grid cells
-    public GameObject buildingcategoryprefab;
-    public enum buildingClass { Resource, Home, Special}
-    public buildingClass buildingclass = buildingClass.Resource;
+    [FormerlySerializedAs("buildingcategoryprefab")]
+    public GameObject buildingPrefab;
+    public enum Role { Resource, Home, Special }
+    [FormerlySerializedAs("buildingclass")]
+    public Role role = Role.Resource;
 
 
 

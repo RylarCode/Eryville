@@ -14,7 +14,7 @@ public class CityHall : MonoBehaviour
         
     }
 
-    public void onClicked()
+    public void OnClicked()
     {
         Debug.Log("Clicked on City Hall");
     }

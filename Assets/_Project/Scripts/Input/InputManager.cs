@@ -48,8 +48,8 @@ public class InputManager : MonoBehaviour
             else if (hit.collider != null)
             {
                 Debug.Log("Clicked on: " + hit.collider.gameObject.name);
-                hit.collider.gameObject.GetComponent<Character>()?.onClicked();
-                hit.collider.gameObject.GetComponent<Building>()?.onClicked();
+                hit.collider.gameObject.GetComponent<Character>()?.OnClicked();
+                hit.collider.gameObject.GetComponent<Building>()?.OnClicked();
             }
             else
             {

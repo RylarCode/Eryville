@@ -82,13 +82,13 @@ public class CharacterManager : MonoBehaviour
     public void CharacterStartsWorkinginBuilding (Character character, Building building)
     {
         character.StartWork();
-        building?.ChracterStartWorking(character);
+        building?.WorkerArrived(character);
     }
 
     public void CharacterStopsWorkinginBuilding(Character character, Building building)
     {
         character.StopWork();
-        building?.ChracterStopWorking(character);
+        building?.WorkerLeft(character);
     }
 
     public void assignCharacterHouse(Character character, Building building)
@@ -106,13 +106,13 @@ public class CharacterManager : MonoBehaviour
     public void CharacterStartsRestinginBuilding(Character character, Building building)
     {
         character.StartResting(building);
-        building?.ChracterStartWorking(character);
+        building?.WorkerArrived(character);
     }
 
     public void CharacterStopsRestinginBuilding(Character character, Building building)
     {
         character.StopResting(building);
-        building?.ChracterStopWorking(character);
+        building?.WorkerLeft(character);
     }
 
 
@@ -134,7 +134,7 @@ public class CharacterManager : MonoBehaviour
     {
         foreach(Building building in BuildingPlacer.Instance.AllPlacedBuildings)
         {
-            if (building.buildingclass == BuildingType.buildingClass.Home)
+            if (building.role == BuildingType.Role.Home)
             {
                 return building;
             }

@@ -204,15 +204,14 @@ public class BuildingPlacer : MonoBehaviour
             offset.y = buildingGrid.cellSize.y / 2f;
         }
 
-        GameObject newBuildingGO = Instantiate(buildingToPlace.buildingcategoryprefab, placePosition + offset, Quaternion.identity);
+        GameObject newBuildingGO = Instantiate(buildingToPlace.buildingPrefab, placePosition + offset, Quaternion.identity);
         newBuildingGO.name = $"{buildingToPlace.buildingName} ({cellPosition.x},{cellPosition.y})"; // Give it a unique name
 
         // 4. Register the Building (tell the game world it exists)
         RegisterBuildingAt(cellPosition, buildingToPlace.size, newBuildingGO.GetComponent<Building>());
 
         // 5. Call OnPlaced on the new building instance (optional)
-        newBuildingGO.GetComponent<Building>().startingCell = new Vector2Int (cellPosition.x, cellPosition.y);
-        newBuildingGO.GetComponent<Building>()?.Initialize(buildingToPlace);
+        newBuildingGO.GetComponent<Building>()?.Initialize(buildingToPlace, new Vector2Int(cellPosition.x, cellPosition.y));
 
         // 6. Deselect building after placement (optional, maybe allow multi-place)
         buildingToPlace = null;

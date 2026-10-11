@@ -36,7 +36,7 @@ public class Character : MonoBehaviour
         }
     }
 
-    public void onClicked()
+    public void OnClicked()
     {
         UIManager.Instance.showCharacterDetails(this);
     }

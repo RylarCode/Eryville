@@ -49,7 +49,7 @@ public class GameManager : MonoBehaviour
     }
 
 
-    public void changeTime()
+    public void AdvanceTimeOfDay()
     {
         timeOfDay[] values = (timeOfDay[])System.Enum.GetValues(typeof(timeOfDay));
         int index = System.Array.IndexOf(values, currentTime);
