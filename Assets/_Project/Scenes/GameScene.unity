@@ -36663,13 +36663,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3c15b9ef52e9a3b4d82fd56bf8f13ad4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  currentGold: 1000
-  currentWood: 500
   currentGameState: 0
-  currentTime: 0
-  buildingPrefabs:
-  - {fileID: 8735228474764763001, guid: 4e17966a91236304b84b7d83934a3934, type: 3}
-  characterPrefabs: []
 --- !u!114 &1663866745
 MonoBehaviour:
   m_ObjectHideFlags: 0

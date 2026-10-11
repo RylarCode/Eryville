@@ -5,6 +5,7 @@ using UnityEngine.Serialization;
 public class BuildingType : ScriptableObject
 {
     public string buildingName;
+    public int typeId;               // unique per BuildingType asset; save files refer to the type by this
     public Sprite sprite;
     public int goldCost;
     public int woodCost;

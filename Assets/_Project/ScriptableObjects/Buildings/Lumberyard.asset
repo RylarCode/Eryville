@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: Lumberyard
   m_EditorClassIdentifier: 
   buildingName: Lumberyard
+  typeId: 2
   sprite: {fileID: 3345032760514067189, guid: 5668c60d880770a47bc493a8b3fed4ee, type: 3}
   goldCost: 20
   woodCost: 20

@@ -23,7 +23,7 @@ public class Building : MonoBehaviour, IClickable
     public Vector2Int cell = new Vector2Int(0, 0); // anchor cell (in grid cell space)
 
     // Stable identity, for saving and for referring to a building without holding a reference
-    public string Id { get; private set; } = System.Guid.NewGuid().ToString("N");
+    public string Id { get; internal set; } = System.Guid.NewGuid().ToString("N");
 
     public string DisplayName => buildingType != null ? buildingType.buildingName : name;
 

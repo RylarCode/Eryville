@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: GoldMine
   m_EditorClassIdentifier: 
   buildingName: Gold Mine
+  typeId: 1
   sprite: {fileID: -6753945329345433839, guid: 4b8b3a123194b4d45a5c5c9b9d0a662c, type: 3}
   goldCost: 10
   woodCost: 10

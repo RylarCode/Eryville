@@ -62,6 +62,18 @@ public class CharacterManager : MonoBehaviour
         return owned;
     }
 
+    // Adds an already-built owned character to the roster (used when loading a game)
+    public void Restore(OwnedCharacter owned)
+    {
+        if (owned != null && !roster.Contains(owned)) roster.Add(owned);
+    }
+
+    // Dismisses everyone (used when loading a game)
+    public void ClearAll()
+    {
+        foreach (OwnedCharacter owned in new List<OwnedCharacter>(roster)) Dismiss(owned);
+    }
+
     // Removes a character from the game: frees their job and home first, so no building keeps a stale reference.
     public void Dismiss(OwnedCharacter character)
     {

@@ -82,7 +82,8 @@ public class BuildingManager : MonoBehaviour
 
     // Creates, initializes and registers a building. Returns null if the spot is taken or the type is invalid.
     // Cost is NOT handled here; the caller pays after a successful build.
-    public Building Build(BuildingType type, Vector2Int anchorCell, Vector3 worldPosition)
+    // Pass an id only when restoring a saved building, so it keeps the id other save data refers to.
+    public Building Build(BuildingType type, Vector2Int anchorCell, Vector3 worldPosition, string id = null)
     {
         if (type == null || type.buildingPrefab == null)
         {
@@ -102,6 +103,7 @@ public class BuildingManager : MonoBehaviour
             return null;
         }
 
+        if (!string.IsNullOrEmpty(id)) building.Id = id;
         building.Initialize(type, anchorCell);
 
         buildings.Add(building);
@@ -112,6 +114,13 @@ public class BuildingManager : MonoBehaviour
 
         BuildingAdded?.Invoke(building);
         return building;
+    }
+
+    // Removes every building (used when loading a game)
+    public void ClearAll()
+    {
+        foreach (Building building in new List<Building>(buildings)) Remove(building);
+        occupiedCells.Clear();
     }
 
     // Removes a building, frees its cells and sends its workers/residents back to being unassigned.

@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: City Hall
   m_EditorClassIdentifier: 
   buildingName: City Hall
+  typeId: 4
   sprite: {fileID: -3140177698272573536, guid: ba288b07d0a3ca64895818a6cd1e8f9f, type: 3}
   goldCost: 0
   woodCost: 0

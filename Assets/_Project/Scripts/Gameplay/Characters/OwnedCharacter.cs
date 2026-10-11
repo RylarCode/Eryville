@@ -26,10 +26,13 @@ public class OwnedCharacter
     // Multiplies a building's output while this character works there (level / loyalty bonuses can go here later)
     public float Productivity => Type.productivity;
 
-    public OwnedCharacter(CharacterType type)
+    public OwnedCharacter(CharacterType type) : this(type, null) { }
+
+    // Pass an id only when restoring a saved character, so it keeps the id other save data refers to
+    public OwnedCharacter(CharacterType type, string id)
     {
         if (type == null) throw new ArgumentNullException(nameof(type));
-        Id = Guid.NewGuid().ToString("N");
+        Id = string.IsNullOrEmpty(id) ? Guid.NewGuid().ToString("N") : id;
         Type = type;
         DisplayName = type.displayName;
     }

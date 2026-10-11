@@ -18,6 +18,9 @@ public class GameClock : MonoBehaviour
     // 0..1 progress through the current phase
     public float PhaseProgress => secondsPerPhase > 0f ? elapsed / secondsPerPhase : 0f;
 
+    // Seconds spent in the current phase (saved so a loaded game continues mid-phase)
+    public float Elapsed => elapsed;
+
     private float elapsed;
 
     private void Awake()
@@ -40,6 +43,13 @@ public class GameClock : MonoBehaviour
         {
             Advance();
         }
+    }
+
+    // Jumps to a time of day without raising TimeOfDayChanged. Used when loading a game.
+    public void SetTime(TimeOfDay time, float secondsIntoPhase)
+    {
+        Current = time;
+        elapsed = Mathf.Max(0f, secondsIntoPhase);
     }
 
     public void Advance()

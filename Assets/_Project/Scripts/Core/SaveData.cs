@@ -1,37 +1,54 @@
-using System.Collections.Generic; // For Lists
-using UnityEngine; // For Vector3 etc.
+using System.Collections.Generic;
+using UnityEngine;
+
+// The shape of a save file (written with JsonUtility, so: public fields, plain types, lists).
+// Things are referred to by id (buildings / characters) or typeId (the ScriptableObject they were made
+// from), never by object or prefab name, so a save can be rebuilt without guessing.
+
+[System.Serializable]
+public class ResourceData
+{
+    public string name;
+    public float amount;
+}
 
 [System.Serializable]
 public class BuildingData
 {
-    public string prefabName; // Or an ID to know which prefab to load
-    public Vector3 position;
-    public float currentHealth; // Example
-    // Add other building-specific saved data (level, inventory?)
+    public string id;        // Building.Id
+    public int typeId;       // BuildingType.typeId
+    public int cellX;        // anchor cell
+    public int cellY;
+    public Vector3 position; // world position it was built at
+    // Add other building-specific saved data here (level, health...)
 }
 
 [System.Serializable]
 public class CharacterData
 {
-    public string prefabName; // Or an ID
-    public Vector3 position;
-    public float currentHealth; // Example
-    public Character.Activity currentActivity; // Save activity enum
-    // Add other character-specific saved data (target position?, inventory?)
+    public string id;             // OwnedCharacter.Id
+    public int typeId;            // CharacterType.typeId
+    public string displayName;
+    public int level;
+    public float loyalty;
+    public string workBuildingId; // Building.Id, or empty
+    public string homeBuildingId; // Building.Id, or empty
+    public bool hasAvatar;        // whether it was visible in the world
+    public Vector3 position;      // avatar position (when hasAvatar)
+    // Activity and destination are not saved: a loaded character re-reads its schedule and walks there.
 }
-
 
 [System.Serializable]
 public class GameData
 {
-    // Game Manager Data
-    public int gold;
-    public int wood;
-    // Add other global game state
+    public int version = 1;
 
-    // Lists of placed objects
+    public List<ResourceData> resources = new List<ResourceData>();
+
+    public int timeOfDay;        // TimeOfDay
+    public float phaseElapsed;   // seconds into the current phase
+    public int worldState;       // WorldState
+
     public List<BuildingData> buildings = new List<BuildingData>();
     public List<CharacterData> characters = new List<CharacterData>();
-
-    // Could add Tilemap data here too if needed
 }

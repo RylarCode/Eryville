@@ -70,6 +70,20 @@ public class ResourceManager : MonoBehaviour
         }
     }
 
+    // Sets a resource to an exact amount (creating it if needed). Used when loading a game.
+    public void SetResourceAmount(string name, float amount)
+    {
+        if (resources.TryGetValue(name, out Resource resource))
+        {
+            resource.currentAmount = amount;
+        }
+        else
+        {
+            AddResource(name, amount);
+        }
+        UIManager.Instance?.UpdateResourceUI(resources);
+    }
+
     // Add or remove from a resource, return true if successful, false if failed
     public bool changeResourceAmount(string name, float amount)
     {
