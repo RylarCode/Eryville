@@ -56,7 +56,7 @@ public class Character : MonoBehaviour
         Building potentialHome = CharacterManager.Instance.FindHomeWithSpace();
         if (potentialHome != null)
         {
-            CharacterManager.Instance.assignCharacterHouse(this, potentialHome);
+            CharacterManager.Instance.AssignResident(this, potentialHome);
         }
         else
         {

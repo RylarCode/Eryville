@@ -141,7 +141,7 @@ public class UIManager : MonoBehaviour
             buttonGO.GetComponentInChildren<TMP_Text>().text = character.displayName;
 
             // Capture the variable for the listener
-            button.onClick.AddListener(() => CharacterManager.Instance.hireCharacter(character, new Vector3(0,0,0)));
+            button.onClick.AddListener(() => CharacterManager.Instance.Hire(character, new Vector3(0,0,0)));
         }
     }
 
@@ -170,7 +170,7 @@ public class UIManager : MonoBehaviour
 
             button.onClick.AddListener(() =>
             {
-                if (!CharacterManager.Instance.assignCharacter(clickedCharacter, building))
+                if (!CharacterManager.Instance.AssignWorker(clickedCharacter, building))
                 {
                     Debug.Log($"Could not assign {clickedCharacter.characterName} to {building.DisplayName} (full or already working there).");
                 }

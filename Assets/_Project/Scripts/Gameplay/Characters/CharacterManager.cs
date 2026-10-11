@@ -1,7 +1,7 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+// The roster: who has been hired, and the rules for hiring, dismissing and assigning them.
 public class CharacterManager : MonoBehaviour
 {
     public static CharacterManager Instance { get; private set; }
@@ -17,15 +17,10 @@ public class CharacterManager : MonoBehaviour
             return;
         }
         Instance = this;
-
     }
 
-
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        // StartCoroutine(testLoop());
-
         // Every character re-reads its schedule whenever the time of day changes
         if (GameClock.Instance != null) GameClock.Instance.TimeOfDayChanged += OnTimeOfDayChanged;
     }
@@ -35,66 +30,70 @@ public class CharacterManager : MonoBehaviour
         if (GameClock.Instance != null) GameClock.Instance.TimeOfDayChanged -= OnTimeOfDayChanged;
     }
 
-    IEnumerator testLoop()
+    // --- Hiring and dismissing ---
+
+    // Creates a character of the given type at spawnPoint and adds it to the roster.
+    // Costs are the caller's business (e.g. the future gacha).
+    public Character Hire(CharacterType type, Vector3 spawnPoint)
     {
-        int count = 0;
-        while (true)
+        if (type == null || type.characterPrefab == null)
         {
-            if (GameManager.Instance.currentGameState == GameManager.gameState.Normal)
-            {
-                hireCharacter(AllCharacters[0], new Vector3(count,0,0));
-                count++;
-            }
-            yield return new WaitForSeconds(1f);
-
+            Debug.LogError("CharacterManager.Hire: character type or its prefab is missing.");
+            return null;
         }
-    }
 
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
+        GameObject newCharGO = Instantiate(type.characterPrefab, spawnPoint, Quaternion.identity);
+        newCharGO.name = type.displayName;
 
-    public void hireCharacter(CharacterType hiredCharacter, Vector3 spawnPoint)
-    {
-        GameObject newCharGO = Instantiate(hiredCharacter.characterPrefab, spawnPoint, Quaternion.identity);
-        newCharGO.name = hiredCharacter.displayName;
-        newCharGO.GetComponent<Character>()?.Initialize(hiredCharacter);
-        registerCharacter(newCharGO.GetComponent<Character>());
-    }
+        Character character = newCharGO.GetComponent<Character>();
+        if (character == null)
+        {
+            Debug.LogError($"Prefab for {type.displayName} has no Character component.");
+            Destroy(newCharGO);
+            return null;
+        }
 
-    public void registerCharacter(Character character)
-    {
+        character.Initialize(type);
         AllHiredCharacters.Add(character);
+        return character;
     }
 
-    public void unregisterCharacter(Character character)
-    { 
+    // Removes a character from the game: frees their job and home first, so no building keeps a stale reference.
+    public void Dismiss(Character character)
+    {
+        if (character == null) return;
+
+        character.WorkBuilding?.RemoveWorker(character);
+        character.HomeBuilding?.RemoveResident(character);
         AllHiredCharacters.Remove(character);
+        Destroy(character.gameObject);
     }
+
+    // --- Assigning ---
 
     // Returns false if the building is full (or the character already works there)
-    public bool assignCharacter(Character character, Building building)
+    public bool AssignWorker(Character character, Building building)
     {
         return building != null && building.TryAssignWorker(character);
     }
 
-    public void unassignCharacter(Character character, Building building)
+    public void UnassignWorker(Character character, Building building)
     {
         building?.RemoveWorker(character);
     }
 
     // Returns false if the building has no free housing (or the character already lives there)
-    public bool assignCharacterHouse(Character character, Building building)
+    public bool AssignResident(Character character, Building building)
     {
         return building != null && building.TryAssignResident(character);
     }
 
-    public void unassignCharacterHouse(Character character, Building building)
+    public void UnassignResident(Character character, Building building)
     {
         building?.RemoveResident(character);
     }
+
+    // --- Schedule ---
 
     // Every character re-reads its schedule when the time of day changes
     public void OnTimeOfDayChanged(TimeOfDay newTime)
@@ -136,6 +135,8 @@ public class CharacterManager : MonoBehaviour
         return best != null ? best : character.HomeBuilding;
     }
 
+    // --- Lookups ---
+
     public Building FindHomeWithSpace()
     {
         foreach(Building building in BuildingManager.Instance.Buildings)
@@ -149,7 +150,7 @@ public class CharacterManager : MonoBehaviour
         return null;
     }
 
-    public Character getHomeless()
+    public Character FindHomeless()
     {
         foreach (Character character in AllHiredCharacters)
         {
@@ -161,6 +162,4 @@ public class CharacterManager : MonoBehaviour
 
         return null;
     }
-
-
 }

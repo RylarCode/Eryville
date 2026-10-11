@@ -10,8 +10,8 @@ public class Housing : MonoBehaviour, IBuildingComponent
         // Fill the new home with homeless characters, up to its housing capacity
         while (building.HasHousingSlot)
         {
-            Character homeless = CharacterManager.Instance.getHomeless();
-            if (homeless == null || !CharacterManager.Instance.assignCharacterHouse(homeless, building)) break;
+            Character homeless = CharacterManager.Instance.FindHomeless();
+            if (homeless == null || !CharacterManager.Instance.AssignResident(homeless, building)) break;
         }
     }
 }
