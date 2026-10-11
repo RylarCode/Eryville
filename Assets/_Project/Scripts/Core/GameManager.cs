@@ -17,6 +17,9 @@ public class GameManager : MonoBehaviour
     public enum gameState { Normal, Menu }
     public gameState currentGameState = gameState.Normal;
 
+    // Overall situation of the world; characters pick rest places based on it (see CharacterType.restOptions)
+    public WorldState worldState = WorldState.Peace;
+
 
     // Need references to your building/character prefabs to reinstantiate them
     [Header("Prefabs for Loading")]

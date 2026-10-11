@@ -53,6 +53,24 @@ public class BuildingManager : MonoBehaviour
         return building;
     }
 
+    // The closest built building of the given type to a world position, or null if there is none.
+    public Building FindNearest(BuildingType type, Vector3 from)
+    {
+        Building nearest = null;
+        float nearestDistance = float.MaxValue;
+        foreach (Building building in buildings)
+        {
+            if (building.buildingType != type) continue;
+            float distance = Vector3.Distance(building.transform.position, from);
+            if (distance < nearestDistance)
+            {
+                nearest = building;
+                nearestDistance = distance;
+            }
+        }
+        return nearest;
+    }
+
     public bool CanPlace(BuildingType type, Vector2Int anchorCell)
     {
         foreach (Vector2Int cell in GetFootprint(anchorCell, type.size))

@@ -105,11 +105,35 @@ public class CharacterManager : MonoBehaviour
         }
     }
 
-    // Where a character goes for a Rest1 / Rest2 schedule slot. For now that is just home;
-    // it will pick from the character type's rest options (bar, park...) depending on the world state.
+    // Where a character goes for a Rest1 / Rest2 schedule slot: the nearest built building among the
+    // character type's rest options for this slot and the current world state. With no match
+    // (no option defined, e.g. in war, or nothing built yet) the character stays home.
     public Building ResolveRestPlace(Character character, ScheduleSlot slot)
     {
-        return character.HomeBuilding;
+        WorldState state = GameManager.Instance != null ? GameManager.Instance.worldState : WorldState.Peace;
+        CharacterType type = character.characterType;
+
+        Building best = null;
+        float bestDistance = float.MaxValue;
+        if (type != null && type.restOptions != null)
+        {
+            foreach (RestOption option in type.restOptions)
+            {
+                if (option.slot != slot || option.worldState != state || option.place == null) continue;
+
+                Building candidate = BuildingManager.Instance.FindNearest(option.place, character.transform.position);
+                if (candidate == null) continue;
+
+                float distance = Vector3.Distance(candidate.transform.position, character.transform.position);
+                if (distance < bestDistance)
+                {
+                    best = candidate;
+                    bestDistance = distance;
+                }
+            }
+        }
+
+        return best != null ? best : character.HomeBuilding;
     }
 
     public Building FindHomeWithSpace()
