@@ -175,7 +175,7 @@ public class Character : MonoBehaviour
 
     }
 
-    public void ScheduleMoving(GameManager.timeOfDay newTime)
+    public void ScheduleMoving(TimeOfDay newTime)
     {
         foreach (WaypointEntry waypoint in Schedule)
         {

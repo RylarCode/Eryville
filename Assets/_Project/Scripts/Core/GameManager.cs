@@ -17,9 +17,6 @@ public class GameManager : MonoBehaviour
     public enum gameState { Normal, Menu }
     public gameState currentGameState = gameState.Normal;
 
-    public enum timeOfDay { Morning, Afternoon, Evening, Night };
-    public timeOfDay currentTime = timeOfDay.Morning;
-
 
     // Need references to your building/character prefabs to reinstantiate them
     [Header("Prefabs for Loading")]
@@ -49,13 +46,10 @@ public class GameManager : MonoBehaviour
     }
 
 
+    // Test button: skip to the next time of day (the GameClock also advances it on its own)
     public void AdvanceTimeOfDay()
     {
-        timeOfDay[] values = (timeOfDay[])System.Enum.GetValues(typeof(timeOfDay));
-        int index = System.Array.IndexOf(values, currentTime);
-        index = (index + 1) % values.Length; // loop back to 0 at the end
-        currentTime =  values[index];
-        CharacterManager.Instance.timeMoveChangeSchedule(currentTime);
+        GameClock.Instance.Advance();
     }
 
     public void LoadMainMenu()

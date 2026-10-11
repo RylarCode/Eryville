@@ -24,7 +24,7 @@ public class CharacterType : ScriptableObject
 public class WaypointEntry
 {
     public enum personalLocation { Home, Work, Rest1, Rest2, Others }
-    public GameManager.timeOfDay time;
+    public TimeOfDay time;
     public personalLocation destination;
 
 }

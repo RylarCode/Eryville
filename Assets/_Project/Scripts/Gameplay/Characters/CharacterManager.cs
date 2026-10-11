@@ -25,6 +25,14 @@ public class CharacterManager : MonoBehaviour
     void Start()
     {
         // StartCoroutine(testLoop());
+
+        // Every character re-reads its schedule whenever the time of day changes
+        if (GameClock.Instance != null) GameClock.Instance.TimeOfDayChanged += timeMoveChangeSchedule;
+    }
+
+    private void OnDestroy()
+    {
+        if (GameClock.Instance != null) GameClock.Instance.TimeOfDayChanged -= timeMoveChangeSchedule;
     }
 
     IEnumerator testLoop()
@@ -112,7 +120,7 @@ public class CharacterManager : MonoBehaviour
 
 
 
-    public void timeMoveChangeSchedule(GameManager.timeOfDay newtime)
+    public void timeMoveChangeSchedule(TimeOfDay newtime)
     {
         foreach (Character character in AllHiredCharacters)
         {
