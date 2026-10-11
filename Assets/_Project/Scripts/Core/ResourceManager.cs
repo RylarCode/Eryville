@@ -112,7 +112,7 @@ public class ResourceManager : MonoBehaviour
         float total = 0f;
         foreach (var building in BuildingManager.Instance.Buildings)
         {
-            total += building.woodGeneration;
+            if (building.Producer != null) total += building.Producer.WoodPerSec;
         }
         return total;
     }
@@ -122,7 +122,7 @@ public class ResourceManager : MonoBehaviour
         float total = 0f;
         foreach (var building in BuildingManager.Instance.Buildings)
         {
-            total += building.goldGeneration;
+            if (building.Producer != null) total += building.Producer.GoldPerSec;
         }
         return total;
     }

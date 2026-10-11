@@ -64,7 +64,7 @@ public class UIManager : MonoBehaviour
             resourceTextInWords = "";
             foreach (var res in resources.Values)
             {
-                resourceTextInWords += $"{res.resourceName}: {res.currentAmount}\n";
+                resourceTextInWords += $"{res.resourceName}: {Mathf.FloorToInt(res.currentAmount)}\n";
             }
             resourceText.text = resourceTextInWords;
         }
@@ -148,7 +148,7 @@ public class UIManager : MonoBehaviour
     public void showCharacterDetails(Character character)
     {
         TogglePanel(characterPanel);
-        characterText.text = $"Name: {character.characterName}\nLoyalty: {character.Loyalty}\nWorking Location: {character.WorkBuilding?.buildingName}\nHome: {character.HomeBuilding?.buildingName}";
+        characterText.text = $"Name: {character.characterName}\nLoyalty: {character.Loyalty}\nWorking Location: {character.WorkBuilding?.DisplayName}\nHome: {character.HomeBuilding?.DisplayName}";
         clickedCharacter = character;
     }
 
@@ -165,13 +165,13 @@ public class UIManager : MonoBehaviour
 
             // Assuming you have an Image and Text on the button prefab
             buttonGO.GetComponent<Image>().sprite = building.buildingType.sprite;
-            buttonGO.GetComponentInChildren<TMP_Text>().text = $"{building.buildingName} ({building.Workers.Count}/{building.WorkerSlots})";
+            buttonGO.GetComponentInChildren<TMP_Text>().text = $"{building.DisplayName} ({building.Workers.Count}/{building.WorkerSlots})";
 
             button.onClick.AddListener(() =>
             {
                 if (!CharacterManager.Instance.assignCharacter(clickedCharacter, building))
                 {
-                    Debug.Log($"Could not assign {clickedCharacter.characterName} to {building.buildingName} (full or already working there).");
+                    Debug.Log($"Could not assign {clickedCharacter.characterName} to {building.DisplayName} (full or already working there).");
                 }
             });
         }

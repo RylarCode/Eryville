@@ -2,20 +2,30 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Serialization;
 
+// Components on a building prefab implement this to react once the Building has been set up.
+public interface IBuildingComponent
+{
+    void OnBuildingInitialized(Building building);
+}
+
+// A component on a building prefab implements this to handle clicks on that building.
+public interface IBuildingClickHandler
+{
+    void OnBuildingClicked();
+}
+
+// Core of every building: which type it is, where it is, and who works / lives in it.
+// Type-specific behaviour lives in components on the prefab (ResourceProducer, Housing, CityHall...).
 public class Building : MonoBehaviour
 {
-    // Default Values, Adjust actual values in Hierarchy
-    public string buildingName = "Generic Building";
-    public BuildingType buildingType;
-    public Vector2Int size = new Vector2Int(1, 1); // Size in grid cells
+    public BuildingType buildingType;  // the template this building was created from (name, size, costs, rates...)
     [FormerlySerializedAs("startingCell")]
     public Vector2Int cell = new Vector2Int(0, 0); // anchor cell (in grid cell space)
-    public float baseWoodGeneration = 0;
-    public float baseGoldGeneration = 0;
-    public int woodGeneration = 0;
-    public int goldGeneration = 0;
-    [FormerlySerializedAs("buildingclass")]
-    public BuildingType.Role role;
+
+    public string DisplayName => buildingType != null ? buildingType.buildingName : name;
+
+    // Present only on buildings that produce resources (see ResourceProducer)
+    public ResourceProducer Producer { get; private set; }
 
     // Occupants. Only the Assign/Remove methods below change these lists (and the matching
     // Character.WorkBuilding / HomeBuilding), so both sides always agree.
@@ -35,31 +45,34 @@ public class Building : MonoBehaviour
 
     // Add other properties: health, level, etc.
 
+    private void Awake()
+    {
+        Producer = GetComponent<ResourceProducer>();
+    }
+
     // Optional: Called when placed
     public void OnPlaced()
     {
-        Debug.Log($"{buildingName} placed at {transform.position}");
+        Debug.Log($"{DisplayName} placed at {transform.position}");
     }
 
     public void OnClicked()
     {
-        if (role == BuildingType.Role.Special)
+        IBuildingClickHandler handler = GetComponent<IBuildingClickHandler>();
+        if (handler != null)
         {
-            gameObject.GetComponent<CityHall>().OnClicked();
+            handler.OnBuildingClicked();
         }
         else
         {
-            Debug.Log($"Clicked on {buildingName}");
+            Debug.Log($"Clicked on {DisplayName}");
         }
-            
     }
 
     public void Initialize(BuildingType type, Vector2Int anchorCell)
     {
         buildingType = type;
         cell = anchorCell;
-        buildingName = type.buildingName;
-        role = type.role;
         GetComponent<SpriteRenderer>().sprite = buildingType.sprite;
         Vector2 spriteWorldSize = buildingType.sprite.bounds.size; // in Unity units
         Vector3 scale = new Vector3(
@@ -81,26 +94,16 @@ public class Building : MonoBehaviour
             collider.offset = Vector2.zero; // Optional: reset offset
         }
 
-        // Resource Generation (If applicable)
-        baseWoodGeneration = buildingType.woodGenerationPerSec;
-        baseGoldGeneration = buildingType.goldGenerationPerSec;
-        RecalculateOutput();
-
-        // Homes immediately take in any homeless characters
-        GetComponent<HomeBuilding>()?.Initialize(type);
-    }
-
-    public void RecalculateOutput()
-    {
-        float totalMultiplier = 1f; // Start at 1 because it's multiplication
-
-        foreach (Character character in workersOnSite)
+        if (Producer == null && (type.goldGenerationPerSec > 0 || type.woodGenerationPerSec > 0))
         {
-            totalMultiplier *= character.resourceMultiplier;
+            Debug.LogWarning($"{type.buildingName} has resource output but its prefab has no ResourceProducer component, so it will produce nothing.");
         }
 
-        woodGeneration = (int)(baseWoodGeneration*totalMultiplier);//rounds down
-        goldGeneration = (int)(baseGoldGeneration*totalMultiplier);//rounds down
+        // Let the type-specific components (Housing, ...) do their setup now that the type is known
+        foreach (IBuildingComponent component in GetComponents<IBuildingComponent>())
+        {
+            component.OnBuildingInitialized(this);
+        }
     }
 
     // --- Workers ---
@@ -124,7 +127,6 @@ public class Building : MonoBehaviour
 
         workersOnSite.Remove(character);
         if (character.WorkBuilding == this) character.SetWorkBuilding(null);
-        RecalculateOutput();
     }
 
     // A worker physically reached / left the building. Only assigned workers count towards output.
@@ -133,12 +135,11 @@ public class Building : MonoBehaviour
         if (!workers.Contains(character) || workersOnSite.Contains(character)) return;
 
         workersOnSite.Add(character);
-        RecalculateOutput();
     }
 
     public void WorkerLeft(Character character)
     {
-        if (workersOnSite.Remove(character)) RecalculateOutput();
+        workersOnSite.Remove(character);
     }
 
     // --- Residents ---

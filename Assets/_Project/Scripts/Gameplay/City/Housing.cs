@@ -1,28 +1,17 @@
 using UnityEngine;
 
-public class HomeBuilding : MonoBehaviour
+// Behaviour for buildings that house characters. Capacity comes from BuildingType.housingSlots
+// and the residents list lives on Building; this adds what is specific to homes.
+[RequireComponent(typeof(Building))]
+public class Housing : MonoBehaviour, IBuildingComponent
 {
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
-    {
-        
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
-
-    public void Initialize(BuildingType type)
+    public void OnBuildingInitialized(Building building)
     {
         // Fill the new home with homeless characters, up to its housing capacity
-        Building building = GetComponent<Building>();
         while (building.HasHousingSlot)
         {
             Character homeless = CharacterManager.Instance.getHomeless();
             if (homeless == null || !CharacterManager.Instance.assignCharacterHouse(homeless, building)) break;
         }
     }
-
 }

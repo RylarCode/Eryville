@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 8018860927139888576}
   - component: {fileID: 5431786777648461893}
   - component: {fileID: 808421840501615483}
+  - component: {fileID: 4417728301947285503}
   m_Layer: 0
   m_Name: Resource Generator Building
   m_TagString: Untagged
@@ -155,3 +156,15 @@ MonoBehaviour:
   startingCell: {x: 0, y: 0}
   woodGeneration: 0
   goldGeneration: 0
+--- !u!114 &4417728301947285503
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8735228474764763001}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b369fb6ae914409ab9e47eada9a67e3f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 

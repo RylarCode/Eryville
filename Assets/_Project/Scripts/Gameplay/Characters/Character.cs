@@ -94,7 +94,7 @@ public class Character : MonoBehaviour
     {
         workingBuilding = building;
         Debug.Log(building != null
-            ? $"{characterName} assigned work at {building.buildingName}"
+            ? $"{characterName} assigned work at {building.DisplayName}"
             : $"{characterName} unassigned from work");
     }
 
@@ -103,7 +103,7 @@ public class Character : MonoBehaviour
     {
         homeBuilding = building;
         Debug.Log(building != null
-            ? $"{characterName} now lives at {building.buildingName}"
+            ? $"{characterName} now lives at {building.DisplayName}"
             : $"{characterName} is now homeless");
     }
 
@@ -112,7 +112,7 @@ public class Character : MonoBehaviour
     {   
         if (workingBuilding)
         {
-            Debug.Log($"{characterName} starting work at {workingBuilding.buildingName}");
+            Debug.Log($"{characterName} starting work at {workingBuilding.DisplayName}");
             currentState = State.Working;
             // Implement work logic (timer, resource generation link, animation)
         }
@@ -123,7 +123,7 @@ public class Character : MonoBehaviour
     {
         if (currentState == State.Working && workingBuilding)
         {
-            Debug.Log($"{characterName} stopped work at {workingBuilding.buildingName}");
+            Debug.Log($"{characterName} stopped work at {workingBuilding.DisplayName}");
             currentState = State.Idle;
             // Implement work logic (timer, resource generation link, animation)
         }
@@ -138,7 +138,7 @@ public class Character : MonoBehaviour
     {
         if (building == homeBuilding || building == rest1Building || building == rest2Building)
         {
-            Debug.Log($"{characterName} starting rest at {building.buildingName}");
+            Debug.Log($"{characterName} starting rest at {building.DisplayName}");
             currentState = State.Resting;
         }
         
@@ -148,7 +148,7 @@ public class Character : MonoBehaviour
     {
         if (currentState == State.Resting)
         {
-            Debug.Log($"{characterName} stopped resting at {building?.buildingName}");
+            Debug.Log($"{characterName} stopped resting at {building?.DisplayName}");
             currentState = State.Idle;
         }
 

@@ -130,7 +130,7 @@ public class CharacterManager : MonoBehaviour
     {
         foreach(Building building in BuildingManager.Instance.Buildings)
         {
-            if (building.role == BuildingType.Role.Home && building.HasHousingSlot)
+            if (building.HasHousingSlot)
             {
                 return building;
             }
