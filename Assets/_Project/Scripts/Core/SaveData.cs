@@ -16,7 +16,7 @@ public class CharacterData
     public string prefabName; // Or an ID
     public Vector3 position;
     public float currentHealth; // Example
-    public Character.State currentState; // Save state enum
+    public Character.Activity currentActivity; // Save activity enum
     // Add other character-specific saved data (target position?, inventory?)
 }
 

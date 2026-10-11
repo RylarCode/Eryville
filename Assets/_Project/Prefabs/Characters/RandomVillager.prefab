@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 4087719480012361897}
   - component: {fileID: 7080359861902673697}
   - component: {fileID: 1804832493466060679}
+  - component: {fileID: 5316297840125748291}
   m_Layer: 0
   m_Name: RandomVillager
   m_TagString: Untagged
@@ -169,3 +170,17 @@ MonoBehaviour:
   characterName: Villager
   moveSpeed: 3
   currentState: 0
+--- !u!114 &5316297840125748291
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4720973192394993719}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b4c1969358234616b96a1c4f807ea250, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  speed: 3
+  speedMultiplier: 1

@@ -97,7 +97,7 @@ public class GameManager : MonoBehaviour
             CharacterData cData = new CharacterData();
             cData.prefabName = character.gameObject.name; // !! Same fragility as buildings
             cData.position = character.transform.position;
-            cData.currentState = character.currentState;
+            cData.currentActivity = character.CurrentActivity;
             // cData.currentHealth = character.currentHealth;
             data.characters.Add(cData);
         }
@@ -208,7 +208,7 @@ public class GameManager : MonoBehaviour
                     if (loadedChar != null)
                     {
                         // Apply loaded state
-                        loadedChar.currentState = cData.currentState;
+                        // TODO: restore the activity (and destination) when load is reworked
                         // loadedChar.currentHealth = cData.currentHealth;
                         // Maybe set destination if they were moving? Needs more saved data.
                         // loadedChar.InitializeFromLoad(cData);

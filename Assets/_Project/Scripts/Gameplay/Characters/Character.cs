@@ -1,156 +1,47 @@
 using UnityEngine;
-using System.Collections.Generic;
 
+[RequireComponent(typeof(CharacterMovement))]
 public class Character : MonoBehaviour
 {
+    public enum Activity { Idle, Traveling, Working, Resting }
+
     public string characterName = "Villager";
     public CharacterType characterType;
-    public float MoveSpeed => characterType != null ? characterType.moveSpeed : 3f;
-    public float Productivity => characterType != null ? characterType.productivity : 1f;
     public float Loyalty = 0f;
+
+    public float Productivity => characterType != null ? characterType.productivity : 1f;
+
     // Changed only through Building.TryAssign*/Remove* so the building lists stay in sync
     [SerializeField] private Building workingBuilding;
     [SerializeField] private Building homeBuilding;
     public Building WorkBuilding => workingBuilding;
     public Building HomeBuilding => homeBuilding;
-    public Building rest1Building;
-    public Building rest2Building;
+
+    public Activity CurrentActivity { get; private set; } = Activity.Idle;
+
+    private CharacterMovement movement;
     private CharacterSchedule schedule;
 
-    // State machine or simple state variable could go here
-    public enum State { Idle, Moving, Working, Resting}
-    public State currentState = State.Idle;
+    private Building currentPlace;        // the building we are Working / Resting at
+    private Building destination;         // the building we are travelling to
+    private Activity activityOnArrival;   // what we start doing when we get there
 
-    private Vector3 targetPosition;
-    private bool isMoving = false;
-
-    void Start()
+    private void Awake()
     {
-        int randomNumber = Random.Range(-10, 10);
-        int randomNumber2 = Random.Range(-10, 10);
-        SetDestination(new Vector3(randomNumber, randomNumber2, 0));
+        movement = GetComponent<CharacterMovement>();
+        if (movement == null) movement = gameObject.AddComponent<CharacterMovement>();
+        movement.Arrived += OnArrived;
     }
-    void Update()
+
+    private void OnDestroy()
     {
-        if (isMoving)
-        {
-            MoveTowardsTarget();
-        }
+        if (movement != null) movement.Arrived -= OnArrived;
+        LeaveCurrentActivity(); // don't leave a ghost worker behind in a building
     }
 
     public void OnClicked()
     {
         UIManager.Instance.showCharacterDetails(this);
-    }
-
-    public void SetDestination(Vector3 destination)
-    {
-        targetPosition = destination;
-        isMoving = true;
-        currentState = State.Moving;
-        Debug.Log($"{characterName} moving towards {targetPosition}");
-        // Optional: Rotate to face destination
-        // Vector2 direction = (destination - transform.position).normalized;
-        // if (direction.x != 0) // Basic facing direction
-        //     transform.localScale = new Vector3(Mathf.Sign(direction.x), 1, 1);
-    }
-
-    private void MoveTowardsTarget()
-    {
-        if (Vector3.Distance(transform.position, targetPosition) < 0.1f)
-        {
-            // Reached destination
-            transform.position = targetPosition; // Snap to exact position
-            isMoving = false;
-            currentState = State.Idle;
-            Debug.Log($"{characterName} reached destination.");
-            // Trigger arrival logic (e.g., start working)
-            if (Vector3.Distance(transform.position, workingBuilding != null ? workingBuilding.transform.position : transform.position) < 0.1f)
-            {
-                CharacterManager.Instance.CharacterStartsWorkinginBuilding(this, workingBuilding);
-            }
-            else if (Vector3.Distance(transform.position, homeBuilding != null ? homeBuilding.transform.position : transform.position) < 0.1f)
-            {
-                CharacterManager.Instance.CharacterStartsRestinginBuilding(this, homeBuilding);
-            }
-            else if (Vector3.Distance(transform.position, rest1Building != null ? rest1Building.transform.position : transform.position) < 0.1f)
-            {
-                CharacterManager.Instance.CharacterStartsRestinginBuilding(this, rest1Building);
-            }
-            else if (Vector3.Distance(transform.position, rest2Building != null ? rest2Building.transform.position : transform.position) < 0.1f)
-            {
-                CharacterManager.Instance.CharacterStartsRestinginBuilding(this, rest2Building);
-            }
-            return;
-        }
-
-        // Move towards the target position
-        transform.position = Vector3.MoveTowards(transform.position, targetPosition, MoveSpeed * Time.deltaTime);
-    }
-
-    // Called only by Building (TryAssignWorker / RemoveWorker); pass null to clear.
-    internal void SetWorkBuilding(Building building)
-    {
-        workingBuilding = building;
-        Debug.Log(building != null
-            ? $"{characterName} assigned work at {building.DisplayName}"
-            : $"{characterName} unassigned from work");
-    }
-
-    // Called only by Building (TryAssignResident / RemoveResident); pass null to clear.
-    internal void SetHomeBuilding(Building building)
-    {
-        homeBuilding = building;
-        Debug.Log(building != null
-            ? $"{characterName} now lives at {building.DisplayName}"
-            : $"{characterName} is now homeless");
-    }
-
-
-    public void StartWork()
-    {   
-        if (workingBuilding)
-        {
-            Debug.Log($"{characterName} starting work at {workingBuilding.DisplayName}");
-            currentState = State.Working;
-            // Implement work logic (timer, resource generation link, animation)
-        }
-
-    }
-
-    public void StopWork()
-    {
-        if (currentState == State.Working && workingBuilding)
-        {
-            Debug.Log($"{characterName} stopped work at {workingBuilding.DisplayName}");
-            currentState = State.Idle;
-            // Implement work logic (timer, resource generation link, animation)
-        }
-
-    }
-
-    
-
-    
-
-    public void StartResting(Building building)
-    {
-        if (building == homeBuilding || building == rest1Building || building == rest2Building)
-        {
-            Debug.Log($"{characterName} starting rest at {building.DisplayName}");
-            currentState = State.Resting;
-        }
-        
-    }
-
-    public void StopResting(Building building)
-    {
-        if (currentState == State.Resting)
-        {
-            Debug.Log($"{characterName} stopped resting at {building?.DisplayName}");
-            currentState = State.Idle;
-        }
-
     }
 
     public void Initialize(CharacterType type)
@@ -159,6 +50,7 @@ public class Character : MonoBehaviour
         characterName = characterType.displayName;
 
         GetComponent<SpriteRenderer>().sprite = characterType.sprite;
+        movement.speed = characterType.moveSpeed;
 
         schedule = new CharacterSchedule(characterType.defaultSchedule); // own copy, so we never edit the asset's list
         Building potentialHome = CharacterManager.Instance.FindHomeWithSpace();
@@ -171,31 +63,127 @@ public class Character : MonoBehaviour
             Debug.Log($"No Home");
         }
 
-
-
+        // Start by doing whatever the schedule says for the current time of day
+        ReapplySchedule();
     }
 
-    public void ScheduleMoving(TimeOfDay newTime)
+    // Called by Building (TryAssignWorker / RemoveWorker); pass null to clear.
+    internal void SetWorkBuilding(Building building)
     {
-        if (schedule == null || !schedule.TryGetSlot(newTime, out ScheduleSlot slot)) return;
+        workingBuilding = building;
+        if (CurrentActivity == Activity.Working && currentPlace != building) LeaveCurrentActivity();
+        Debug.Log(building != null
+            ? $"{characterName} assigned work at {building.DisplayName}"
+            : $"{characterName} unassigned from work");
+        if (building != null) ReapplySchedule();
+    }
 
-        Vector3? targetLocation = slot switch
-        {
-            ScheduleSlot.Home => homeBuilding != null ? homeBuilding.transform.position : (Vector3?)null,
-            ScheduleSlot.Work => workingBuilding != null ? workingBuilding.transform.position : (Vector3?)null,
-            ScheduleSlot.Rest1 => rest1Building != null ? rest1Building.transform.position : (Vector3?)null,
-            ScheduleSlot.Rest2 => rest2Building != null ? rest2Building.transform.position : (Vector3?)null,
-            _ => null
-        };
+    // Called by Building (TryAssignResident / RemoveResident); pass null to clear.
+    internal void SetHomeBuilding(Building building)
+    {
+        homeBuilding = building;
+        Debug.Log(building != null
+            ? $"{characterName} now lives at {building.DisplayName}"
+            : $"{characterName} is now homeless");
+        if (building != null) ReapplySchedule();
+    }
 
-        if (targetLocation.HasValue)
+    // --- Schedule ---
+
+    // Decide where to be for this time of day and head there. If the schedule has no entry for it,
+    // the character just carries on with what it was doing.
+    // A new job / home may change where we should be right now (e.g. hired mid-shift)
+    private void ReapplySchedule()
+    {
+        ApplySchedule(GameClock.Instance != null ? GameClock.Instance.Current : TimeOfDay.Morning);
+    }
+
+    public void ApplySchedule(TimeOfDay time)
+    {
+        if (schedule == null || !schedule.TryGetSlot(time, out ScheduleSlot slot)) return;
+
+        Building place = ResolvePlace(slot, out Activity activity);
+        if (place == null)
         {
-            SetDestination(targetLocation.Value);
+            // Nowhere to go for this slot (no job, no home...): stop what we were doing and stay put
+            Debug.Log($"{characterName} has nowhere to go for {slot}.");
+            movement.Stop();
+            destination = null;
+            LeaveCurrentActivity();
+            return;
         }
-        else
+
+        bool alreadyThere = CurrentActivity == activity && currentPlace == place;
+        bool alreadyOnTheWay = CurrentActivity == Activity.Traveling && destination == place && activityOnArrival == activity;
+        if (alreadyThere || alreadyOnTheWay) return;
+
+        GoTo(place, activity);
+    }
+
+    private Building ResolvePlace(ScheduleSlot slot, out Activity activity)
+    {
+        switch (slot)
         {
-            Debug.LogWarning("No valid building found for: " + slot);
+            case ScheduleSlot.Work:
+                activity = Activity.Working;
+                return workingBuilding;
+            case ScheduleSlot.Home:
+                activity = Activity.Resting;
+                return homeBuilding;
+            case ScheduleSlot.Rest1:
+            case ScheduleSlot.Rest2:
+                activity = Activity.Resting;
+                return CharacterManager.Instance.ResolveRestPlace(this, slot);
+            default:
+                activity = Activity.Idle;
+                return null;
         }
     }
 
+    // --- Moving and activities ---
+
+    private void GoTo(Building place, Activity activityWhenThere)
+    {
+        LeaveCurrentActivity();
+
+        destination = place;
+        activityOnArrival = activityWhenThere;
+        CurrentActivity = Activity.Traveling;
+        movement.MoveTo(place.transform.position);
+        Debug.Log($"{characterName} heading to {place.DisplayName} to {activityWhenThere}");
+    }
+
+    // We know why we came here, so there is no need to work it out from our position
+    private void OnArrived()
+    {
+        Building place = destination;
+        destination = null;
+
+        if (place == null) // the building was removed while we were on the way
+        {
+            CurrentActivity = Activity.Idle;
+            return;
+        }
+
+        // The assignment may have changed on the way; only start work where we still work
+        Activity activity = activityOnArrival;
+        if (activity == Activity.Working && place != workingBuilding) activity = Activity.Idle;
+
+        EnterActivity(activity, place);
+    }
+
+    private void EnterActivity(Activity activity, Building place)
+    {
+        CurrentActivity = activity;
+        currentPlace = place;
+        if (activity == Activity.Working) place.WorkerArrived(this);
+        Debug.Log($"{characterName} is now {activity} at {place.DisplayName}");
+    }
+
+    private void LeaveCurrentActivity()
+    {
+        if (CurrentActivity == Activity.Working && currentPlace != null) currentPlace.WorkerLeft(this);
+        currentPlace = null;
+        CurrentActivity = Activity.Idle;
+    }
 }

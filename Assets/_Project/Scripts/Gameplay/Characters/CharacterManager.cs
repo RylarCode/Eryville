@@ -27,12 +27,12 @@ public class CharacterManager : MonoBehaviour
         // StartCoroutine(testLoop());
 
         // Every character re-reads its schedule whenever the time of day changes
-        if (GameClock.Instance != null) GameClock.Instance.TimeOfDayChanged += timeMoveChangeSchedule;
+        if (GameClock.Instance != null) GameClock.Instance.TimeOfDayChanged += OnTimeOfDayChanged;
     }
 
     private void OnDestroy()
     {
-        if (GameClock.Instance != null) GameClock.Instance.TimeOfDayChanged -= timeMoveChangeSchedule;
+        if (GameClock.Instance != null) GameClock.Instance.TimeOfDayChanged -= OnTimeOfDayChanged;
     }
 
     IEnumerator testLoop()
@@ -85,18 +85,6 @@ public class CharacterManager : MonoBehaviour
         building?.RemoveWorker(character);
     }
 
-    public void CharacterStartsWorkinginBuilding (Character character, Building building)
-    {
-        character.StartWork();
-        building?.WorkerArrived(character);
-    }
-
-    public void CharacterStopsWorkinginBuilding(Character character, Building building)
-    {
-        character.StopWork();
-        building?.WorkerLeft(character);
-    }
-
     // Returns false if the building has no free housing (or the character already lives there)
     public bool assignCharacterHouse(Character character, Building building)
     {
@@ -108,29 +96,20 @@ public class CharacterManager : MonoBehaviour
         building?.RemoveResident(character);
     }
 
-    public void CharacterStartsRestinginBuilding(Character character, Building building)
-    {
-        character.StartResting(building);
-    }
-
-    public void CharacterStopsRestinginBuilding(Character character, Building building)
-    {
-        character.StopResting(building);
-    }
-
-
-
-    public void timeMoveChangeSchedule(TimeOfDay newtime)
+    // Every character re-reads its schedule when the time of day changes
+    public void OnTimeOfDayChanged(TimeOfDay newTime)
     {
         foreach (Character character in AllHiredCharacters)
         {
-            CharacterStopsWorkinginBuilding(character, character.WorkBuilding);
-            CharacterStopsRestinginBuilding(character, character.HomeBuilding);
-            CharacterStopsRestinginBuilding(character, character.rest1Building);
-            CharacterStopsRestinginBuilding(character, character.rest2Building);
-
-            character.ScheduleMoving(newtime);
+            character.ApplySchedule(newTime);
         }
+    }
+
+    // Where a character goes for a Rest1 / Rest2 schedule slot. For now that is just home;
+    // it will pick from the character type's rest options (bar, park...) depending on the world state.
+    public Building ResolveRestPlace(Character character, ScheduleSlot slot)
+    {
+        return character.HomeBuilding;
     }
 
     public Building FindHomeWithSpace()
