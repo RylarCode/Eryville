@@ -1,7 +1,7 @@
 using UnityEngine;
 
 [RequireComponent(typeof(CharacterMovement))]
-public class Character : MonoBehaviour
+public class Character : MonoBehaviour, IClickable
 {
     public enum Activity { Idle, Traveling, Working, Resting }
 
@@ -39,9 +39,12 @@ public class Character : MonoBehaviour
         LeaveCurrentActivity(); // don't leave a ghost worker behind in a building
     }
 
+    // Raised when the player clicks a character; the UI listens, so Character knows nothing about it
+    public static event System.Action<Character> Selected;
+
     public void OnClicked()
     {
-        UIManager.Instance.showCharacterDetails(this);
+        Selected?.Invoke(this);
     }
 
     public void Initialize(CharacterType type)

@@ -16,7 +16,7 @@ public interface IBuildingClickHandler
 
 // Core of every building: which type it is, where it is, and who works / lives in it.
 // Type-specific behaviour lives in components on the prefab (ResourceProducer, Housing, CityHall...).
-public class Building : MonoBehaviour
+public class Building : MonoBehaviour, IClickable
 {
     public BuildingType buildingType;  // the template this building was created from (name, size, costs, rates...)
     [FormerlySerializedAs("startingCell")]

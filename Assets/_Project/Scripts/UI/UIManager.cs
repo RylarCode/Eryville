@@ -49,6 +49,16 @@ public class UIManager : MonoBehaviour
 
     }
 
+    private void OnEnable()
+    {
+        Character.Selected += ShowCharacterDetails;
+    }
+
+    private void OnDisable()
+    {
+        Character.Selected -= ShowCharacterDetails;
+    }
+
     void Start()
     {
         GenerateBuildingPanelButtons();
@@ -145,7 +155,7 @@ public class UIManager : MonoBehaviour
         }
     }
 
-    public void showCharacterDetails(Character character)
+    public void ShowCharacterDetails(Character character)
     {
         // Open the panel only if it is closed; clicking another character just switches the selection
         if (!characterPanel.activeInHierarchy) TogglePanel(characterPanel);
