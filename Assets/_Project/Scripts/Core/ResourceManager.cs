@@ -11,7 +11,6 @@ public class ResourceManager : MonoBehaviour
     public static ResourceManager Instance { get; private set; }
 
     [SerializeField] public Dictionary<string, Resource> resources = new Dictionary<string, Resource>();
-    [SerializeField] public List<Building> activeBuildings = new List<Building>();
 
 
 
@@ -108,20 +107,10 @@ public class ResourceManager : MonoBehaviour
         return 0;
     }
 
-    public void RegisterBuilding(Building building)
-    {
-        activeBuildings.Add(building);
-    }
-
-    public void UnregisterBuilding(Building building)
-    {
-        activeBuildings.Remove(building);
-    }
-
     public float GetTotalWoodPerSec()
     {
         float total = 0f;
-        foreach (var building in activeBuildings)
+        foreach (var building in BuildingManager.Instance.Buildings)
         {
             total += building.woodGeneration;
         }
@@ -131,7 +120,7 @@ public class ResourceManager : MonoBehaviour
     public float GetTotalGoldPerSec()
     {
         float total = 0f;
-        foreach (var building in activeBuildings)
+        foreach (var building in BuildingManager.Instance.Buildings)
         {
             total += building.goldGeneration;
         }

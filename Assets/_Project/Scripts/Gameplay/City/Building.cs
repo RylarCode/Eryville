@@ -85,7 +85,6 @@ public class Building : MonoBehaviour
         baseWoodGeneration = buildingType.woodGenerationPerSec;
         baseGoldGeneration = buildingType.goldGenerationPerSec;
         RecalculateOutput();
-        ResourceManager.Instance.RegisterBuilding(this);
 
         // Homes immediately take in any homeless characters
         GetComponent<HomeBuilding>()?.Initialize(type);

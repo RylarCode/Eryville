@@ -155,7 +155,7 @@ public class UIManager : MonoBehaviour
     public void GenerateAssignCharactertoBuildingButtons()
     {
         
-        foreach (Building building in BuildingPlacer.Instance.AllPlacedBuildings)
+        foreach (Building building in BuildingManager.Instance.Buildings)
         {
             if (building.WorkerSlots <= 0) continue; // nobody can work here (homes, city hall...)
 

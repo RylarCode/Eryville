@@ -128,7 +128,7 @@ public class CharacterManager : MonoBehaviour
 
     public Building FindHomeWithSpace()
     {
-        foreach(Building building in BuildingPlacer.Instance.AllPlacedBuildings)
+        foreach(Building building in BuildingManager.Instance.Buildings)
         {
             if (building.role == BuildingType.Role.Home && building.HasHousingSlot)
             {

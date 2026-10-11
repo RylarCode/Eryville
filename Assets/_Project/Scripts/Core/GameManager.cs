@@ -194,8 +194,7 @@ public class GameManager : MonoBehaviour
                         loadedBuilding.OnPlaced(); // Re-run placement logic? Or specific load logic?
                     }
                     // Make sure the loaded building correctly occupies grid space (re-register)
-                    // BuildingPlacer needs access or a GridManager does
-                    // GridManager.Instance.RegisterBuilding(grid.WorldToCell(bData.position), loadedBuilding.size, loadedBuilding);
+                    // TODO: load should go through BuildingManager.Build(type, cell, worldPosition) so the building is registered and occupies its cells
                 }
                 else
                 {
