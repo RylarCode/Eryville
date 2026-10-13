@@ -15,7 +15,21 @@ public class BuildingPlacer : MonoBehaviour
     [SerializeField] private Tilemap placementTilemap; // Assign PlacementTilemap
     [SerializeField] private Camera mainCamera; // Assign Main Camera
 
-    public BuildingType buildingToPlace = null; // The prefab of the building we are currently trying to place
+    public BuildingType buildingToPlace = null; // The type of building we are currently trying to place (null when not placing)
+
+    // Move mode: an existing building picked up and waiting to be dropped somewhere else
+    private Building buildingToMove;
+    private bool moveActive;
+    private Color movedBuildingOriginalColor = Color.white;
+
+    // True while the player is in placing or moving mode: clicks then go to the placer, not to whatever is under them
+    public bool IsPlacing => buildingToPlace != null || moveActive;
+    public bool IsMoving => moveActive;
+
+    // Raised when move mode ends, whether the building was dropped or the move cancelled
+    public event System.Action MovingEnded;
+
+    private BuildingType ActiveType => moveActive && buildingToMove != null ? buildingToMove.buildingType : buildingToPlace;
 
     // Optional: Visual feedback for placement
     [SerializeField] private GameObject placementIndicator; // A semi-transparent sprite matching building size
@@ -44,6 +58,12 @@ public class BuildingPlacer : MonoBehaviour
             sr.color = new Color(sr.color.r, sr.color.g, sr.color.b, 0.5f);
             currentIndicatorInstance.SetActive(false); // Start hidden
         }
+    }
+
+    private void Update()
+    {
+        // The building being moved was removed meanwhile: leave move mode so the game does not stay paused
+        if (moveActive && buildingToMove == null) EndMove();
     }
 
     private void OnEnable()
@@ -80,79 +100,96 @@ public class BuildingPlacer : MonoBehaviour
             return;
         }
 
+        if (moveActive) EndMove(); // picking something to build cancels a move in progress
 
-
-        // buildingToPlace = buildingPrefab;
         buildingToPlace = buildingSO;
+        ShowIndicator(buildingSO);
+    }
 
-        // Activate and size the placement indicator
-        if (currentIndicatorInstance != null && buildingToPlace != null)
+    // Activates the ghost and sizes it for the given building type
+    private void ShowIndicator(BuildingType type)
+    {
+        if (currentIndicatorInstance == null) return;
+
+        currentIndicatorInstance.SetActive(true);
+        currentIndicatorInstance.GetComponent<SpriteRenderer>().sprite = type.sprite;
+
+        // Scale the ghost so the sprite covers the building's size in tiles
+        Vector2 spriteWorldSize = type.sprite.bounds.size; // in Unity units
+        currentIndicatorInstance.transform.localScale = new Vector3(
+            type.size.x / spriteWorldSize.x,
+            type.size.y / spriteWorldSize.y,
+            1f
+        );
+        SetIndicatorColor(Color.white);
+    }
+
+    // --- Moving an existing building ---
+
+    // Picks the building up: it is dimmed where it stands and a ghost follows the pointer until the
+    // player clicks a free spot (drop) or cancels.
+    public void StartMoving(Building building)
+    {
+        if (building == null || building.buildingType == null || !building.buildingType.movable) return;
+
+        if (moveActive) EndMove();
+        buildingToPlace = null;
+        buildingToMove = building;
+        moveActive = true;
+
+        SpriteRenderer original = building.GetComponent<SpriteRenderer>();
+        if (original != null)
         {
-            currentIndicatorInstance.SetActive(true);
-            // currentIndicatorInstance.GetComponent<SpriteRenderer>().sprite = buildingPrefab.gameObject.GetComponent<SpriteRenderer>().sprite;
-            currentIndicatorInstance.GetComponent<SpriteRenderer>().sprite = buildingSO.sprite;
-
-            // 2. Get the size in tiles
-            //Vector2 buildingSize = buildingPrefab.size; // (e.g., (2, 3))
-            Vector2 buildingSize = buildingSO.size;
-
-            // 3. Get sprite world size (how big 1 sprite is)
-            // Vector2 spriteWorldSize = buildingPrefab.gameObject.GetComponent<SpriteRenderer>().sprite.bounds.size; // in Unity units
-            Vector2 spriteWorldSize = buildingSO.sprite.bounds.size; // in Unity units
-
-            // 4. Calculate required scale
-            Vector3 scale = new Vector3(
-                buildingSize.x / spriteWorldSize.x,
-                buildingSize.y / spriteWorldSize.y,
-                1f
-            );
-
-            // 5. Apply the scale
-            currentIndicatorInstance.transform.localScale = scale;
-
+            movedBuildingOriginalColor = original.color;
+            original.color = new Color(movedBuildingOriginalColor.r, movedBuildingOriginalColor.g, movedBuildingOriginalColor.b, 0.5f);
         }
-        else if (currentIndicatorInstance != null)
+
+        ShowIndicator(building.buildingType);
+        if (currentIndicatorInstance != null) currentIndicatorInstance.transform.position = building.transform.position;
+    }
+
+    public void CancelMoving()
+    {
+        if (moveActive) EndMove();
+    }
+
+    private void EndMove()
+    {
+        if (buildingToMove != null)
         {
-            currentIndicatorInstance.SetActive(false); // Hide if no building selected
+            SpriteRenderer original = buildingToMove.GetComponent<SpriteRenderer>();
+            if (original != null) original.color = movedBuildingOriginalColor;
         }
+        buildingToMove = null;
+        moveActive = false;
+        if (currentIndicatorInstance != null) currentIndicatorInstance.SetActive(false);
+        MovingEnded?.Invoke();
     }
 
     // --- Input Handlers ---
     private void HandlePointerMove(Vector2 screenPosition)
     {
-        if (buildingToPlace == null || currentIndicatorInstance == null || !currentIndicatorInstance.activeSelf) return;
+        BuildingType type = ActiveType;
+        if (type == null || currentIndicatorInstance == null || !currentIndicatorInstance.activeSelf) return;
 
         Vector3 worldPosition = mainCamera.ScreenToWorldPoint(new Vector3(screenPosition.x, screenPosition.y, mainCamera.nearClipPlane + 10)); // +10 to be in front of background
         Vector3Int cellPosition = buildingGrid.WorldToCell(worldPosition);
-        Vector3 cellCenterWorld = buildingGrid.GetCellCenterWorld(cellPosition);
 
-        Vector2 size = buildingToPlace.size; // e.g., (2,3)
-        Vector3 offset = Vector3.zero;
-        if ((size.x % 2) == 0)
-        {
-            offset.x = buildingGrid.cellSize.x / 2f;
-        }
-        if ((size.y % 2) == 0)
-        {
-            offset.y = buildingGrid.cellSize.y / 2f;
-        }
+        currentIndicatorInstance.transform.position = GetBuildingWorldPosition(cellPosition, type.size);
 
-        // 4. Final set
-        currentIndicatorInstance.transform.position = cellCenterWorld + offset;
-
-
-        // Optional: Add visual feedback for validity (e.g., change indicator color)
-        // bool canPlace = BuildingManager.Instance.CanPlace(buildingToPlace, new Vector2Int(cellPosition.x, cellPosition.y));
-        // SetIndicatorColor(canPlace ? Color.green : Color.red);
+        // Green where the building can go, red where it can not
+        Vector2Int anchorCell = new Vector2Int(cellPosition.x, cellPosition.y);
+        bool valid = moveActive && buildingToMove != null
+            ? BuildingManager.Instance.CanMove(buildingToMove, anchorCell)
+            : BuildingManager.Instance.CanPlace(type, anchorCell);
+        SetIndicatorColor(valid ? Color.green : Color.red);
     }
-
 
     private void HandlePlacementClick(Vector2 screenPosition)
     {
-        if (buildingToPlace == null)
+        if (!IsPlacing)
         {
             // Maybe implement deselection or interaction with existing buildings here
-            // Debug.Log("No building selected to place.");
             return;
         }
 
@@ -160,8 +197,8 @@ public class BuildingPlacer : MonoBehaviour
         Vector3 worldPosition = mainCamera.ScreenToWorldPoint(new Vector3(screenPosition.x, screenPosition.y, mainCamera.nearClipPlane + 10));
         Vector3Int cellPosition = buildingGrid.WorldToCell(worldPosition);
 
-        // Try to place the building
-        TryPlaceBuilding(cellPosition);
+        if (moveActive) TryMoveBuilding(cellPosition);
+        else TryPlaceBuilding(cellPosition);
     }
 
 
@@ -211,13 +248,52 @@ public class BuildingPlacer : MonoBehaviour
         return position;
     }
 
-    // Optional: Helper to change indicator color based on placement validity
-    // private void SetIndicatorColor(Color color) {
-    //     if (currentIndicatorInstance == null) return;
-    //     var renderer = currentIndicatorInstance.GetComponent<SpriteRenderer>();
-    //     if (renderer != null) {
-    //         color.a = renderer.color.a; // Keep original transparency
-    //         renderer.color = color;
-    //     }
-    // }
+    // --- Move Logic ---
+    private void TryMoveBuilding(Vector3Int cellPosition)
+    {
+        Building building = buildingToMove;
+        if (building == null) // removed while we were choosing where to put it
+        {
+            EndMove();
+            return;
+        }
+
+        BuildingType type = building.buildingType;
+        Vector2Int anchorCell = new Vector2Int(cellPosition.x, cellPosition.y);
+
+        // Dropped right where it already stands: nothing to do
+        if (anchorCell == building.Cell)
+        {
+            EndMove();
+            return;
+        }
+
+        if (!BuildingManager.Instance.CanMove(building, anchorCell))
+        {
+            Debug.Log($"Cannot move {building.DisplayName} to {cellPosition}. Spot occupied or invalid.");
+            return; // stay in move mode so the player can try another spot
+        }
+
+        if (type.moveGoldCost > ResourceManager.Instance.GetResourceAmount("Gold") || type.moveWoodCost > ResourceManager.Instance.GetResourceAmount("Wood"))
+        {
+            Debug.Log($"Cannot afford to move {building.DisplayName}. Cost: {type.moveGoldCost}G, {type.moveWoodCost}W");
+            return;
+        }
+
+        if (!BuildingManager.Instance.Move(building, anchorCell, GetBuildingWorldPosition(cellPosition, type.size))) return;
+
+        ResourceManager.Instance.changeResourceAmount("Gold", -type.moveGoldCost);
+        ResourceManager.Instance.changeResourceAmount("Wood", -type.moveWoodCost);
+
+        Debug.Log($"Moved {building.DisplayName} to {cellPosition}.");
+        EndMove();
+    }
+
+    // Tints the ghost, keeping its transparency
+    private void SetIndicatorColor(Color color)
+    {
+        if (currentIndicatorInstance == null) return;
+        SpriteRenderer indicator = currentIndicatorInstance.GetComponent<SpriteRenderer>();
+        if (indicator != null) indicator.color = new Color(color.r, color.g, color.b, 0.5f);
+    }
 }

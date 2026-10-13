@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro; // Import TextMeshPro namespace
 using UnityEngine.InputSystem;
+using UnityEngine.Events;
 using System.Collections.Generic;
 using System.Text;
 
@@ -27,6 +28,7 @@ public class UIManager : MonoBehaviour
     public GameObject characterPanel; // The right-hand details panel, used for both characters and buildings
     [SerializeField] private TextMeshProUGUI characterText;
     [SerializeField] private GameObject assignJobButton; // the "Assign" button on that panel; hidden when showing a building
+    private GameObject moveButton; // "Move" button, made at runtime as a copy of the Assign button; shown for buildings only
 
     // What the details panel is currently showing
     private enum PanelMode { None, Character, Building }
@@ -85,6 +87,9 @@ public class UIManager : MonoBehaviour
             if (found != null) assignJobButton = found.gameObject;
         }
 
+        CreateMoveButton();
+        if (BuildingPlacer.Instance != null) BuildingPlacer.Instance.MovingEnded += OnMovingEnded;
+
         // The panel now shows more text than a character used to need: shrink it to fit instead of overflowing
         characterText.enableAutoSizing = true;
         characterText.fontSizeMin = 14f;
@@ -97,14 +102,16 @@ public class UIManager : MonoBehaviour
     private void OnDestroy()
     {
         if (InputManager.Instance != null) InputManager.Instance.OnPointerClick -= HandleWorldClick;
+        if (BuildingPlacer.Instance != null) BuildingPlacer.Instance.MovingEnded -= OnMovingEnded;
     }
 
     private void Update()
     {
-        // Escape closes the character panels, or else whatever menu is open
+        // Escape cancels a move in progress, or closes the character panels, or else whatever menu is open
         if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
         {
-            if (CharacterPanelsOpen) CloseCharacterPanels();
+            if (BuildingPlacer.Instance != null && BuildingPlacer.Instance.IsMoving) BuildingPlacer.Instance.CancelMoving();
+            else if (CharacterPanelsOpen) CloseCharacterPanels();
             else if (openPanel != null) TogglePanel(openPanel);
         }
 
@@ -165,6 +172,7 @@ public class UIManager : MonoBehaviour
         if (!panel.activeInHierarchy)
         {
             //Debug.Log("Opening Menu" + panel.name);
+            if (BuildingPlacer.Instance.IsMoving) BuildingPlacer.Instance.CancelMoving(); // opening a menu abandons a move
             if (openPanel != null && panel != assignPanel )
             {
                 openPanel.SetActive(false);
@@ -263,6 +271,7 @@ public class UIManager : MonoBehaviour
         assignPanel.SetActive(false); // the assign-job list only opens when its button is pressed
         ClearList();
         if (assignJobButton != null) assignJobButton.SetActive(true);
+        if (moveButton != null) moveButton.SetActive(false);
         RefreshCharacterText();
     }
 
@@ -287,6 +296,7 @@ public class UIManager : MonoBehaviour
         selectedCharacter = null;
 
         if (assignJobButton != null) assignJobButton.SetActive(false); // assigning a job makes no sense here
+        if (moveButton != null) moveButton.SetActive(building.buildingType != null && building.buildingType.movable);
         ClearList();
         occupantListSignature = null;
         nextBuildingRefresh = Time.unscaledTime + BuildingRefreshInterval;
@@ -378,6 +388,54 @@ public class UIManager : MonoBehaviour
 
         OwnedCharacter captured = occupant;
         buttonGO.GetComponent<Button>().onClick.AddListener(() => ShowCharacterDetails(captured));
+    }
+
+    // --- Moving buildings ---
+
+    // Makes the "Move" button as a copy of the Assign button, so it looks the same and sits in the same
+    // spot (which is free in building view). The copy's scene-assigned click action is switched off.
+    private void CreateMoveButton()
+    {
+        if (assignJobButton == null) return;
+
+        moveButton = Instantiate(assignJobButton, assignJobButton.transform.parent);
+        moveButton.name = "MoveButton";
+
+        Button button = moveButton.GetComponent<Button>();
+        if (button != null)
+        {
+            for (int i = 0; i < button.onClick.GetPersistentEventCount(); i++)
+            {
+                button.onClick.SetPersistentListenerState(i, UnityEventCallState.Off);
+            }
+            button.onClick.AddListener(StartMovingSelectedBuilding);
+        }
+
+        TMP_Text label = moveButton.GetComponentInChildren<TMP_Text>();
+        if (label != null) label.text = "Move";
+        moveButton.SetActive(false);
+    }
+
+    // Called by the "Move" button: closes the panel and lets the player drop the building somewhere else.
+    // The game is paused with the grid shown while they choose, like when placing from the build menu.
+    public void StartMovingSelectedBuilding()
+    {
+        if (selectedBuilding == null || BuildingPlacer.Instance == null) return;
+
+        Building building = selectedBuilding;
+        CloseCharacterPanels();
+        BuildingPlacer.Instance.StartMoving(building);
+        if (BuildingPlacer.Instance.IsMoving)
+        {
+            GameManager.Instance.currentGameState = GameManager.gameState.Menu;
+            GridlinesGO.SetActive(true);
+        }
+    }
+
+    private void OnMovingEnded()
+    {
+        GameManager.Instance.currentGameState = GameManager.gameState.Normal;
+        GridlinesGO.SetActive(false);
     }
 
     // Called by the "Assign" button on the details panel (character mode)

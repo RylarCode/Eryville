@@ -9,6 +9,11 @@ public class BuildingType : ScriptableObject
     public Sprite sprite;
     public int goldCost;
     public int woodCost;
+
+    [Header("Moving")]
+    public bool movable = true;   // can the player pick this building up and put it somewhere else?
+    public int moveGoldCost;      // free for now; raise to charge for moving
+    public int moveWoodCost;
     public Vector2Int size = new Vector2Int(1, 1); // Size in grid cells
     [FormerlySerializedAs("buildingcategoryprefab")]
     public GameObject buildingPrefab;

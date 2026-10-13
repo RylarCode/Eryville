@@ -54,9 +54,10 @@ public class InputManager : MonoBehaviour
             {
                 //Debug.Log("Clicked on UI — skip placing.");
             }
-            else if (hits.Length > 0)
+            else if (hits.Length > 0 && !(BuildingPlacer.Instance != null && BuildingPlacer.Instance.IsPlacing))
             {
-                // Something solid was clicked: it gets the click (if it can use it) and nothing is placed
+                // Something solid was clicked: it gets the click (if it can use it) and nothing is placed.
+                // (Not while placing or moving a building: then the click is the placer's, even over other buildings.)
                 target?.OnClicked();
             }
             else

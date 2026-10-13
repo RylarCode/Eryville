@@ -11,6 +11,7 @@ public class BuildingManager : MonoBehaviour
 
     public event Action<Building> BuildingAdded;
     public event Action<Building> BuildingRemoved;
+    public event Action<Building> BuildingMoved;
 
     private readonly List<Building> buildings = new List<Building>();
     private readonly Dictionary<Vector2Int, Building> occupiedCells = new Dictionary<Vector2Int, Building>();
@@ -71,12 +72,44 @@ public class BuildingManager : MonoBehaviour
         return nearest;
     }
 
-    public bool CanPlace(BuildingType type, Vector2Int anchorCell)
+    // Whether a building of this type fits with its anchor at anchorCell. When checking a spot for a building
+    // that already exists (moving it), pass it as ignore so its own current cells do not count as taken.
+    public bool CanPlace(BuildingType type, Vector2Int anchorCell, Building ignore = null)
     {
         foreach (Vector2Int cell in GetFootprint(anchorCell, type.size))
         {
-            if (occupiedCells.ContainsKey(cell)) return false;
+            if (occupiedCells.TryGetValue(cell, out Building occupant) && occupant != ignore) return false;
         }
+        return true;
+    }
+
+    public bool CanMove(Building building, Vector2Int newAnchorCell)
+    {
+        return building != null && building.buildingType != null && building.buildingType.movable
+            && buildings.Contains(building) && CanPlace(building.buildingType, newAnchorCell, building);
+    }
+
+    // Moves a building to a new anchor cell: frees its old cells, takes the new ones and tells everyone
+    // (characters heading there or inside it follow). Returns false, changing nothing, if it cannot go there.
+    // Cost is NOT handled here, like Build.
+    public bool Move(Building building, Vector2Int newAnchorCell, Vector3 newWorldPosition)
+    {
+        if (!CanMove(building, newAnchorCell)) return false;
+        if (newAnchorCell == building.Cell) return true; // already there
+
+        foreach (Vector2Int cell in GetFootprint(building.Cell, building.buildingType.size))
+        {
+            if (occupiedCells.TryGetValue(cell, out Building occupant) && occupant == building) occupiedCells.Remove(cell);
+        }
+        foreach (Vector2Int cell in GetFootprint(newAnchorCell, building.buildingType.size))
+        {
+            occupiedCells[cell] = building;
+        }
+
+        building.transform.position = newWorldPosition;
+        building.SetCell(newAnchorCell);
+
+        BuildingMoved?.Invoke(building);
         return true;
     }
 
@@ -128,7 +161,7 @@ public class BuildingManager : MonoBehaviour
     {
         if (building == null || !buildings.Remove(building)) return;
 
-        foreach (Vector2Int cell in GetFootprint(building.cell, building.buildingType.size))
+        foreach (Vector2Int cell in GetFootprint(building.Cell, building.buildingType.size))
         {
             if (occupiedCells.TryGetValue(cell, out Building occupant) && occupant == building)
             {

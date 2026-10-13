@@ -19,8 +19,12 @@ public interface IBuildingClickHandler
 public class Building : MonoBehaviour, IClickable
 {
     public BuildingType buildingType;  // the template this building was created from (name, size, costs, rates...)
-    [FormerlySerializedAs("startingCell")]
-    public Vector2Int cell = new Vector2Int(0, 0); // anchor cell (in grid cell space)
+    [SerializeField, FormerlySerializedAs("startingCell")]
+    private Vector2Int cell = new Vector2Int(0, 0); // anchor cell (in grid cell space)
+
+    // Where the building is on the grid. Only BuildingManager changes it (Build / Move), together with the cell map.
+    public Vector2Int Cell => cell;
+    internal void SetCell(Vector2Int anchorCell) { cell = anchorCell; }
 
     // Stable identity, for saving and for referring to a building without holding a reference
     public string Id { get; internal set; } = System.Guid.NewGuid().ToString("N");

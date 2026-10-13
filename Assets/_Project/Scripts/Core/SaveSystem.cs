@@ -65,8 +65,8 @@ public static class SaveSystem
             {
                 id = building.Id,
                 typeId = building.buildingType.typeId,
-                cellX = building.cell.x,
-                cellY = building.cell.y,
+                cellX = building.Cell.x,
+                cellY = building.Cell.y,
                 position = building.transform.position,
             });
         }

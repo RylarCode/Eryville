@@ -44,6 +44,7 @@ public class Character : MonoBehaviour, IClickable
     private void OnDestroy()
     {
         if (movement != null) movement.Arrived -= OnArrived;
+        if (BuildingManager.Instance != null) BuildingManager.Instance.BuildingMoved -= OnBuildingMoved;
         LeaveCurrentActivity(); // don't leave a ghost worker behind in a building
         if (Owned != null && Owned.Avatar == this) Owned.Avatar = null;
     }
@@ -63,8 +64,25 @@ public class Character : MonoBehaviour, IClickable
         movement.speed = owned.Type.moveSpeed;
         schedule = new CharacterSchedule(owned.Type.defaultSchedule); // own copy, so we never edit the asset's list
 
+        // Follow the buildings we go to if they get moved
+        if (BuildingManager.Instance != null) BuildingManager.Instance.BuildingMoved += OnBuildingMoved;
+
         // Start by doing whatever the schedule says for the current time of day
         ReapplySchedule();
+    }
+
+    // A building was picked up and put down elsewhere: anyone on the way there heads for the new spot,
+    // and anyone inside (working, resting, even just visiting) goes with it
+    private void OnBuildingMoved(Building building)
+    {
+        if (destination == building)
+        {
+            movement.MoveTo(building.transform.position);
+        }
+        else if (currentPlace == building)
+        {
+            transform.position = building.transform.position;
+        }
     }
 
     // Called by OwnedCharacter when its job / home changes
