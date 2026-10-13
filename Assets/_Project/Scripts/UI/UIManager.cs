@@ -3,9 +3,7 @@ using UnityEngine.UI;
 using TMPro; // Import TextMeshPro namespace
 using UnityEngine.InputSystem;
 using System.Collections.Generic;
-using UnityEngine.Tilemaps;
-using UnityEngine.TextCore.Text;
-using System.Text.RegularExpressions;
+using System.Text;
 
 public class UIManager : MonoBehaviour
 {
@@ -22,13 +20,22 @@ public class UIManager : MonoBehaviour
     public Transform buildingButtonContainer; // The UI Panel (Vertical/Horizontal Layout Group)
 
     public Transform hireButtonContainer; // The UI Panel (Vertical/Horizontal Layout Group)
-    public GameObject assignPanel;
-    public Transform assignButtonContainer;
-    public Character clickedCharacter;
+    public GameObject assignPanel;          // the list panel beside the details panel (assign-job list / occupants list)
+    public Transform assignButtonContainer; // where that list's buttons go
 
-    [Header("Character Details")]
-    public GameObject characterPanel; // Character UI Panel
+    [Header("Character / Building Details")]
+    public GameObject characterPanel; // The right-hand details panel, used for both characters and buildings
     [SerializeField] private TextMeshProUGUI characterText;
+    [SerializeField] private GameObject assignJobButton; // the "Assign" button on that panel; hidden when showing a building
+
+    // What the details panel is currently showing
+    private enum PanelMode { None, Character, Building }
+    private PanelMode panelMode = PanelMode.None;
+    private OwnedCharacter selectedCharacter;
+    private Building selectedBuilding;
+    private string occupantListSignature; // what the occupants list currently shows, so it is only rebuilt when it changes
+    private float nextBuildingRefresh;
+    private const float BuildingRefreshInterval = 0.5f;
 
     // Gridlines
     [Header("Gridlines")]
@@ -52,18 +59,36 @@ public class UIManager : MonoBehaviour
 
     private void OnEnable()
     {
-        Character.Selected += ShowCharacterDetails;
+        Character.Selected += OnCharacterSelected;
+        Building.Selected += ShowBuildingDetails;
     }
 
     private void OnDisable()
     {
-        Character.Selected -= ShowCharacterDetails;
+        Character.Selected -= OnCharacterSelected;
+        Building.Selected -= ShowBuildingDetails;
+    }
+
+    private void OnCharacterSelected(Character avatar)
+    {
+        ShowCharacterDetails(avatar.Owned);
     }
 
     void Start()
     {
-        // Clicking empty ground closes the character panel
+        // Clicking empty ground closes the details panel
         if (InputManager.Instance != null) InputManager.Instance.OnPointerClick += HandleWorldClick;
+
+        if (assignJobButton == null)
+        {
+            Transform found = characterPanel.transform.Find("AssignButton");
+            if (found != null) assignJobButton = found.gameObject;
+        }
+
+        // The panel now shows more text than a character used to need: shrink it to fit instead of overflowing
+        characterText.enableAutoSizing = true;
+        characterText.fontSizeMin = 14f;
+        characterText.fontSizeMax = 36f;
 
         GenerateBuildingPanelButtons();
         GenerateHirePanelButtons();
@@ -82,6 +107,14 @@ public class UIManager : MonoBehaviour
             if (CharacterPanelsOpen) CloseCharacterPanels();
             else if (openPanel != null) TogglePanel(openPanel);
         }
+
+        // A building's details change while you watch (workers arrive and leave): keep them current
+        if (panelMode == PanelMode.Building && characterPanel.activeInHierarchy && Time.unscaledTime >= nextBuildingRefresh)
+        {
+            nextBuildingRefresh = Time.unscaledTime + BuildingRefreshInterval;
+            if (selectedBuilding == null) CloseCharacterPanels(); // the building was removed
+            else RefreshBuildingPanel();
+        }
     }
 
     private bool CharacterPanelsOpen => characterPanel.activeInHierarchy || assignPanel.activeInHierarchy;
@@ -91,16 +124,15 @@ public class UIManager : MonoBehaviour
         if (CharacterPanelsOpen) CloseCharacterPanels();
     }
 
-    // Closes the character panel together with the assign-job panel that sits on top of it
+    // Closes the details panel together with the list panel beside it
     private void CloseCharacterPanels()
     {
         characterPanel.SetActive(false);
         assignPanel.SetActive(false);
-        foreach (Transform child in assignButtonContainer)
-        {
-            Destroy(child.gameObject);
-        }
-        clickedCharacter = null;
+        ClearList();
+        panelMode = PanelMode.None;
+        selectedCharacter = null;
+        selectedBuilding = null;
         openPanel = null;
         GameManager.Instance.currentGameState = GameManager.gameState.Normal;
         GridlinesGO.SetActive(false);
@@ -149,15 +181,16 @@ public class UIManager : MonoBehaviour
             GameManager.Instance.currentGameState = GameManager.gameState.Normal;
             panel.SetActive(false);
             openPanel = null;
-            clickedCharacter = null;
+            if (panel != assignPanel) // closing just the list must not forget what is selected
+            {
+                selectedCharacter = null;
+                selectedBuilding = null;
+            }
             BuildingPlacer.Instance.buildingToPlace = null;
             if (BuildingPlacer.Instance.currentIndicatorInstance != null) BuildingPlacer.Instance.currentIndicatorInstance.SetActive(false);
             GridlinesGO.SetActive(false);
 
-            foreach (Transform child in assignButtonContainer)
-            {
-                Destroy(child.gameObject);
-            }
+            ClearList();
         }
     }
 
@@ -196,22 +229,163 @@ public class UIManager : MonoBehaviour
         }
     }
 
-    public void ShowCharacterDetails(Character character)
+    // --- Details panel (characters and buildings share the right-hand panel) ---
+
+    private void OpenDetailsPanel()
+    {
+        if (!characterPanel.activeInHierarchy) TogglePanel(characterPanel);
+    }
+
+    // Removes every button from the list panel beside the details panel
+    private void ClearList()
+    {
+        foreach (Transform child in assignButtonContainer)
+        {
+            child.gameObject.SetActive(false);
+            Destroy(child.gameObject);
+        }
+    }
+
+    public void ShowCharacterDetails(OwnedCharacter character)
     {
         // Clicking the selected character again closes the panel; clicking another one switches the selection
-        if (characterPanel.activeInHierarchy && clickedCharacter == character)
+        if (panelMode == PanelMode.Character && selectedCharacter == character && characterPanel.activeInHierarchy)
         {
             CloseCharacterPanels();
             return;
         }
-        if (!characterPanel.activeInHierarchy) TogglePanel(characterPanel);
-        characterText.text = $"Name: {character.DisplayName}\nLoyalty: {character.Owned.Loyalty}\nWorking Location: {character.WorkBuilding?.DisplayName}\nHome: {character.HomeBuilding?.DisplayName}";
-        clickedCharacter = character;
+
+        OpenDetailsPanel();
+        panelMode = PanelMode.Character;
+        selectedCharacter = character;
+        selectedBuilding = null;
+
+        assignPanel.SetActive(false); // the assign-job list only opens when its button is pressed
+        ClearList();
+        if (assignJobButton != null) assignJobButton.SetActive(true);
+        RefreshCharacterText();
     }
 
+    private void RefreshCharacterText()
+    {
+        OwnedCharacter c = selectedCharacter;
+        characterText.text = $"Name: {c.DisplayName}\nLevel: {c.Level}\nLoyalty: {c.Loyalty}\nWorking Location: {c.WorkBuilding?.DisplayName}\nHome: {c.HomeBuilding?.DisplayName}";
+    }
+
+    public void ShowBuildingDetails(Building building)
+    {
+        // Same rules as for characters: click again to close, click another to switch
+        if (panelMode == PanelMode.Building && selectedBuilding == building && characterPanel.activeInHierarchy)
+        {
+            CloseCharacterPanels();
+            return;
+        }
+
+        OpenDetailsPanel();
+        panelMode = PanelMode.Building;
+        selectedBuilding = building;
+        selectedCharacter = null;
+
+        if (assignJobButton != null) assignJobButton.SetActive(false); // assigning a job makes no sense here
+        ClearList();
+        occupantListSignature = null;
+        nextBuildingRefresh = Time.unscaledTime + BuildingRefreshInterval;
+        RefreshBuildingPanel();
+        assignPanel.SetActive(true); // the list beside the panel shows who works and lives here
+    }
+
+    private void RefreshBuildingPanel()
+    {
+        characterText.text = BuildBuildingText(selectedBuilding);
+
+        // Rebuild the occupants list only when it actually changed
+        string signature = OccupantSignature(selectedBuilding);
+        if (signature != occupantListSignature)
+        {
+            occupantListSignature = signature;
+            RebuildOccupantList(selectedBuilding);
+        }
+    }
+
+    private static string BuildBuildingText(Building building)
+    {
+        BuildingType type = building.buildingType;
+        StringBuilder text = new StringBuilder();
+        text.AppendLine(building.DisplayName);
+        if (type != null) text.AppendLine($"Size: {type.size.x}x{type.size.y}");
+
+        if (building.Producer != null)
+        {
+            if (type.goldGenerationPerSec > 0) text.AppendLine($"Gold: +{building.Producer.GoldPerSec:0.#}/s");
+            if (type.woodGenerationPerSec > 0) text.AppendLine($"Wood: +{building.Producer.WoodPerSec:0.#}/s");
+            if (building.WorkersOnSite.Count > 0) text.AppendLine($"Worker bonus: x{building.Producer.WorkerMultiplier:0.##}");
+        }
+        if (building.WorkerSlots > 0)
+        {
+            text.AppendLine($"Workers: {building.Workers.Count}/{building.WorkerSlots} ({building.WorkersOnSite.Count} on site)");
+        }
+        if (building.HousingSlots > 0)
+        {
+            text.AppendLine($"Residents: {building.Residents.Count}/{building.HousingSlots}");
+        }
+        return text.ToString();
+    }
+
+    // A string that changes whenever the occupants list would look different
+    private static string OccupantSignature(Building building)
+    {
+        StringBuilder signature = new StringBuilder();
+        foreach (OwnedCharacter worker in building.Workers)
+        {
+            signature.Append(worker.Id).Append("|w|").Append(building.IsWorkerOnSite(worker)).Append(';');
+        }
+        foreach (OwnedCharacter resident in building.Residents)
+        {
+            signature.Append(resident.Id).Append("|r;");
+        }
+        return signature.ToString();
+    }
+
+    private void RebuildOccupantList(Building building)
+    {
+        ClearList();
+
+        foreach (OwnedCharacter worker in building.Workers)
+        {
+            AddOccupantButton(worker, building.IsWorkerOnSite(worker) ? "Worker (on site)" : "Worker");
+        }
+        foreach (OwnedCharacter resident in building.Residents)
+        {
+            AddOccupantButton(resident, "Resident");
+        }
+
+        if (building.Workers.Count == 0 && building.Residents.Count == 0)
+        {
+            // Nothing to click: a plain label so the list is not just blank
+            GameObject label = Instantiate(buttonPrefab, assignButtonContainer);
+            label.name = "NobodyLabel";
+            label.GetComponentInChildren<TMP_Text>().text = "Nobody yet";
+        }
+    }
+
+    // One clickable row: clicking it opens that character's details (even if they are hidden inside the building)
+    private void AddOccupantButton(OwnedCharacter occupant, string role)
+    {
+        GameObject buttonGO = Instantiate(buttonPrefab, assignButtonContainer);
+        buttonGO.name = $"{occupant.DisplayName}OccupantButton";
+        buttonGO.GetComponent<Image>().sprite = occupant.Type.sprite;
+        buttonGO.GetComponentInChildren<TMP_Text>().text = $"{occupant.DisplayName} - {role}";
+
+        OwnedCharacter captured = occupant;
+        buttonGO.GetComponent<Button>().onClick.AddListener(() => ShowCharacterDetails(captured));
+    }
+
+    // Called by the "Assign" button on the details panel (character mode)
     public void GenerateAssignCharactertoBuildingButtons()
     {
-        
+        if (selectedCharacter == null) return;
+
+        ClearList(); // pressing the button again must not stack a second copy of the list
         foreach (Building building in BuildingManager.Instance.Buildings)
         {
             if (building.WorkerSlots <= 0) continue; // nobody can work here (homes, city hall...)
@@ -226,9 +400,14 @@ public class UIManager : MonoBehaviour
 
             button.onClick.AddListener(() =>
             {
-                if (!CharacterManager.Instance.AssignWorker(clickedCharacter.Owned, building))
+                if (selectedCharacter == null) return;
+                if (CharacterManager.Instance.AssignWorker(selectedCharacter, building))
                 {
-                    Debug.Log($"Could not assign {clickedCharacter.DisplayName} to {building.DisplayName} (full or already working there).");
+                    RefreshCharacterText(); // show the new job
+                }
+                else
+                {
+                    Debug.Log($"Could not assign {selectedCharacter.DisplayName} to {building.DisplayName} (full or already working there).");
                 }
             });
         }

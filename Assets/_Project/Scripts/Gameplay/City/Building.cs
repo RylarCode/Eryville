@@ -62,8 +62,13 @@ public class Building : MonoBehaviour, IClickable
 
     public int ClickPriority => 0;
 
+    // Raised when the player clicks a building; the UI listens, so Building knows nothing about it
+    public static event System.Action<Building> Selected;
+
     public void OnClicked()
     {
+        Selected?.Invoke(this);
+
         IBuildingClickHandler handler = GetComponent<IBuildingClickHandler>();
         if (handler != null)
         {
@@ -141,6 +146,16 @@ public class Building : MonoBehaviour, IClickable
         if (!workers.Contains(avatar.Owned) || workersOnSite.Contains(avatar)) return;
 
         workersOnSite.Add(avatar);
+    }
+
+    // Whether this assigned worker's avatar is physically at the building right now
+    public bool IsWorkerOnSite(OwnedCharacter worker)
+    {
+        foreach (Character avatar in workersOnSite)
+        {
+            if (avatar != null && avatar.Owned == worker) return true;
+        }
+        return false;
     }
 
     public void WorkerLeft(Character avatar)

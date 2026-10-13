@@ -290,8 +290,8 @@ MonoBehaviour:
   hireButtonContainer: {fileID: 1265082692}
   assignPanel: {fileID: 635767425}
   assignButtonContainer: {fileID: 105011405}
-  clickedCharacter: {fileID: 0}
   characterPanel: {fileID: 992080627}
+  assignJobButton: {fileID: 538739388}
   characterText: {fileID: 1905654542}
   GridlinesGO: {fileID: 887790825}
 --- !u!4 &18778359
