@@ -39,16 +39,25 @@ public class InputManager : MonoBehaviour
         if (pendingClick.HasValue)
         {
             Vector3 worldPosition = mainCamera.ScreenToWorldPoint(pendingClick.Value);
-            RaycastHit2D hit = Physics2D.Raycast(worldPosition, Vector2.zero);
+            RaycastHit2D[] hits = Physics2D.RaycastAll(worldPosition, Vector2.zero);
+
+            // Of everything under the cursor, the clickable with the highest priority wins
+            // (a character standing on a building is clicked, not the building)
+            IClickable target = null;
+            foreach (RaycastHit2D hit in hits)
+            {
+                IClickable candidate = hit.collider.gameObject.GetComponent<IClickable>();
+                if (candidate != null && (target == null || candidate.ClickPriority > target.ClickPriority)) target = candidate;
+            }
 
             if (EventSystem.current.IsPointerOverGameObject())
             {
                 //Debug.Log("Clicked on UI — skip placing.");
             }
-            else if (hit.collider != null)
+            else if (hits.Length > 0)
             {
-                Debug.Log("Clicked on: " + hit.collider.gameObject.name);
-                hit.collider.gameObject.GetComponent<IClickable>()?.OnClicked();
+                // Something solid was clicked: it gets the click (if it can use it) and nothing is placed
+                target?.OnClicked();
             }
             else
             {

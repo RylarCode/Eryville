@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro; // Import TextMeshPro namespace
+using UnityEngine.InputSystem;
 using System.Collections.Generic;
 using UnityEngine.Tilemaps;
 using UnityEngine.TextCore.Text;
@@ -61,8 +62,48 @@ public class UIManager : MonoBehaviour
 
     void Start()
     {
+        // Clicking empty ground closes the character panel
+        if (InputManager.Instance != null) InputManager.Instance.OnPointerClick += HandleWorldClick;
+
         GenerateBuildingPanelButtons();
         GenerateHirePanelButtons();
+    }
+
+    private void OnDestroy()
+    {
+        if (InputManager.Instance != null) InputManager.Instance.OnPointerClick -= HandleWorldClick;
+    }
+
+    private void Update()
+    {
+        // Escape closes the character panels, or else whatever menu is open
+        if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
+        {
+            if (CharacterPanelsOpen) CloseCharacterPanels();
+            else if (openPanel != null) TogglePanel(openPanel);
+        }
+    }
+
+    private bool CharacterPanelsOpen => characterPanel.activeInHierarchy || assignPanel.activeInHierarchy;
+
+    private void HandleWorldClick(Vector2 screenPosition)
+    {
+        if (CharacterPanelsOpen) CloseCharacterPanels();
+    }
+
+    // Closes the character panel together with the assign-job panel that sits on top of it
+    private void CloseCharacterPanels()
+    {
+        characterPanel.SetActive(false);
+        assignPanel.SetActive(false);
+        foreach (Transform child in assignButtonContainer)
+        {
+            Destroy(child.gameObject);
+        }
+        clickedCharacter = null;
+        openPanel = null;
+        GameManager.Instance.currentGameState = GameManager.gameState.Normal;
+        GridlinesGO.SetActive(false);
     }
 
     // --- Public Methods to Update UI ---
@@ -157,7 +198,12 @@ public class UIManager : MonoBehaviour
 
     public void ShowCharacterDetails(Character character)
     {
-        // Open the panel only if it is closed; clicking another character just switches the selection
+        // Clicking the selected character again closes the panel; clicking another one switches the selection
+        if (characterPanel.activeInHierarchy && clickedCharacter == character)
+        {
+            CloseCharacterPanels();
+            return;
+        }
         if (!characterPanel.activeInHierarchy) TogglePanel(characterPanel);
         characterText.text = $"Name: {character.DisplayName}\nLoyalty: {character.Owned.Loyalty}\nWorking Location: {character.WorkBuilding?.DisplayName}\nHome: {character.HomeBuilding?.DisplayName}";
         clickedCharacter = character;

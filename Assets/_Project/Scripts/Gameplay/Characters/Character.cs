@@ -18,7 +18,11 @@ public class Character : MonoBehaviour, IClickable
 
     public Activity CurrentActivity { get; private set; } = Activity.Idle;
 
+    public int ClickPriority => 1; // above buildings, so a character standing on one gets the click
+
     private CharacterMovement movement;
+    private SpriteRenderer spriteRenderer;
+    private Collider2D bodyCollider;
     private CharacterSchedule schedule;
 
     private Building currentPlace;        // the building we are Working / Resting at
@@ -33,6 +37,8 @@ public class Character : MonoBehaviour, IClickable
         movement = GetComponent<CharacterMovement>();
         if (movement == null) movement = gameObject.AddComponent<CharacterMovement>();
         movement.Arrived += OnArrived;
+        spriteRenderer = GetComponent<SpriteRenderer>();
+        bodyCollider = GetComponent<Collider2D>();
     }
 
     private void OnDestroy()
@@ -53,7 +59,7 @@ public class Character : MonoBehaviour, IClickable
         Owned = owned;
         owned.Avatar = this;
 
-        GetComponent<SpriteRenderer>().sprite = owned.Type.sprite;
+        spriteRenderer.sprite = owned.Type.sprite;
         movement.speed = owned.Type.moveSpeed;
         schedule = new CharacterSchedule(owned.Type.defaultSchedule); // own copy, so we never edit the asset's list
 
@@ -157,10 +163,19 @@ public class Character : MonoBehaviour, IClickable
         EnterActivity(activity, place);
     }
 
+    // Characters are out of sight while they are inside a building (working or resting). The collider goes
+    // too, otherwise an invisible character would swallow clicks meant for the building.
+    private void SetVisible(bool visible)
+    {
+        if (spriteRenderer != null) spriteRenderer.enabled = visible;
+        if (bodyCollider != null) bodyCollider.enabled = visible;
+    }
+
     private void EnterActivity(Activity activity, Building place)
     {
         CurrentActivity = activity;
         currentPlace = place;
+        SetVisible(activity != Activity.Working && activity != Activity.Resting);
         if (activity == Activity.Working) place.WorkerArrived(this);
         Debug.Log($"{DisplayName} is now {activity} at {place.DisplayName}");
     }
@@ -170,5 +185,6 @@ public class Character : MonoBehaviour, IClickable
         if (CurrentActivity == Activity.Working && currentPlace != null) currentPlace.WorkerLeft(this);
         currentPlace = null;
         CurrentActivity = Activity.Idle;
+        SetVisible(true);
     }
 }

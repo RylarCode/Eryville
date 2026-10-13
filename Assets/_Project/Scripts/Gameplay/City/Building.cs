@@ -60,6 +60,8 @@ public class Building : MonoBehaviour, IClickable
         Debug.Log($"{DisplayName} placed at {transform.position}");
     }
 
+    public int ClickPriority => 0;
+
     public void OnClicked()
     {
         IBuildingClickHandler handler = GetComponent<IBuildingClickHandler>();

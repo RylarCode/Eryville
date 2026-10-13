@@ -15,15 +15,23 @@ public class CharacterMovement : MonoBehaviour
     private const float ArriveDistance = 0.1f;
     private Vector3 target;
 
+    // Only enabled while walking, so characters that are standing still or inside a building cost no Update calls
+    private void Awake()
+    {
+        enabled = false;
+    }
+
     public void MoveTo(Vector3 destination)
     {
         target = destination;
         IsMoving = true;
+        enabled = true;
     }
 
     public void Stop()
     {
         IsMoving = false;
+        enabled = false;
     }
 
     private void Update()
@@ -34,6 +42,7 @@ public class CharacterMovement : MonoBehaviour
         {
             transform.position = target; // snap to the exact position
             IsMoving = false;
+            enabled = false;
             Arrived?.Invoke();
             return;
         }
