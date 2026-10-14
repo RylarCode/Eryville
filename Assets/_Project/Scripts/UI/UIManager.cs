@@ -124,6 +124,13 @@ public class UIManager : MonoBehaviour
             if (selectedBuilding == null) CloseCharacterPanels(); // the building was removed
             else RefreshBuildingPanel();
         }
+
+        // A character's mood and speed change over time too
+        if (panelMode == PanelMode.Character && selectedCharacter != null && characterPanel.activeInHierarchy && Time.unscaledTime >= nextBuildingRefresh)
+        {
+            nextBuildingRefresh = Time.unscaledTime + BuildingRefreshInterval;
+            RefreshCharacterText();
+        }
     }
 
     private bool CharacterPanelsOpen => characterPanel.activeInHierarchy || assignPanel.activeInHierarchy;
@@ -332,7 +339,7 @@ public class UIManager : MonoBehaviour
     private void RefreshCharacterText()
     {
         OwnedCharacter c = selectedCharacter;
-        characterText.text = $"Name: {c.DisplayName}\nLevel: {c.Level}\nLoyalty: {c.Loyalty}\nWorking Location: {c.WorkBuilding?.DisplayName}\nHome: {c.HomeBuilding?.DisplayName}";
+        characterText.text = $"Name: {c.DisplayName}\nLevel: {c.Level}\nLoyalty: {c.Loyalty:0}\nMood: {c.Mood:0}\nSpeed: {c.DescribeSpeed()}\nWorking Location: {c.WorkBuilding?.DisplayName}\nHome: {c.HomeBuilding?.DisplayName}";
     }
 
     public void ShowBuildingDetails(Building building)

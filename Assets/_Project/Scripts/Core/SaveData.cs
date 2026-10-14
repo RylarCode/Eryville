@@ -39,6 +39,7 @@ public class CharacterData
     public string displayName;
     public int level;
     public float loyalty;
+    public float mood;            // added in version 3
     public string workBuildingId; // Building.Id, or empty
     public string homeBuildingId; // Building.Id, or empty
     public bool hasAvatar;        // whether it was visible in the world

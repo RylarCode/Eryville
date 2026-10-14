@@ -11,7 +11,7 @@ using UnityEngine;
 // so everything a loaded building or character needs (sprite, size, registration, assignments) is set up.
 public static class SaveSystem
 {
-    public const int CurrentVersion = 2; // 2 added roads; version 1 saves still load (they have no roads)
+    public const int CurrentVersion = 3; // 2 added roads, 3 added mood; older saves still load (no roads / default mood)
     public const string DefaultFileName = "savegame.json";
 
     private static string PathFor(string fileName)
@@ -85,6 +85,7 @@ public static class SaveSystem
                 displayName = owned.DisplayName,
                 level = owned.Level,
                 loyalty = owned.Loyalty,
+                mood = owned.Mood,
                 workBuildingId = owned.WorkBuilding != null ? owned.WorkBuilding.Id : "",
                 homeBuildingId = owned.HomeBuilding != null ? owned.HomeBuilding.Id : "",
                 hasAvatar = owned.HasAvatar,
@@ -184,6 +185,7 @@ public static class SaveSystem
             if (!string.IsNullOrEmpty(saved.displayName)) owned.DisplayName = saved.displayName;
             owned.Level = saved.level;
             owned.Loyalty = saved.loyalty;
+            if (data.version >= 3) owned.Mood = saved.mood; // older saves have no mood: keep the type's starting mood
             CharacterManager.Instance.Restore(owned);
 
             if (TryGetBuilding(buildingsById, saved.workBuildingId, out Building work) && !CharacterManager.Instance.AssignWorker(owned, work))

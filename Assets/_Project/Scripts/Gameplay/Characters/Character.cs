@@ -48,6 +48,7 @@ public class Character : MonoBehaviour, IClickable
     private void OnDestroy()
     {
         if (movement != null) movement.Arrived -= OnArrived;
+        if (Owned != null) Owned.StatsChanged -= OnStatsChanged;
         if (BuildingManager.Instance != null) BuildingManager.Instance.BuildingMoved -= OnBuildingMoved;
         if (MapGrid.Instance != null) MapGrid.Instance.ObstaclesChanged -= OnObstaclesChanged;
         pendingRoute?.Cancel();
@@ -67,7 +68,8 @@ public class Character : MonoBehaviour, IClickable
         owned.Avatar = this;
 
         spriteRenderer.sprite = owned.Type.sprite;
-        movement.speed = owned.Type.moveSpeed;
+        movement.speed = owned.MoveSpeed;
+        owned.StatsChanged += OnStatsChanged;
         schedule = new CharacterSchedule(owned.Type.defaultSchedule); // own copy, so we never edit the asset's list
 
         // Follow the buildings we go to if they get moved
@@ -102,6 +104,12 @@ public class Character : MonoBehaviour, IClickable
         {
             RequestRoute(null);
         }
+    }
+
+    // Loyalty, mood or a modifier changed: walk at the new speed
+    private void OnStatsChanged()
+    {
+        movement.speed = Owned.MoveSpeed;
     }
 
     // Called by OwnedCharacter when its job / home changes
