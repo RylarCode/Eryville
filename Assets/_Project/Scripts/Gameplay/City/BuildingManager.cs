@@ -78,6 +78,7 @@ public class BuildingManager : MonoBehaviour
         foreach (Vector2Int cell in GetFootprint(anchorCell, type.size))
         {
             if (!map.InBounds(cell)) return false; // off the map
+            if (map.RoadAt(cell) != null) return false; // a road is in the way
             Building occupant = map.BuildingAt(cell);
             if (occupant != null && occupant != ignore) return false;
         }

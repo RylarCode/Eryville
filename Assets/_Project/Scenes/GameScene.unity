@@ -36631,6 +36631,7 @@ GameObject:
   - component: {fileID: 1663866749}
   - component: {fileID: 1663866750}
   - component: {fileID: 1663866751}
+  - component: {fileID: 1663866752}
   m_Layer: 0
   m_Name: GameManager
   m_TagString: Untagged
@@ -37284,6 +37285,21 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxSearchesPerFrame: 25
+--- !u!114 &1663866752
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1663866742}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1a367fcd80474deca4882b28fa3d7ca7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  roadTypes:
+  - {fileID: 11400000, guid: 03983909fed54f75b29c023947936d73, type: 2}
+  sortingOrder: -3
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.Tilemaps;
 
 // The single source of truth for what is on each cell of the map: the playable bounds, which cells
-// buildings occupy, and (later) which cells have roads. Placing, road building and pathfinding all
+// buildings occupy, and which cells have roads. Placing, road building and pathfinding all
 // ask here, so they can never disagree about what is where.
 //
 // Buildings are put on the map and taken off it by BuildingManager (and roads by RoadManager);
@@ -43,6 +43,11 @@ public class MapGrid : MonoBehaviour
     public event Action ObstaclesChanged;   // something that blocks walking appeared or disappeared (buildings)
 
     private readonly Dictionary<Vector2Int, Building> buildingCells = new Dictionary<Vector2Int, Building>();
+    private readonly Dictionary<Vector2Int, RoadType> roadCells = new Dictionary<Vector2Int, RoadType>();
+    private float maxSpeedMultiplier = 1f;
+
+    // The scene's Grid (null if none was assigned)
+    public Grid Grid => grid;
 
     private void Awake()
     {
@@ -127,7 +132,7 @@ public class MapGrid : MonoBehaviour
     // (roads, later traffic) changes both how fast people walk and which way they choose.
     public float SpeedMultiplierAt(Vector2Int cell)
     {
-        return 1f;
+        return roadCells.TryGetValue(cell, out RoadType road) ? road.speedMultiplier : 1f;
     }
 
     public float SpeedMultiplierAt(Vector3 world)
@@ -136,7 +141,38 @@ public class MapGrid : MonoBehaviour
     }
 
     // The highest speed multiplier any cell can have (the pathfinder needs it for its estimates)
-    public float MaxSpeedMultiplier => 1f;
+    public float MaxSpeedMultiplier => maxSpeedMultiplier;
+
+    // --- Roads ---
+
+    public RoadType RoadAt(Vector2Int cell)
+    {
+        roadCells.TryGetValue(cell, out RoadType road);
+        return road;
+    }
+
+    public IEnumerable<KeyValuePair<Vector2Int, RoadType>> Roads => roadCells;
+
+    internal void SetRoad(Vector2Int cell, RoadType road)
+    {
+        roadCells[cell] = road;
+        if (road.speedMultiplier > maxSpeedMultiplier) maxSpeedMultiplier = road.speedMultiplier;
+        Touch(false);
+    }
+
+    internal bool ClearRoad(Vector2Int cell)
+    {
+        if (!roadCells.Remove(cell)) return false;
+        Touch(false);
+        return true;
+    }
+
+    internal void ClearRoads()
+    {
+        roadCells.Clear();
+        maxSpeedMultiplier = 1f;
+        Touch(false);
+    }
 
     internal void PlaceBuilding(IEnumerable<Vector2Int> cells, Building building)
     {
