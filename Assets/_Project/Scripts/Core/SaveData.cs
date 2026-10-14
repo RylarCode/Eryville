@@ -24,6 +24,14 @@ public class BuildingData
 }
 
 [System.Serializable]
+public class RoadData
+{
+    public int cellX;
+    public int cellY;
+    public int typeId;       // RoadType.typeId
+}
+
+[System.Serializable]
 public class CharacterData
 {
     public string id;             // OwnedCharacter.Id
@@ -41,7 +49,7 @@ public class CharacterData
 [System.Serializable]
 public class GameData
 {
-    public int version = 1;
+    public int version = SaveSystem.CurrentVersion;
 
     public List<ResourceData> resources = new List<ResourceData>();
 
@@ -50,5 +58,6 @@ public class GameData
     public int worldState;       // WorldState
 
     public List<BuildingData> buildings = new List<BuildingData>();
+    public List<RoadData> roads = new List<RoadData>();               // added in version 2
     public List<CharacterData> characters = new List<CharacterData>();
 }

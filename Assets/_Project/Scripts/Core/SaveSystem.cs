@@ -11,7 +11,7 @@ using UnityEngine;
 // so everything a loaded building or character needs (sprite, size, registration, assignments) is set up.
 public static class SaveSystem
 {
-    public const int CurrentVersion = 1;
+    public const int CurrentVersion = 2; // 2 added roads; version 1 saves still load (they have no roads)
     public const string DefaultFileName = "savegame.json";
 
     private static string PathFor(string fileName)
@@ -71,6 +71,11 @@ public static class SaveSystem
             });
         }
 
+        foreach (KeyValuePair<Vector2Int, RoadType> road in MapGrid.Instance.Roads)
+        {
+            data.roads.Add(new RoadData { cellX = road.Key.x, cellY = road.Key.y, typeId = road.Value.typeId });
+        }
+
         foreach (OwnedCharacter owned in CharacterManager.Instance.Roster)
         {
             data.characters.Add(new CharacterData
@@ -120,10 +125,12 @@ public static class SaveSystem
 
         Dictionary<int, BuildingType> buildingTypes = IndexBuildingTypes();
         Dictionary<int, CharacterType> characterTypes = IndexCharacterTypes();
+        Dictionary<int, RoadType> roadTypes = IndexRoadTypes();
 
         // 2. Clear the world through the managers, so their registries are emptied too
         CharacterManager.Instance.ClearAll();
         BuildingManager.Instance.ClearAll();
+        RoadManager.Instance.ClearAll();
 
         // 3. Global state
         foreach (ResourceData resource in data.resources)
@@ -152,7 +159,19 @@ public static class SaveSystem
             buildingsById[building.Id] = building;
         }
 
-        // 5. Characters: restore the record, re-attach job and home, then give it its body back
+        // 5. Roads (before the characters, so their first walk already knows about them)
+        int roadCount = 0;
+        foreach (RoadData saved in data.roads)
+        {
+            if (!roadTypes.TryGetValue(saved.typeId, out RoadType type))
+            {
+                Debug.LogWarning($"Save refers to unknown road type {saved.typeId}; skipped.");
+                continue;
+            }
+            if (RoadManager.Instance.Build(type, new Vector2Int(saved.cellX, saved.cellY))) roadCount++;
+        }
+
+        // 6. Characters: restore the record, re-attach job and home, then give it its body back
         foreach (CharacterData saved in data.characters)
         {
             if (!characterTypes.TryGetValue(saved.typeId, out CharacterType type))
@@ -180,7 +199,7 @@ public static class SaveSystem
             if (saved.hasAvatar) CharacterManager.Instance.SpawnAvatar(owned, saved.position);
         }
 
-        Debug.Log($"Game loaded from {path}: {buildingsById.Count} buildings, {CharacterManager.Instance.Roster.Count} characters.");
+        Debug.Log($"Game loaded from {path}: {buildingsById.Count} buildings, {roadCount} road cells, {CharacterManager.Instance.Roster.Count} characters.");
         return true;
     }
 
@@ -200,6 +219,22 @@ public static class SaveSystem
             if (index.ContainsKey(type.typeId))
             {
                 Debug.LogWarning($"Duplicate BuildingType typeId {type.typeId} ({type.buildingName}); saves may load the wrong building.");
+                continue;
+            }
+            index[type.typeId] = type;
+        }
+        return index;
+    }
+
+    private static Dictionary<int, RoadType> IndexRoadTypes()
+    {
+        Dictionary<int, RoadType> index = new Dictionary<int, RoadType>();
+        foreach (RoadType type in RoadManager.Instance.RoadTypes)
+        {
+            if (type == null) continue;
+            if (index.ContainsKey(type.typeId))
+            {
+                Debug.LogWarning($"Duplicate RoadType typeId {type.typeId} ({type.displayName}); saves may load the wrong road.");
                 continue;
             }
             index[type.typeId] = type;
