@@ -36629,6 +36629,7 @@ GameObject:
   - component: {fileID: 1663866747}
   - component: {fileID: 1663866748}
   - component: {fileID: 1663866749}
+  - component: {fileID: 1663866750}
   m_Layer: 0
   m_Name: GameManager
   m_TagString: Untagged
@@ -37253,6 +37254,22 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   secondsPerPhase: 30
   autoAdvance: 1
+--- !u!114 &1663866750
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1663866742}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbe58517eacb4005a4781fff90e1a371, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  grid: {fileID: 1944487659}
+  boundsTilemap: {fileID: 502131101}
+  fallbackMin: {x: -28, y: -17}
+  fallbackMax: {x: 28, y: 11}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

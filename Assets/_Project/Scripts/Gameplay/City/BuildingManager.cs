@@ -2,9 +2,9 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-// Single source of truth for which buildings exist and which grid cells they occupy.
-// Everything that needs "all buildings" (production, assign UI, home lookup) asks here,
-// and every building is created / destroyed through Build / Remove.
+// Single source of truth for which buildings exist. Everything that needs "all buildings"
+// (production, assign UI, home lookup) asks here, and every building is created / moved /
+// destroyed through Build / Move / Remove. The cells buildings occupy are kept on the MapGrid.
 public class BuildingManager : MonoBehaviour
 {
     public static BuildingManager Instance { get; private set; }
@@ -14,7 +14,6 @@ public class BuildingManager : MonoBehaviour
     public event Action<Building> BuildingMoved;
 
     private readonly List<Building> buildings = new List<Building>();
-    private readonly Dictionary<Vector2Int, Building> occupiedCells = new Dictionary<Vector2Int, Building>();
 
     public IReadOnlyList<Building> Buildings => buildings;
 
@@ -45,13 +44,12 @@ public class BuildingManager : MonoBehaviour
 
     public bool IsCellOccupied(Vector2Int cell)
     {
-        return occupiedCells.ContainsKey(cell);
+        return MapGrid.Instance.IsBuildingCell(cell);
     }
 
     public Building GetBuildingAt(Vector2Int cell)
     {
-        occupiedCells.TryGetValue(cell, out Building building);
-        return building;
+        return MapGrid.Instance.BuildingAt(cell);
     }
 
     // The closest built building of the given type to a world position, or null if there is none.
@@ -76,9 +74,12 @@ public class BuildingManager : MonoBehaviour
     // that already exists (moving it), pass it as ignore so its own current cells do not count as taken.
     public bool CanPlace(BuildingType type, Vector2Int anchorCell, Building ignore = null)
     {
+        MapGrid map = MapGrid.Instance;
         foreach (Vector2Int cell in GetFootprint(anchorCell, type.size))
         {
-            if (occupiedCells.TryGetValue(cell, out Building occupant) && occupant != ignore) return false;
+            if (!map.InBounds(cell)) return false; // off the map
+            Building occupant = map.BuildingAt(cell);
+            if (occupant != null && occupant != ignore) return false;
         }
         return true;
     }
@@ -97,14 +98,9 @@ public class BuildingManager : MonoBehaviour
         if (!CanMove(building, newAnchorCell)) return false;
         if (newAnchorCell == building.Cell) return true; // already there
 
-        foreach (Vector2Int cell in GetFootprint(building.Cell, building.buildingType.size))
-        {
-            if (occupiedCells.TryGetValue(cell, out Building occupant) && occupant == building) occupiedCells.Remove(cell);
-        }
-        foreach (Vector2Int cell in GetFootprint(newAnchorCell, building.buildingType.size))
-        {
-            occupiedCells[cell] = building;
-        }
+        MapGrid map = MapGrid.Instance;
+        map.RemoveBuilding(GetFootprint(building.Cell, building.buildingType.size), building);
+        map.PlaceBuilding(GetFootprint(newAnchorCell, building.buildingType.size), building);
 
         building.transform.position = newWorldPosition;
         building.SetCell(newAnchorCell);
@@ -140,10 +136,7 @@ public class BuildingManager : MonoBehaviour
         building.Initialize(type, anchorCell);
 
         buildings.Add(building);
-        foreach (Vector2Int cell in GetFootprint(anchorCell, type.size))
-        {
-            occupiedCells[cell] = building;
-        }
+        MapGrid.Instance.PlaceBuilding(GetFootprint(anchorCell, type.size), building);
 
         BuildingAdded?.Invoke(building);
         return building;
@@ -153,7 +146,7 @@ public class BuildingManager : MonoBehaviour
     public void ClearAll()
     {
         foreach (Building building in new List<Building>(buildings)) Remove(building);
-        occupiedCells.Clear();
+        MapGrid.Instance.ClearBuildings();
     }
 
     // Removes a building, frees its cells and sends its workers/residents back to being unassigned.
@@ -161,13 +154,7 @@ public class BuildingManager : MonoBehaviour
     {
         if (building == null || !buildings.Remove(building)) return;
 
-        foreach (Vector2Int cell in GetFootprint(building.Cell, building.buildingType.size))
-        {
-            if (occupiedCells.TryGetValue(cell, out Building occupant) && occupant == building)
-            {
-                occupiedCells.Remove(cell);
-            }
-        }
+        MapGrid.Instance.RemoveBuilding(GetFootprint(building.Cell, building.buildingType.size), building);
 
         foreach (OwnedCharacter worker in new List<OwnedCharacter>(building.Workers)) building.RemoveWorker(worker);
         foreach (OwnedCharacter resident in new List<OwnedCharacter>(building.Residents)) building.RemoveResident(resident);
