@@ -15,8 +15,18 @@ public class CameraController : MonoBehaviour
     private Vector2 moveInput;
     private bool isDragging;
 
+    // The camera rig that the player moves around; anything that wants to look somewhere asks it
+    public static CameraController Instance { get; private set; }
+
+    // Jumps the camera so the given world position is in the middle of the view
+    public void FocusOn(Vector3 world)
+    {
+        transform.position = new Vector3(world.x, world.y, transform.position.z);
+    }
+
     private void Awake()
     {
+        Instance = this;
         input = new PlayerInputActions();
         cam = Camera.main;
         targetPosition = transform.position;

@@ -37,6 +37,10 @@ public class UIManager : MonoBehaviour
     private Building selectedBuilding;
     private string occupantListSignature; // what the occupants list currently shows, so it is only rebuilt when it changes
     private float nextBuildingRefresh;
+
+    // The Town menu (everything you own) and the button that opens it
+    private TownMenu town;
+    private float nextTownRefresh;
     private const float BuildingRefreshInterval = 0.5f;
 
     // Gridlines
@@ -88,6 +92,8 @@ public class UIManager : MonoBehaviour
         }
 
         CreateMoveButton();
+        town = new TownMenu(this, buttonPrefab, characterPanel, assignPanel);
+        CreateTownButton();
         if (BuildingPlacer.Instance != null) BuildingPlacer.Instance.MovingEnded += OnMovingEnded;
 
         // The panel now shows more text than a character used to need: shrink it to fit instead of overflowing
@@ -115,6 +121,13 @@ public class UIManager : MonoBehaviour
             else if (BuildingPlacer.Instance != null && BuildingPlacer.Instance.IsMoving) BuildingPlacer.Instance.CancelMoving();
             else if (CharacterPanelsOpen) CloseCharacterPanels();
             else if (openPanel != null) TogglePanel(openPanel);
+        }
+
+        // The Town list changes while you watch too (characters walk about, buildings fill up)
+        if (town != null && town.Panel.activeInHierarchy && Time.unscaledTime >= nextTownRefresh)
+        {
+            nextTownRefresh = Time.unscaledTime + BuildingRefreshInterval;
+            town.Refresh();
         }
 
         // A building's details change while you watch (workers arrive and leave): keep them current
@@ -449,6 +462,48 @@ public class UIManager : MonoBehaviour
 
         OwnedCharacter captured = occupant;
         buttonGO.GetComponent<Button>().onClick.AddListener(() => ShowCharacterDetails(captured));
+    }
+
+    // --- Town menu ---
+
+    // Makes the "Town" button as a copy of the Hire button, placed just to its right. The copy's
+    // scene-assigned click action is switched off.
+    private void CreateTownButton()
+    {
+        Transform canvas = characterPanel.transform.parent;
+        Transform source = canvas.Find("OpenHireButton");
+        if (source == null) source = canvas.Find("OpenBuildButton");
+        if (source == null)
+        {
+            Debug.LogWarning("Could not find the Hire / Build button to copy, so there is no Town button.");
+            return;
+        }
+
+        GameObject townButton = Instantiate(source.gameObject, canvas);
+        townButton.name = "OpenTownButton";
+        townButton.transform.SetSiblingIndex(source.GetSiblingIndex() + 1);
+
+        RectTransform sourceRect = source.GetComponent<RectTransform>();
+        RectTransform rect = townButton.GetComponent<RectTransform>();
+        if (sourceRect != null && rect != null) rect.anchoredPosition = sourceRect.anchoredPosition + new Vector2(sourceRect.sizeDelta.x + 10f, 0f);
+
+        Button button = townButton.GetComponent<Button>();
+        for (int i = 0; i < button.onClick.GetPersistentEventCount(); i++)
+        {
+            button.onClick.SetPersistentListenerState(i, UnityEventCallState.Off);
+        }
+        button.onClick.AddListener(ToggleTownMenu);
+
+        TMP_Text label = townButton.GetComponentInChildren<TMP_Text>();
+        if (label != null) label.text = "Town";
+    }
+
+    public void ToggleTownMenu()
+    {
+        if (town == null) return;
+        bool opening = !town.Panel.activeInHierarchy;
+        TogglePanel(town.Panel); // pauses and closes other menus, like Build and Hire do
+        if (opening) town.Show();
     }
 
     // --- Moving buildings ---
