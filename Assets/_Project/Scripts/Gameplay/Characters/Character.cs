@@ -29,6 +29,10 @@ public class Character : MonoBehaviour, IClickable
     private Building destination;         // the building we are travelling to
     private Activity activityOnArrival;   // what we start doing when we get there
 
+    private PathService.PathRequest pendingRoute; // a route we asked for and are still waiting for
+    private Building routeOrigin;                 // the building that route starts from (null: from where we stand)
+    private Activity routeOriginActivity;         // what we were doing there, to carry on with if there is no way out
+
     // Raised when the player clicks a character; the UI listens, so Character knows nothing about it
     public static event System.Action<Character> Selected;
 
@@ -45,6 +49,8 @@ public class Character : MonoBehaviour, IClickable
     {
         if (movement != null) movement.Arrived -= OnArrived;
         if (BuildingManager.Instance != null) BuildingManager.Instance.BuildingMoved -= OnBuildingMoved;
+        if (MapGrid.Instance != null) MapGrid.Instance.ObstaclesChanged -= OnObstaclesChanged;
+        pendingRoute?.Cancel();
         LeaveCurrentActivity(); // don't leave a ghost worker behind in a building
         if (Owned != null && Owned.Avatar == this) Owned.Avatar = null;
     }
@@ -66,6 +72,7 @@ public class Character : MonoBehaviour, IClickable
 
         // Follow the buildings we go to if they get moved
         if (BuildingManager.Instance != null) BuildingManager.Instance.BuildingMoved += OnBuildingMoved;
+        MapGrid.Instance.ObstaclesChanged += OnObstaclesChanged;
 
         // Start by doing whatever the schedule says for the current time of day
         ReapplySchedule();
@@ -77,11 +84,23 @@ public class Character : MonoBehaviour, IClickable
     {
         if (destination == building)
         {
-            movement.MoveTo(building.transform.position);
+            RequestRoute(pendingRoute != null ? routeOrigin : null); // find the way to its new spot
         }
         else if (currentPlace == building)
         {
             transform.position = building.transform.position;
+        }
+    }
+
+    // Something solid appeared on the map (a building was placed or moved): if it is on our way, find another way
+    private void OnObstaclesChanged()
+    {
+        if (CurrentActivity != Activity.Traveling || destination == null || !movement.IsMoving) return;
+
+        MapGrid map = MapGrid.Instance;
+        if (movement.AnyRemainingWaypoint(point => map.IsBlocked(map.WorldToCell(point))))
+        {
+            RequestRoute(null);
         }
     }
 
@@ -117,6 +136,8 @@ public class Character : MonoBehaviour, IClickable
             // Nowhere to go for this slot (no job, no home...): stop what we were doing and stay put
             Debug.Log($"{DisplayName} has nowhere to go for {slot}.");
             movement.Stop();
+            pendingRoute?.Cancel();
+            pendingRoute = null;
             destination = null;
             LeaveCurrentActivity();
             return;
@@ -153,13 +174,53 @@ public class Character : MonoBehaviour, IClickable
 
     private void GoTo(Building place, Activity activityWhenThere)
     {
+        Building origin = currentPlace; // where we are setting off from, if we were inside a building
+        routeOriginActivity = CurrentActivity;
         LeaveCurrentActivity();
 
         destination = place;
         activityOnArrival = activityWhenThere;
         CurrentActivity = Activity.Traveling;
-        movement.MoveTo(place.transform.position);
         Debug.Log($"{DisplayName} heading to {place.DisplayName} to {activityWhenThere}");
+        RequestRoute(origin);
+    }
+
+    // Asks for the way to the destination, from inside a building (origin) or from wherever we stand (null).
+    // The walk starts when the answer arrives, which can take a few frames when many characters ask at once.
+    private void RequestRoute(Building origin)
+    {
+        pendingRoute?.Cancel();
+        movement.Stop();
+
+        routeOrigin = origin;
+        if (origin != null) SetVisible(false); // still "inside" until the route is known, then step out at the entrance
+        pendingRoute = PathService.Instance.Request(transform.position, origin, destination, OnRouteReady);
+    }
+
+    private void OnRouteReady(PathService.PathResult route)
+    {
+        pendingRoute = null;
+        if (destination == null || CurrentActivity != Activity.Traveling) return;
+
+        if (!route.Found)
+        {
+            Debug.Log($"{DisplayName} cannot find a way to {destination.DisplayName}.");
+            destination = null;
+            if (routeOrigin != null && (routeOriginActivity == Activity.Working || routeOriginActivity == Activity.Resting))
+            {
+                EnterActivity(routeOriginActivity, routeOrigin); // no way out of the building: carry on inside
+            }
+            else
+            {
+                SetVisible(true);
+                CurrentActivity = Activity.Idle;
+            }
+            return;
+        }
+
+        SetVisible(true);
+        if (route.StartsAtBuilding) transform.position = route.Waypoints[0]; // step out of the building at its entrance
+        movement.FollowPath(route.Waypoints);
     }
 
     // We know why we came here, so there is no need to work it out from our position
@@ -193,7 +254,9 @@ public class Character : MonoBehaviour, IClickable
     {
         CurrentActivity = activity;
         currentPlace = place;
-        SetVisible(activity != Activity.Working && activity != Activity.Resting);
+        bool inside = activity == Activity.Working || activity == Activity.Resting;
+        SetVisible(!inside);
+        if (inside) transform.position = place.transform.position; // we reached its entrance and went in
         if (activity == Activity.Working) place.WorkerArrived(this);
         Debug.Log($"{DisplayName} is now {activity} at {place.DisplayName}");
     }

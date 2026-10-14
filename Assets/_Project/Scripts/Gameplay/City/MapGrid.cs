@@ -120,6 +120,24 @@ public class MapGrid : MonoBehaviour
         return buildingCells.ContainsKey(cell);
     }
 
+    // --- Terrain speed ---
+
+    // How much faster (or slower) than normal a character walks on this cell: 1 on open ground.
+    // This is also the cost the pathfinder weighs routes with, so anything that changes it
+    // (roads, later traffic) changes both how fast people walk and which way they choose.
+    public float SpeedMultiplierAt(Vector2Int cell)
+    {
+        return 1f;
+    }
+
+    public float SpeedMultiplierAt(Vector3 world)
+    {
+        return SpeedMultiplierAt(WorldToCell(world));
+    }
+
+    // The highest speed multiplier any cell can have (the pathfinder needs it for its estimates)
+    public float MaxSpeedMultiplier => 1f;
+
     internal void PlaceBuilding(IEnumerable<Vector2Int> cells, Building building)
     {
         foreach (Vector2Int cell in cells) buildingCells[cell] = building;
