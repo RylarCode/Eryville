@@ -15,6 +15,23 @@ public class InputManager : MonoBehaviour
     // Events other scripts can subscribe to
     public event Action<Vector2> OnPointerClick; // Passes screen position
     public event Action<Vector2> OnPointerPositionUpdate; // Passes screen position
+    public event Action<Vector2> OnPointerReleased;       // Passes screen position; the button / finger came up
+
+    // Whether the button is down (or the finger is on the screen) right now
+    public bool IsPointerHeld { get; private set; }
+
+    // Everything that currently turns clicks into building (placing, moving, roads...). Each registers
+    // itself here; while any is active, clicks go to it instead of selecting what is under the cursor.
+    public static readonly System.Collections.Generic.List<IPlacementMode> PlacementModes = new System.Collections.Generic.List<IPlacementMode>();
+
+    private static bool AnyPlacementActive()
+    {
+        foreach (IPlacementMode mode in PlacementModes)
+        {
+            if (mode.IsPlacing) return true;
+        }
+        return false;
+    }
 
     // For the Update frame
     private Vector2? pendingClick = null;
@@ -54,7 +71,7 @@ public class InputManager : MonoBehaviour
             {
                 //Debug.Log("Clicked on UI — skip placing.");
             }
-            else if (hits.Length > 0 && !(BuildingPlacer.Instance != null && BuildingPlacer.Instance.IsPlacing))
+            else if (hits.Length > 0 && !AnyPlacementActive())
             {
                 // Something solid was clicked: it gets the click (if it can use it) and nothing is placed.
                 // (Not while placing or moving a building: then the click is the placer's, even over other buildings.)
@@ -78,6 +95,7 @@ public class InputManager : MonoBehaviour
 
         // Subscribe C# methods to the input actions
         playerInputActions.Gameplay.PointerClick.performed += HandlePointerClick;
+        playerInputActions.Gameplay.PointerClick.canceled += HandlePointerRelease;
         playerInputActions.Gameplay.PointerPosition.performed += HandlePointerPosition; // Use performed for continuous update
     }
 
@@ -85,6 +103,7 @@ public class InputManager : MonoBehaviour
     {
         // Unsubscribe to prevent errors when disabled/destroyed
         playerInputActions.Gameplay.PointerClick.performed -= HandlePointerClick;
+        playerInputActions.Gameplay.PointerClick.canceled -= HandlePointerRelease;
         playerInputActions.Gameplay.PointerPosition.performed -= HandlePointerPosition;
 
         // Disable the Action Map
@@ -98,7 +117,14 @@ public class InputManager : MonoBehaviour
 
         // Debug.Log($"Pointer Click detected at screen position: {screenPosition}, World Position: {worldPosition}");
         pendingClick = screenPosition;
+        IsPointerHeld = true;
 
+    }
+
+    private void HandlePointerRelease(InputAction.CallbackContext context)
+    {
+        IsPointerHeld = false;
+        OnPointerReleased?.Invoke(playerInputActions.Gameplay.PointerPosition.ReadValue<Vector2>());
     }
 
     private void HandlePointerPosition(InputAction.CallbackContext context)

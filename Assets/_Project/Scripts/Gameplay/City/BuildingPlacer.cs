@@ -3,7 +3,7 @@ using UnityEngine.Tilemaps; // Needed for Tilemap interaction
 using UnityEngine.InputSystem; // If using new Input System directly here
 using System.Collections.Generic;
 
-public class BuildingPlacer : MonoBehaviour
+public class BuildingPlacer : MonoBehaviour, IPlacementMode
 {
     public static BuildingPlacer Instance { get; private set; }
 
@@ -44,6 +44,7 @@ public class BuildingPlacer : MonoBehaviour
             return;
         }
         Instance = this;
+        InputManager.PlacementModes.Add(this);
 
 
         if (mainCamera == null) mainCamera = Camera.main; // Auto-find if not assigned
@@ -58,6 +59,11 @@ public class BuildingPlacer : MonoBehaviour
             sr.color = new Color(sr.color.r, sr.color.g, sr.color.b, 0.5f);
             currentIndicatorInstance.SetActive(false); // Start hidden
         }
+    }
+
+    private void OnDestroy()
+    {
+        InputManager.PlacementModes.Remove(this);
     }
 
     private void Update()
@@ -101,6 +107,7 @@ public class BuildingPlacer : MonoBehaviour
         }
 
         if (moveActive) EndMove(); // picking something to build cancels a move in progress
+        if (RoadPlacer.Instance != null) RoadPlacer.Instance.Cancel(); // ...and road building
 
         buildingToPlace = buildingSO;
         ShowIndicator(buildingSO);
@@ -133,6 +140,7 @@ public class BuildingPlacer : MonoBehaviour
         if (building == null || building.buildingType == null || !building.buildingType.movable) return;
 
         if (moveActive) EndMove();
+        if (RoadPlacer.Instance != null) RoadPlacer.Instance.Cancel();
         buildingToPlace = null;
         buildingToMove = building;
         moveActive = true;
@@ -151,6 +159,17 @@ public class BuildingPlacer : MonoBehaviour
     public void CancelMoving()
     {
         if (moveActive) EndMove();
+    }
+
+    // Stops placing or moving, whichever is going on (another building mode is taking over)
+    public void CancelPlacing()
+    {
+        if (moveActive) EndMove();
+        if (buildingToPlace != null)
+        {
+            buildingToPlace = null;
+            if (currentIndicatorInstance != null) currentIndicatorInstance.SetActive(false);
+        }
     }
 
     private void EndMove()

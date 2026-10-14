@@ -110,7 +110,8 @@ public class UIManager : MonoBehaviour
         // Escape cancels a move in progress, or closes the character panels, or else whatever menu is open
         if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
         {
-            if (BuildingPlacer.Instance != null && BuildingPlacer.Instance.IsMoving) BuildingPlacer.Instance.CancelMoving();
+            if (RoadPlacer.Instance != null && RoadPlacer.Instance.IsPlacing) RoadPlacer.Instance.Cancel();
+            else if (BuildingPlacer.Instance != null && BuildingPlacer.Instance.IsMoving) BuildingPlacer.Instance.CancelMoving();
             else if (CharacterPanelsOpen) CloseCharacterPanels();
             else if (openPanel != null) TogglePanel(openPanel);
         }
@@ -173,6 +174,7 @@ public class UIManager : MonoBehaviour
         {
             //Debug.Log("Opening Menu" + panel.name);
             if (BuildingPlacer.Instance.IsMoving) BuildingPlacer.Instance.CancelMoving(); // opening a menu abandons a move
+            if (RoadPlacer.Instance != null) RoadPlacer.Instance.Cancel(); // ...and road building
             if (openPanel != null && panel != assignPanel )
             {
                 openPanel.SetActive(false);
@@ -186,6 +188,7 @@ public class UIManager : MonoBehaviour
         else
         {
             //Debug.Log("Closing Menu" + panel.name);
+            if (RoadPlacer.Instance != null) RoadPlacer.Instance.Cancel();
             GameManager.Instance.currentGameState = GameManager.gameState.Normal;
             panel.SetActive(false);
             openPanel = null;
@@ -218,6 +221,30 @@ public class UIManager : MonoBehaviour
             BuildingType captured = building;
             button.onClick.AddListener(() => BuildingPlacer.Instance.SelectBuildingToPlace(captured));
         }
+
+        GenerateRoadButtons();
+    }
+
+    // Roads are in the same menu as buildings: one button per kind of road, and one to take roads away
+    void GenerateRoadButtons()
+    {
+        if (RoadPlacer.Instance == null) return;
+
+        foreach (RoadType road in RoadManager.Instance.RoadTypes)
+        {
+            GameObject buttonGO = Instantiate(buttonPrefab, buildingButtonContainer);
+            buttonGO.name = $"{road.displayName}Button";
+            buttonGO.GetComponent<Image>().sprite = road.sprite;
+            buttonGO.GetComponentInChildren<TMP_Text>().text = $"{road.displayName} ({road.goldCost}G)";
+
+            RoadType captured = road;
+            buttonGO.GetComponent<Button>().onClick.AddListener(() => RoadPlacer.Instance.StartPainting(captured));
+        }
+
+        GameObject eraser = Instantiate(buttonPrefab, buildingButtonContainer);
+        eraser.name = "RemoveRoadButton";
+        eraser.GetComponentInChildren<TMP_Text>().text = "Remove Road";
+        eraser.GetComponent<Button>().onClick.AddListener(() => RoadPlacer.Instance.StartErasing());
     }
 
     void GenerateHirePanelButtons()
