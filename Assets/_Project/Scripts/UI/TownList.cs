@@ -113,6 +113,7 @@ public static class TownList
         if (b.HousingSlots > 0) label += $" - Residents {b.Residents.Count}/{b.HousingSlots}";
         if (b.Producer != null)
         {
+            if (!b.Producer.IsRunning) label += " - Not producing";
             if (b.Producer.GoldPerSec > 0f) label += $" - Gold +{b.Producer.GoldPerSec:0.#}/s";
             if (b.Producer.WoodPerSec > 0f) label += $" - Wood +{b.Producer.WoodPerSec:0.#}/s";
         }

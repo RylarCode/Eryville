@@ -80,8 +80,9 @@ public class Character : MonoBehaviour, IClickable
         ReapplySchedule();
     }
 
-    // A building was picked up and put down elsewhere: anyone on the way there heads for the new spot,
-    // and anyone inside (working, resting, even just visiting) goes with it
+    // A building was picked up and put down elsewhere: anyone on the way there heads for the new spot, and
+    // anyone inside (working, resting, even just visiting) has to walk over from where the building used to be.
+    // Workers are therefore not producing until they arrive.
     private void OnBuildingMoved(Building building)
     {
         if (destination == building)
@@ -90,7 +91,14 @@ public class Character : MonoBehaviour, IClickable
         }
         else if (currentPlace == building)
         {
-            transform.position = building.transform.position;
+            Activity activity = CurrentActivity;
+            LeaveCurrentActivity(); // step out where the building used to stand
+            destination = building;
+            activityOnArrival = activity;
+            routeOriginActivity = Activity.Idle;
+            CurrentActivity = Activity.Traveling;
+            Debug.Log($"{DisplayName} follows {building.DisplayName} to its new spot to {activity}");
+            RequestRoute(null);
         }
     }
 

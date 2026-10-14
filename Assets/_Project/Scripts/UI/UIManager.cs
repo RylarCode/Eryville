@@ -402,6 +402,7 @@ public class UIManager : MonoBehaviour
         {
             if (type.goldGenerationPerSec > 0) text.AppendLine($"Gold: +{building.Producer.GoldPerSec:0.#}/s");
             if (type.woodGenerationPerSec > 0) text.AppendLine($"Wood: +{building.Producer.WoodPerSec:0.#}/s");
+            if (!building.Producer.IsRunning) text.AppendLine("Not producing: nobody is working here right now");
             if (building.WorkersOnSite.Count > 0) text.AppendLine($"Worker bonus: x{building.Producer.WorkerMultiplier:0.##}");
         }
         if (building.WorkerSlots > 0)
