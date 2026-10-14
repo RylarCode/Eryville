@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -11,6 +12,9 @@ public class CharacterManager : MonoBehaviour
 
     private readonly List<OwnedCharacter> roster = new List<OwnedCharacter>();
     public IReadOnlyList<OwnedCharacter> Roster => roster;
+
+    // Raised whenever someone joins or leaves the roster
+    public event Action RosterChanged;
 
     private void Awake()
     {
@@ -37,11 +41,33 @@ public class CharacterManager : MonoBehaviour
 
     // Adds a new owned character of the given type to the roster, gives it a home if one has space,
     // and puts its avatar in the world at spawnPoint. Costs are the caller's business (e.g. the future gacha).
+    // How many characters of this type the player owns
+    public int OwnedCount(CharacterType type)
+    {
+        int count = 0;
+        foreach (OwnedCharacter owned in roster)
+        {
+            if (owned.Type == type) count++;
+        }
+        return count;
+    }
+
+    // Whether the player may own one more of this type (see CharacterType.maxOwned)
+    public bool CanHire(CharacterType type)
+    {
+        return type != null && (type.maxOwned <= 0 || OwnedCount(type) < type.maxOwned);
+    }
+
     public OwnedCharacter Hire(CharacterType type, Vector3 spawnPoint)
     {
         if (type == null)
         {
             Debug.LogError("CharacterManager.Hire: character type is missing.");
+            return null;
+        }
+        if (!CanHire(type))
+        {
+            Debug.Log($"Cannot hire another {type.displayName}: the limit is {type.maxOwned}.");
             return null;
         }
 
@@ -59,13 +85,16 @@ public class CharacterManager : MonoBehaviour
         }
 
         SpawnAvatar(owned, spawnPoint);
+        RosterChanged?.Invoke();
         return owned;
     }
 
     // Adds an already-built owned character to the roster (used when loading a game)
     public void Restore(OwnedCharacter owned)
     {
-        if (owned != null && !roster.Contains(owned)) roster.Add(owned);
+        if (owned == null || roster.Contains(owned)) return;
+        roster.Add(owned);
+        RosterChanged?.Invoke();
     }
 
     // Dismisses everyone (used when loading a game)
@@ -83,6 +112,7 @@ public class CharacterManager : MonoBehaviour
         character.HomeBuilding?.RemoveResident(character);
         DespawnAvatar(character);
         roster.Remove(character);
+        RosterChanged?.Invoke();
     }
 
     // --- Avatars ---

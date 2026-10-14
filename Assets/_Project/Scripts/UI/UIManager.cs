@@ -103,6 +103,7 @@ public class UIManager : MonoBehaviour
     {
         if (InputManager.Instance != null) InputManager.Instance.OnPointerClick -= HandleWorldClick;
         if (BuildingPlacer.Instance != null) BuildingPlacer.Instance.MovingEnded -= OnMovingEnded;
+        if (CharacterManager.Instance != null) CharacterManager.Instance.RosterChanged -= RefreshHireButtons;
     }
 
     private void Update()
@@ -247,6 +248,16 @@ public class UIManager : MonoBehaviour
         eraser.GetComponent<Button>().onClick.AddListener(() => RoadPlacer.Instance.StartErasing());
     }
 
+    // One hire button per character type; each shows how many you own out of the limit and
+    // switches itself off once you have as many as you are allowed
+    private class HireButton
+    {
+        public CharacterType type;
+        public Button button;
+        public TMP_Text label;
+    }
+    private readonly List<HireButton> hireButtons = new List<HireButton>();
+
     void GenerateHirePanelButtons()
     {
         foreach (CharacterType character in CharacterManager.Instance.AllCharacters)
@@ -257,10 +268,26 @@ public class UIManager : MonoBehaviour
 
             // Assuming you have an Image and Text on the button prefab
             buttonGO.GetComponent<Image>().sprite = character.sprite;
-            buttonGO.GetComponentInChildren<TMP_Text>().text = character.displayName;
+
+            hireButtons.Add(new HireButton { type = character, button = button, label = buttonGO.GetComponentInChildren<TMP_Text>() });
 
             // Capture the variable for the listener
             button.onClick.AddListener(() => CharacterManager.Instance.Hire(character, new Vector3(0,0,0)));
+        }
+
+        CharacterManager.Instance.RosterChanged += RefreshHireButtons;
+        RefreshHireButtons();
+    }
+
+    private void RefreshHireButtons()
+    {
+        foreach (HireButton hire in hireButtons)
+        {
+            int owned = CharacterManager.Instance.OwnedCount(hire.type);
+            hire.label.text = hire.type.maxOwned > 0
+                ? $"{hire.type.displayName} ({owned}/{hire.type.maxOwned})"
+                : $"{hire.type.displayName} ({owned})";
+            hire.button.interactable = CharacterManager.Instance.CanHire(hire.type);
         }
     }
 

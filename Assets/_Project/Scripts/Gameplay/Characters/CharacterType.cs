@@ -14,6 +14,10 @@ public class CharacterType : ScriptableObject
     public enum Role { Resource, Defense, Offense, Others }
     public Role role = Role.Resource;
 
+    [Header("Ownership")]
+    public int maxOwned = 10;          // how many of this character the player can own: generic types (villager, guard) allow many,
+                                       // a named story character allows 1. 0 or less means no limit.
+
     [Header("Stats")]
     public float moveSpeed = 3f;       // world units per second
     public float productivity = 1.2f;  // multiplies a building's output while this character works there

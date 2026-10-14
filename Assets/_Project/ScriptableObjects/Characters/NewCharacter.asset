@@ -20,6 +20,7 @@ MonoBehaviour:
   role: 0
   moveSpeed: 3
   productivity: 1.2
+  maxOwned: 1
   defaultSchedule:
   - time: 0
     destination: 0
