@@ -87,11 +87,18 @@ public static class SaveSystem
                 loyalty = owned.Loyalty,
                 mood = owned.Mood,
                 wagePaid = owned.WagePaid,
+                awareness = owned.AwarenessLevel,
                 workBuildingId = owned.WorkBuilding != null ? owned.WorkBuilding.Id : "",
                 homeBuildingId = owned.HomeBuilding != null ? owned.HomeBuilding.Id : "",
                 hasAvatar = owned.HasAvatar,
                 position = owned.HasAvatar ? owned.Avatar.transform.position : Vector3.zero,
             });
+        }
+
+        if (GachaSystem.Instance != null)
+        {
+            data.gachaTotalPulls = GachaSystem.Instance.TotalPulls;
+            data.gachaPity.AddRange(GachaSystem.Instance.PityCounters);
         }
 
         return data;
@@ -187,7 +194,11 @@ public static class SaveSystem
             owned.Level = saved.level;
             owned.Loyalty = saved.loyalty;
             if (data.version >= 3) owned.Mood = saved.mood; // older saves have no mood: keep the type's starting mood
-            if (data.version >= 4) owned.WagePaid = saved.wagePaid;
+            if (data.version >= 4)
+            {
+                owned.WagePaid = saved.wagePaid;
+                owned.AwarenessLevel = saved.awareness;
+            }
             CharacterManager.Instance.Restore(owned);
 
             if (TryGetBuilding(buildingsById, saved.workBuildingId, out Building work) && !CharacterManager.Instance.AssignWorker(owned, work))
@@ -201,6 +212,12 @@ public static class SaveSystem
 
             // Spawned last so it already knows its job and home when it picks where to go
             if (saved.hasAvatar) CharacterManager.Instance.SpawnAvatar(owned, saved.position);
+        }
+
+        if (GachaSystem.Instance != null)
+        {
+            if (data.version >= 4) GachaSystem.Instance.RestoreState(data.gachaTotalPulls, data.gachaPity);
+            else GachaSystem.Instance.RestoreState(0, null);
         }
 
         Debug.Log($"Game loaded from {path}: {buildingsById.Count} buildings, {roadCount} road cells, {CharacterManager.Instance.Roster.Count} characters.");

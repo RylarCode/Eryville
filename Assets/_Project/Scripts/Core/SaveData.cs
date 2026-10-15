@@ -41,6 +41,7 @@ public class CharacterData
     public float loyalty;
     public float mood;            // added in version 3
     public bool wagePaid = true;  // added in version 4: whether the latest payday covered this character
+    public int awareness;         // added in version 4: self-awareness level (from duplicate pulls)
     public string workBuildingId; // Building.Id, or empty
     public string homeBuildingId; // Building.Id, or empty
     public bool hasAvatar;        // whether it was visible in the world
@@ -62,4 +63,7 @@ public class GameData
     public List<BuildingData> buildings = new List<BuildingData>();
     public List<RoadData> roads = new List<RoadData>();               // added in version 2
     public List<CharacterData> characters = new List<CharacterData>();
+
+    public int gachaTotalPulls;                               // added in version 4
+    public List<int> gachaPity = new List<int>();             // pulls since the last result of each pity rule's rarity
 }

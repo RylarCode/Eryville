@@ -52,7 +52,13 @@ public class MoodSystem : MonoBehaviour
         foreach (OwnedCharacter character in CharacterManager.Instance.Roster)
         {
             float change = 0f;
-            foreach (IMoodRule rule in rules) change += rule.ChangePerSecond(character);
+            foreach (IMoodRule rule in rules)
+            {
+                float effect = rule.ChangePerSecond(character);
+                // Self-awareness buffs: gains scale by MoodRecovery, losses by MoodDrain
+                effect *= effect > 0f ? character.BuffMultiplier(BuffStat.MoodRecovery) : character.BuffMultiplier(BuffStat.MoodDrain);
+                change += effect;
+            }
             if (change != 0f) character.Mood += change * seconds;
         }
     }

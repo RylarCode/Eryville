@@ -42,7 +42,7 @@ public class OwnedCharacter
 
     // What this character costs per day, and whether the latest payday covered it. An unpaid character
     // refuses to work (stays home) until the next payday pays them.
-    public int DailyWage => Type.dailyWage;
+    public int DailyWage => Mathf.Max(0, Mathf.RoundToInt(Type.dailyWage * BuffMultiplier(BuffStat.DailyWage)));
     private bool wagePaid = true;
     public bool WagePaid
     {
@@ -56,7 +56,57 @@ public class OwnedCharacter
     }
 
     // Multiplies a building's output while this character works there (level / loyalty bonuses can go here later)
-    public float Productivity => Type.productivity;
+    public float Productivity => Type.productivity * BuffMultiplier(BuffStat.Productivity);
+
+    // --- Self-awareness (gained from duplicate pulls) ---
+
+    private int awarenessLevel;
+    public int MaxAwareness => Type.awarenessLevels != null ? Type.awarenessLevels.Count : 0;
+    public bool AwarenessMaxed => awarenessLevel >= MaxAwareness;
+
+    // 0 = none yet. Each level adds the buffs the character type defines for it (levels stack).
+    public int AwarenessLevel
+    {
+        get { return awarenessLevel; }
+        set
+        {
+            int clamped = Mathf.Clamp(value, 0, MaxAwareness);
+            if (clamped == awarenessLevel) return;
+            awarenessLevel = clamped;
+            RecalculateSpeed();
+            StatsChanged?.Invoke();
+        }
+    }
+
+    // The combined multiplier of every buff of this stat the character has unlocked
+    public float BuffMultiplier(BuffStat stat)
+    {
+        float multiplier = 1f;
+        for (int level = 0; level < awarenessLevel && level < MaxAwareness; level++)
+        {
+            AwarenessLevel entry = Type.awarenessLevels[level];
+            if (entry == null || entry.buffs == null) continue;
+            foreach (AwarenessBuff buff in entry.buffs)
+            {
+                if (buff.stat == stat) multiplier *= buff.multiplier;
+            }
+        }
+        return multiplier;
+    }
+
+    // e.g. "2/3: Productivity x1.05; MoveSpeed x1.1"
+    public string DescribeAwareness()
+    {
+        if (MaxAwareness == 0) return "none";
+        StringBuilder text = new StringBuilder();
+        text.Append($"{awarenessLevel}/{MaxAwareness}");
+        for (int level = 0; level < awarenessLevel; level++)
+        {
+            text.Append(level == 0 ? ": " : "; ");
+            text.Append(Type.awarenessLevels[level].Describe());
+        }
+        return text.ToString();
+    }
 
     public OwnedCharacter(CharacterType type) : this(type, null) { }
 
@@ -106,7 +156,7 @@ public class OwnedCharacter
 
     private void RecalculateSpeed()
     {
-        float speed = Type.moveSpeed * LoyaltyFactor * MoodFactor;
+        float speed = Type.moveSpeed * LoyaltyFactor * MoodFactor * BuffMultiplier(BuffStat.MoveSpeed);
         foreach (float multiplier in speedModifiers.Values) speed *= multiplier;
         MoveSpeed = speed;
     }
@@ -116,6 +166,8 @@ public class OwnedCharacter
     {
         StringBuilder text = new StringBuilder();
         text.Append($"{MoveSpeed:0.##} (base {Type.moveSpeed:0.##} x loyalty {LoyaltyFactor:0.##} x mood {MoodFactor:0.##}");
+        float awareness = BuffMultiplier(BuffStat.MoveSpeed);
+        if (awareness != 1f) text.Append($" x self-awareness {awareness:0.##}");
         foreach (KeyValuePair<string, float> modifier in speedModifiers) text.Append($" x {modifier.Key} {modifier.Value:0.##}");
         text.Append(")");
         return text.ToString();

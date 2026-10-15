@@ -18,6 +18,12 @@ public class CharacterType : ScriptableObject
     public int maxOwned = 10;          // how many of this character the player can own: generic types (villager, guard) allow many,
                                        // a named story character allows 1. 0 or less means no limit.
 
+    [Header("Recruitment")]
+    public Rarity rarity = Rarity.Common;   // how rare this character is to pull
+    public float pullWeight = 1f;           // chance relative to the other characters of the same rarity
+    // What each duplicate pull gives this character. One entry per level: level 1 is the first duplicate, and so on.
+    public List<AwarenessLevel> awarenessLevels = new List<AwarenessLevel>();
+
     [Header("Stats")]
     public float moveSpeed = 3f;       // world units per second
     public float productivity = 1.2f;  // multiplies a building's output while this character works there

@@ -52,6 +52,17 @@ public class CharacterManager : MonoBehaviour
         return count;
     }
 
+    // Everyone the player owns of this type
+    public List<OwnedCharacter> OwnedOf(CharacterType type)
+    {
+        List<OwnedCharacter> list = new List<OwnedCharacter>();
+        foreach (OwnedCharacter owned in roster)
+        {
+            if (owned.Type == type) list.Add(owned);
+        }
+        return list;
+    }
+
     // Whether the player may own one more of this type (see CharacterType.maxOwned)
     public bool CanHire(CharacterType type)
     {
