@@ -352,7 +352,7 @@ public class UIManager : MonoBehaviour
     private void RefreshCharacterText()
     {
         OwnedCharacter c = selectedCharacter;
-        characterText.text = $"Name: {c.DisplayName}\nLevel: {c.Level}\nLoyalty: {c.Loyalty:0}\nMood: {c.Mood:0}\nSpeed: {c.DescribeSpeed()}\nWorking Location: {c.WorkBuilding?.DisplayName}\nHome: {c.HomeBuilding?.DisplayName}";
+        characterText.text = $"Name: {c.DisplayName}\nLevel: {c.Level}\nLoyalty: {c.Loyalty:0}\nMood: {c.Mood:0}\nSpeed: {c.DescribeSpeed()}\nWorking Location: {c.WorkBuilding?.DisplayName}\nHome: {c.HomeBuilding?.DisplayName}\nWage: {c.DailyWage}/day{(c.WagePaid ? "" : " (UNPAID - refuses to work)")}";
     }
 
     public void ShowBuildingDetails(Building building)

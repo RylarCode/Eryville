@@ -127,6 +127,12 @@ public class Character : MonoBehaviour, IClickable
         if (building != null) ReapplySchedule();
     }
 
+    // Paid (or not paid) at payday: an unpaid worker goes home, a paid one goes back to the schedule
+    internal void OnWageStatusChanged()
+    {
+        ReapplySchedule();
+    }
+
     internal void OnHomeBuildingChanged(Building building)
     {
         if (building != null) ReapplySchedule();
@@ -171,6 +177,11 @@ public class Character : MonoBehaviour, IClickable
         switch (slot)
         {
             case ScheduleSlot.Work:
+                if (Owned != null && !Owned.WagePaid)
+                {
+                    activity = Activity.Resting; // no wage, no work: stay home
+                    return HomeBuilding;
+                }
                 activity = Activity.Working;
                 return WorkBuilding;
             case ScheduleSlot.Home:

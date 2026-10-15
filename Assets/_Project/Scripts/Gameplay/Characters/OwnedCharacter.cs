@@ -40,6 +40,21 @@ public class OwnedCharacter
     public Character Avatar { get; internal set; }
     public bool HasAvatar => Avatar != null;
 
+    // What this character costs per day, and whether the latest payday covered it. An unpaid character
+    // refuses to work (stays home) until the next payday pays them.
+    public int DailyWage => Type.dailyWage;
+    private bool wagePaid = true;
+    public bool WagePaid
+    {
+        get { return wagePaid; }
+        set
+        {
+            if (wagePaid == value) return;
+            wagePaid = value;
+            if (HasAvatar) Avatar.OnWageStatusChanged();
+        }
+    }
+
     // Multiplies a building's output while this character works there (level / loyalty bonuses can go here later)
     public float Productivity => Type.productivity;
 

@@ -15,7 +15,7 @@ MonoBehaviour:
   displayName: Darkie
   typeId: 1
   sprite: {fileID: -3164809056393425246, guid: c573041da7b1f7f4186212b1f970dbd1, type: 3}
-  initialWage: 10
+  dailyWage: 10
   characterPrefab: {fileID: 4720973192394993719, guid: 5f208e7ad7396264eacf7f9357b581a8, type: 3}
   role: 0
   moveSpeed: 3

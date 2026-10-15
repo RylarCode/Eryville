@@ -70,6 +70,7 @@ public static class TownList
         string label = $"{c.DisplayName} - {StatusOf(c)} - Mood {c.Mood:0}";
         if (c.HomeBuilding == null) label += " - no home";
         if (c.WorkBuilding == null) label += " - no job";
+        if (!c.WagePaid) label += " - unpaid";
         return new TownRow { Key = "c:" + c.Id, Label = label, Sprite = c.Type.sprite, Character = c };
     }
 

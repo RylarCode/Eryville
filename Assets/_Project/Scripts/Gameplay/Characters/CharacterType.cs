@@ -9,7 +9,7 @@ public class CharacterType : ScriptableObject
     public string displayName;
     public int typeId;               // unique per CharacterType asset
     public Sprite sprite;
-    public int initialWage = 10;
+    public int dailyWage = 10;       // gold this character costs every day (paid at the start of each morning)
     public GameObject characterPrefab;
     public enum Role { Resource, Defense, Offense, Others }
     public Role role = Role.Resource;

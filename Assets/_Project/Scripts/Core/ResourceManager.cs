@@ -10,6 +10,10 @@ public class ResourceManager : MonoBehaviour
     // Singleton pattern: Ensures only one instance exists
     public static ResourceManager Instance { get; private set; }
 
+    public const string Gold = "Gold";
+    public const string Wood = "Wood";
+    public const string Letters = "Letters"; // recruitment letters: the currency for pulling characters at the tavern
+
     [SerializeField] public Dictionary<string, Resource> resources = new Dictionary<string, Resource>();
 
 
@@ -31,6 +35,7 @@ public class ResourceManager : MonoBehaviour
         resources.Clear();
         AddResource("Gold", 100, 0);
         AddResource("Wood", 50, 0);
+        AddResource(Letters, 2, 0);
         UIManager.Instance?.UpdateResourceUI(resources); // Update UI
 
 
