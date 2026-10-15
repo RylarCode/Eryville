@@ -12,6 +12,7 @@ public class PullResult
     public bool IsNew;                // a new character joined (otherwise this was a duplicate)
     public int AwarenessLevel;        // for duplicates: the character's self-awareness level afterwards
     public bool ConvertedToLoyalty;   // the duplicate's character was already at max self-awareness, so it gave loyalty instead
+    public float LoyaltyGained;       // how much, in that case
 }
 
 // Recruitment: spend recruitment letters at the tavern to pull characters. A pull picks a rarity by the pool's
@@ -208,6 +209,7 @@ public class GachaSystem : MonoBehaviour
         {
             target.Loyalty += maxedDuplicateLoyalty;
             result.ConvertedToLoyalty = true;
+            result.LoyaltyGained = maxedDuplicateLoyalty;
         }
         result.AwarenessLevel = target.AwarenessLevel;
         return result;

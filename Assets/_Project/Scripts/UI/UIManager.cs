@@ -41,6 +41,10 @@ public class UIManager : MonoBehaviour
     // The Town menu (everything you own) and the button that opens it
     private TownMenu town;
     private float nextTownRefresh;
+
+    // The Recruit menu (the tavern's gacha)
+    private RecruitMenu recruit;
+    private float nextRecruitRefresh;
     private const float BuildingRefreshInterval = 0.5f;
 
     // Gridlines
@@ -93,7 +97,9 @@ public class UIManager : MonoBehaviour
 
         CreateMoveButton();
         town = new TownMenu(this, buttonPrefab, characterPanel, assignPanel);
-        CreateTownButton();
+        CreateMenuButton("OpenTownButton", "Town", 1, ToggleTownMenu);
+        recruit = new RecruitMenu(this, buttonPrefab, characterPanel, assignPanel);
+        CreateMenuButton("OpenRecruitButton", "Recruit", 2, ToggleRecruitMenu);
         if (BuildingPlacer.Instance != null) BuildingPlacer.Instance.MovingEnded += OnMovingEnded;
 
         // The panel now shows more text than a character used to need: shrink it to fit instead of overflowing
@@ -128,6 +134,11 @@ public class UIManager : MonoBehaviour
         {
             nextTownRefresh = Time.unscaledTime + BuildingRefreshInterval;
             town.Refresh();
+        }
+        if (recruit != null && recruit.Panel.activeInHierarchy && Time.unscaledTime >= nextRecruitRefresh)
+        {
+            nextRecruitRefresh = Time.unscaledTime + BuildingRefreshInterval;
+            recruit.Refresh();
         }
 
         // A building's details change while you watch (workers arrive and leave): keep them current
@@ -352,7 +363,7 @@ public class UIManager : MonoBehaviour
     private void RefreshCharacterText()
     {
         OwnedCharacter c = selectedCharacter;
-        characterText.text = $"Name: {c.DisplayName}\nLevel: {c.Level}\nLoyalty: {c.Loyalty:0}\nMood: {c.Mood:0}\nSpeed: {c.DescribeSpeed()}\nWorking Location: {c.WorkBuilding?.DisplayName}\nHome: {c.HomeBuilding?.DisplayName}\nWage: {c.DailyWage}/day{(c.WagePaid ? "" : " (UNPAID - refuses to work)")}";
+        characterText.text = $"Name: {c.DisplayName}\nLevel: {c.Level}\nLoyalty: {c.Loyalty:0}\nMood: {c.Mood:0}\nSpeed: {c.DescribeSpeed()}\nWorking Location: {c.WorkBuilding?.DisplayName}\nHome: {c.HomeBuilding?.DisplayName}\nRarity: {c.Type.rarity}\nSelf-awareness: {c.DescribeAwareness()}\nWage: {c.DailyWage}/day{(c.WagePaid ? "" : " (UNPAID - refuses to work)")}";
     }
 
     public void ShowBuildingDetails(Building building)
@@ -467,36 +478,44 @@ public class UIManager : MonoBehaviour
 
     // --- Town menu ---
 
-    // Makes the "Town" button as a copy of the Hire button, placed just to its right. The copy's
-    // scene-assigned click action is switched off.
-    private void CreateTownButton()
+    // Makes a menu button as a copy of the Hire button, placed to its right (slot 1 is the first place to the
+    // right, slot 2 the next...). The copy's scene-assigned click action is switched off.
+    private void CreateMenuButton(string buttonName, string text, int slot, UnityAction onClick)
     {
         Transform canvas = characterPanel.transform.parent;
         Transform source = canvas.Find("OpenHireButton");
         if (source == null) source = canvas.Find("OpenBuildButton");
         if (source == null)
         {
-            Debug.LogWarning("Could not find the Hire / Build button to copy, so there is no Town button.");
+            Debug.LogWarning($"Could not find the Hire / Build button to copy, so there is no {text} button.");
             return;
         }
 
-        GameObject townButton = Instantiate(source.gameObject, canvas);
-        townButton.name = "OpenTownButton";
-        townButton.transform.SetSiblingIndex(source.GetSiblingIndex() + 1);
+        GameObject menuButton = Instantiate(source.gameObject, canvas);
+        menuButton.name = buttonName;
+        menuButton.transform.SetSiblingIndex(source.GetSiblingIndex() + slot);
 
         RectTransform sourceRect = source.GetComponent<RectTransform>();
-        RectTransform rect = townButton.GetComponent<RectTransform>();
-        if (sourceRect != null && rect != null) rect.anchoredPosition = sourceRect.anchoredPosition + new Vector2(sourceRect.sizeDelta.x + 10f, 0f);
+        RectTransform rect = menuButton.GetComponent<RectTransform>();
+        if (sourceRect != null && rect != null) rect.anchoredPosition = sourceRect.anchoredPosition + new Vector2((sourceRect.sizeDelta.x + 10f) * slot, 0f);
 
-        Button button = townButton.GetComponent<Button>();
+        Button button = menuButton.GetComponent<Button>();
         for (int i = 0; i < button.onClick.GetPersistentEventCount(); i++)
         {
             button.onClick.SetPersistentListenerState(i, UnityEventCallState.Off);
         }
-        button.onClick.AddListener(ToggleTownMenu);
+        button.onClick.AddListener(onClick);
 
-        TMP_Text label = townButton.GetComponentInChildren<TMP_Text>();
-        if (label != null) label.text = "Town";
+        TMP_Text label = menuButton.GetComponentInChildren<TMP_Text>();
+        if (label != null) label.text = text;
+    }
+
+    public void ToggleRecruitMenu()
+    {
+        if (recruit == null) return;
+        bool opening = !recruit.Panel.activeInHierarchy;
+        TogglePanel(recruit.Panel);
+        if (opening) recruit.Show();
     }
 
     public void ToggleTownMenu()

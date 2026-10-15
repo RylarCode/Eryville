@@ -38,69 +38,17 @@ public class TownMenu
         this.ui = ui;
         this.buttonPrefab = buttonPrefab;
 
-        // The panel: same slot and same look as the details panel
-        panel = new GameObject("TownPanel", typeof(RectTransform), typeof(Image));
-        panel.transform.SetParent(detailsPanel.transform.parent, false);
-        panel.transform.SetSiblingIndex(detailsPanel.transform.GetSiblingIndex());
-        RectTransform rect = panel.GetComponent<RectTransform>();
-        RectTransform detailsRect = detailsPanel.GetComponent<RectTransform>();
-        if (detailsRect != null)
-        {
-            rect.anchorMin = detailsRect.anchorMin;
-            rect.anchorMax = detailsRect.anchorMax;
-            rect.pivot = detailsRect.pivot;
-            rect.anchoredPosition = detailsRect.anchoredPosition;
-            rect.sizeDelta = detailsRect.sizeDelta;
-        }
-        Image detailsImage = detailsPanel.GetComponent<Image>();
-        if (detailsImage != null)
-        {
-            Image image = panel.GetComponent<Image>();
-            image.sprite = detailsImage.sprite;
-            image.color = detailsImage.color;
-            image.type = detailsImage.type;
-        }
+        panel = MenuPanels.CreatePanel("TownPanel", detailsPanel);
 
         // Across the top: the two tabs, then the sort and filter buttons
-        GameObject header = new GameObject("TownHeader", typeof(RectTransform), typeof(GridLayoutGroup));
-        header.transform.SetParent(panel.transform, false);
-        RectTransform headerRect = header.GetComponent<RectTransform>();
-        headerRect.anchorMin = new Vector2(0f, 1f);
-        headerRect.anchorMax = new Vector2(1f, 1f);
-        headerRect.pivot = new Vector2(0.5f, 1f);
-        headerRect.anchoredPosition = new Vector2(0f, -10f);
-        headerRect.sizeDelta = new Vector2(-20f, 70f);
-        GridLayoutGroup grid = header.GetComponent<GridLayoutGroup>();
-        grid.cellSize = new Vector2(160f, 30f);
-        grid.spacing = new Vector2(10f, 10f);
-        grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
-        grid.constraintCount = 2;
-        grid.childAlignment = TextAnchor.UpperLeft;
-
-        charactersTabLabel = AddHeaderButton(header.transform, () => SelectTab(TownTab.Characters));
-        buildingsTabLabel = AddHeaderButton(header.transform, () => SelectTab(TownTab.Buildings));
-        sortLabel = AddHeaderButton(header.transform, CycleSort);
-        filterLabel = AddHeaderButton(header.transform, CycleFilter);
+        Transform header = MenuPanels.CreateHeader(panel, 2);
+        charactersTabLabel = AddHeaderButton(header, () => SelectTab(TownTab.Characters));
+        buildingsTabLabel = AddHeaderButton(header, () => SelectTab(TownTab.Buildings));
+        sortLabel = AddHeaderButton(header, CycleSort);
+        filterLabel = AddHeaderButton(header, CycleFilter);
 
         // Below that: a scrolling list, copied from the existing one so it looks and works the same
-        Transform sourceScroll = listPanel.transform.Find("Scroll View");
-        if (sourceScroll != null)
-        {
-            GameObject scroll = UnityEngine.Object.Instantiate(sourceScroll.gameObject, panel.transform);
-            scroll.name = "TownScroll";
-            RectTransform scrollRect = scroll.GetComponent<RectTransform>();
-            scrollRect.anchorMin = new Vector2(0f, 0f);
-            scrollRect.anchorMax = new Vector2(1f, 1f);
-            scrollRect.offsetMin = new Vector2(10f, 10f);
-            scrollRect.offsetMax = new Vector2(-10f, -90f);
-            content = scroll.transform.Find("Viewport/Content");
-            if (content != null) ClearChildren(content);
-        }
-        if (content == null)
-        {
-            Debug.LogError("TownMenu: could not find the scrolling list to copy (AssignPanel/Scroll View/Viewport/Content).");
-            content = panel.transform;
-        }
+        content = MenuPanels.CreateScrollList(panel, listPanel, MenuPanels.HeaderHeight(2));
 
         panel.SetActive(false);
     }
@@ -130,10 +78,7 @@ public class TownMenu
 
     private TMP_Text AddHeaderButton(Transform header, Action onClick)
     {
-        GameObject go = UnityEngine.Object.Instantiate(buttonPrefab, header);
-        go.name = "TownHeaderButton";
-        go.GetComponent<Button>().onClick.AddListener(() => onClick());
-        return go.GetComponentInChildren<TMP_Text>();
+        return MenuPanels.AddHeaderButton(header, buttonPrefab, onClick, out Button unused);
     }
 
     private void UpdateHeader()
@@ -177,18 +122,9 @@ public class TownMenu
 
     // --- Rows ---
 
-    private static void ClearChildren(Transform parent)
-    {
-        foreach (Transform child in parent)
-        {
-            child.gameObject.SetActive(false);
-            UnityEngine.Object.Destroy(child.gameObject);
-        }
-    }
-
     private void Rebuild(List<TownRow> rows)
     {
-        ClearChildren(content);
+        MenuPanels.ClearChildren(content);
 
         if (rows.Count == 0)
         {
