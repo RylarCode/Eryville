@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f741337cc474429f93418f1d47d7a809, type: 3}
+  m_Name: TavernPool
+  m_EditorClassIdentifier: 
+  poolName: Tavern
+  characters:
+  - {fileID: 11400000, guid: 230bcc466fc44df4d8dc8f4e78b9106c, type: 2}
+  - {fileID: 11400000, guid: 021970b8cfe460b4095cda9e77f33239, type: 2}
+  odds:
+  - rarity: 0
+    weight: 70
+  - rarity: 1
+    weight: 22
+  - rarity: 2
+    weight: 7
+  - rarity: 3
+    weight: 1
+  pity:
+  - minRarity: 1
+    every: 10
+  - minRarity: 2
+    every: 50

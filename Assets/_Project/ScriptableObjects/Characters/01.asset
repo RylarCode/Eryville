@@ -18,6 +18,21 @@ MonoBehaviour:
   dailyWage: 10
   characterPrefab: {fileID: 4720973192394993719, guid: 5f208e7ad7396264eacf7f9357b581a8, type: 3}
   role: 0
+  rarity: 0
+  pullWeight: 1
+  awarenessLevels:
+  - description: 
+    buffs:
+    - stat: 0
+      multiplier: 1.05
+  - description: 
+    buffs:
+    - stat: 1
+      multiplier: 1.05
+  - description: 
+    buffs:
+    - stat: 2
+      multiplier: 0.9
   moveSpeed: 3
   productivity: 1.2
   maxOwned: 10
