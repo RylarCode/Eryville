@@ -25,6 +25,10 @@ public class Character : MonoBehaviour, IClickable
     private Collider2D bodyCollider;
     private CharacterSchedule schedule;
 
+    // Drawing order: lower on the screen is nearer, so it is drawn in front of whoever is behind it
+    private int sortBase = 1;
+    private int sortTieBreak;
+
     private Building currentPlace;        // the building we are Working / Resting at
     private Building destination;         // the building we are travelling to
     private Activity activityOnArrival;   // what we start doing when we get there
@@ -43,6 +47,14 @@ public class Character : MonoBehaviour, IClickable
         movement.Arrived += OnArrived;
         spriteRenderer = GetComponent<SpriteRenderer>();
         bodyCollider = GetComponent<Collider2D>();
+        if (spriteRenderer != null) sortBase = Mathf.Max(1, spriteRenderer.sortingOrder); // always above buildings and roads
+    }
+
+    // Characters who stand or walk at the same spot still get a stable front-to-back order
+    private void LateUpdate()
+    {
+        if (spriteRenderer == null || !spriteRenderer.enabled) return;
+        spriteRenderer.sortingOrder = sortBase + Mathf.RoundToInt((100f - transform.position.y) * 100f) + sortTieBreak;
     }
 
     private void OnDestroy()
@@ -50,7 +62,7 @@ public class Character : MonoBehaviour, IClickable
         if (movement != null) movement.Arrived -= OnArrived;
         if (Owned != null) Owned.StatsChanged -= OnStatsChanged;
         if (BuildingManager.Instance != null) BuildingManager.Instance.BuildingMoved -= OnBuildingMoved;
-        if (MapGrid.Instance != null) MapGrid.Instance.ObstaclesChanged -= OnObstaclesChanged;
+        if (MapGrid.Existing != null) MapGrid.Existing.ObstaclesChanged -= OnObstaclesChanged;
         pendingRoute?.Cancel();
         LeaveCurrentActivity(); // don't leave a ghost worker behind in a building
         if (Owned != null && Owned.Avatar == this) Owned.Avatar = null;
@@ -66,6 +78,12 @@ public class Character : MonoBehaviour, IClickable
     {
         Owned = owned;
         owned.Avatar = this;
+
+        // Everyone gets a small personal difference in drawing order and in where on the road they walk,
+        // so a crowd leaving one building spreads out instead of sitting exactly on top of each other
+        int hash = owned.Id.GetHashCode() & 0x7fffffff;
+        sortTieBreak = hash % 10;
+        movement.offset = new Vector3(((hash >> 4) % 100 / 100f - 0.5f) * 0.3f, ((hash >> 11) % 100 / 100f - 0.5f) * 0.3f, 0f);
 
         spriteRenderer.sprite = owned.Type.sprite;
         movement.speed = owned.MoveSpeed;

@@ -12,12 +12,18 @@ using UnityEngine.Tilemaps;
 public class MapGrid : MonoBehaviour
 {
     private static MapGrid instance;
+    private static bool quitting;
+
+    // The map if there is one, without creating one. Use this while things are being torn down
+    // (OnDestroy), when making a new map would leave a stray object behind.
+    public static MapGrid Existing => instance;
 
     // Created on demand (with default bounds) if the scene does not have one
     public static MapGrid Instance
     {
         get
         {
+            if (instance == null && quitting) return null; // the game is closing: do not create anything now
             if (instance == null)
             {
                 Debug.LogWarning("No MapGrid in the scene; creating one with the default bounds.");
@@ -57,7 +63,13 @@ public class MapGrid : MonoBehaviour
             return;
         }
         instance = this;
+        quitting = false;
         ComputeBounds();
+    }
+
+    private void OnApplicationQuit()
+    {
+        quitting = true;
     }
 
     private void ComputeBounds()

@@ -128,18 +128,13 @@ public class TownMenu
 
         if (rows.Count == 0)
         {
-            GameObject empty = UnityEngine.Object.Instantiate(buttonPrefab, content);
-            empty.name = "TownEmptyLabel";
-            empty.GetComponentInChildren<TMP_Text>().text = tab == TownTab.Characters ? "No characters to show." : "No buildings to show.";
+            MenuPanels.MakeRow(buttonPrefab, content, "TownEmptyLabel", tab == TownTab.Characters ? "No characters to show." : "No buildings to show.", null, false);
             return;
         }
 
         foreach (TownRow row in rows)
         {
-            GameObject go = UnityEngine.Object.Instantiate(buttonPrefab, content);
-            go.name = row.Key;
-            go.GetComponent<Image>().sprite = row.Sprite;
-            go.GetComponentInChildren<TMP_Text>().text = row.Label;
+            GameObject go = MenuPanels.MakeRow(buttonPrefab, content, row.Key, row.Label, row.Sprite);
 
             TownRow captured = row;
             go.GetComponent<Button>().onClick.AddListener(() => OnRowClicked(captured));

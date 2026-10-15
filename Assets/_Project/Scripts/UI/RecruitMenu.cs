@@ -68,11 +68,11 @@ public class RecruitMenu
         lettersLabel.text = $"Letters: {gacha.Letters}";
         wagesLabel.text = WageSystem.Instance != null ? $"Wages: {WageSystem.Instance.TotalDailyWages()}/day" : "Wages: -";
         buyLabel.text = $"Buy letter ({gacha.LetterGoldCost} gold)";
-        buyButton.interactable = ResourceManager.Instance.GetResourceAmount(ResourceManager.Gold) >= gacha.LetterGoldCost;
+        MenuPanels.SetButtonEnabled(buyButton, buyLabel, ResourceManager.Instance.GetResourceAmount(ResourceManager.Gold) >= gacha.LetterGoldCost);
         pullOneLabel.text = $"Pull x1 ({gacha.CostOf(1)} letter)";
-        pullOneButton.interactable = gacha.CanPull(1, out string reasonOne);
+        MenuPanels.SetButtonEnabled(pullOneButton, pullOneLabel, gacha.CanPull(1, out string reasonOne));
         pullTenLabel.text = $"Pull x10 ({gacha.CostOf(GachaSystem.TenPull)} letters)";
-        pullTenButton.interactable = gacha.CanPull(GachaSystem.TenPull, out string reasonTen);
+        MenuPanels.SetButtonEnabled(pullTenButton, pullTenLabel, gacha.CanPull(GachaSystem.TenPull, out string reasonTen));
         pityLabel.text = DescribePity(gacha);
 
         string message = !string.IsNullOrEmpty(gacha.LastMessage) ? gacha.LastMessage : (reasonOne.Length > 0 ? reasonOne : "Pull to recruit.");
@@ -93,14 +93,8 @@ public class RecruitMenu
 
     private void AddRow(string name, string text, Sprite sprite, System.Action onClick)
     {
-        GameObject go = Object.Instantiate(buttonPrefab, content);
-        go.name = name;
-        go.GetComponentInChildren<TMP_Text>().text = text;
-        Image image = go.GetComponent<Image>();
-        if (image != null && sprite != null) image.sprite = sprite;
-        Button button = go.GetComponent<Button>();
-        if (onClick != null) button.onClick.AddListener(() => onClick());
-        else button.interactable = false;
+        GameObject go = MenuPanels.MakeRow(buttonPrefab, content, name, text, sprite, onClick != null);
+        if (onClick != null) go.GetComponent<Button>().onClick.AddListener(() => onClick());
     }
 
     // --- Actions ---

@@ -95,6 +95,7 @@ public class UIManager : MonoBehaviour
             if (found != null) assignJobButton = found.gameObject;
         }
 
+        MenuPanels.ConfigureListContent(assignButtonContainer);
         CreateMoveButton();
         town = new TownMenu(this, buttonPrefab, characterPanel, assignPanel);
         CreateMenuButton("OpenTownButton", "Town", 1, ToggleTownMenu);
@@ -241,13 +242,8 @@ public class UIManager : MonoBehaviour
     {
         foreach (BuildingType building in BuildingPlacer.Instance.AllBuildings)
         {
-            GameObject buttonGO = Instantiate(buttonPrefab, buildingButtonContainer);
-            buttonGO.name = $"{building.buildingName}Button";
+            GameObject buttonGO = MenuPanels.MakeCard(buttonPrefab, buildingButtonContainer, $"{building.buildingName}Button", building.sprite, building.buildingName);
             Button button = buttonGO.GetComponent<Button>();
-
-            // Assuming you have an Image and Text on the button prefab
-            buttonGO.GetComponent<Image>().sprite = building.sprite;
-            buttonGO.GetComponentInChildren<TMP_Text>().text = building.buildingName;
 
             // Capture the variable for the listener
             BuildingType captured = building;
@@ -264,18 +260,13 @@ public class UIManager : MonoBehaviour
 
         foreach (RoadType road in RoadManager.Instance.RoadTypes)
         {
-            GameObject buttonGO = Instantiate(buttonPrefab, buildingButtonContainer);
-            buttonGO.name = $"{road.displayName}Button";
-            buttonGO.GetComponent<Image>().sprite = road.sprite;
-            buttonGO.GetComponentInChildren<TMP_Text>().text = $"{road.displayName} ({road.goldCost}G)";
+            GameObject buttonGO = MenuPanels.MakeCard(buttonPrefab, buildingButtonContainer, $"{road.displayName}Button", road.sprite, $"{road.displayName} ({road.goldCost}G)");
 
             RoadType captured = road;
             buttonGO.GetComponent<Button>().onClick.AddListener(() => RoadPlacer.Instance.StartPainting(captured));
         }
 
-        GameObject eraser = Instantiate(buttonPrefab, buildingButtonContainer);
-        eraser.name = "RemoveRoadButton";
-        eraser.GetComponentInChildren<TMP_Text>().text = "Remove Road";
+        GameObject eraser = MenuPanels.MakeCard(buttonPrefab, buildingButtonContainer, "RemoveRoadButton", null, "Remove Road");
         eraser.GetComponent<Button>().onClick.AddListener(() => RoadPlacer.Instance.StartErasing());
     }
 
@@ -293,12 +284,8 @@ public class UIManager : MonoBehaviour
     {
         foreach (CharacterType character in CharacterManager.Instance.AllCharacters)
         {
-            GameObject buttonGO = Instantiate(buttonPrefab, hireButtonContainer);
-            buttonGO.name = $"{character.displayName}Button";
+            GameObject buttonGO = MenuPanels.MakeCard(buttonPrefab, hireButtonContainer, $"{character.displayName}Button", character.sprite, character.displayName);
             Button button = buttonGO.GetComponent<Button>();
-
-            // Assuming you have an Image and Text on the button prefab
-            buttonGO.GetComponent<Image>().sprite = character.sprite;
 
             hireButtons.Add(new HireButton { type = character, button = button, label = buttonGO.GetComponentInChildren<TMP_Text>() });
 
@@ -458,19 +445,14 @@ public class UIManager : MonoBehaviour
         if (building.Workers.Count == 0 && building.Residents.Count == 0)
         {
             // Nothing to click: a plain label so the list is not just blank
-            GameObject label = Instantiate(buttonPrefab, assignButtonContainer);
-            label.name = "NobodyLabel";
-            label.GetComponentInChildren<TMP_Text>().text = "Nobody yet";
+            MenuPanels.MakeRow(buttonPrefab, assignButtonContainer, "NobodyLabel", "Nobody yet", null, false);
         }
     }
 
     // One clickable row: clicking it opens that character's details (even if they are hidden inside the building)
     private void AddOccupantButton(OwnedCharacter occupant, string role)
     {
-        GameObject buttonGO = Instantiate(buttonPrefab, assignButtonContainer);
-        buttonGO.name = $"{occupant.DisplayName}OccupantButton";
-        buttonGO.GetComponent<Image>().sprite = occupant.Type.sprite;
-        buttonGO.GetComponentInChildren<TMP_Text>().text = $"{occupant.DisplayName} - {role}";
+        GameObject buttonGO = MenuPanels.MakeRow(buttonPrefab, assignButtonContainer, $"{occupant.DisplayName}OccupantButton", $"{occupant.DisplayName} - {role}", occupant.Type.sprite);
 
         OwnedCharacter captured = occupant;
         buttonGO.GetComponent<Button>().onClick.AddListener(() => ShowCharacterDetails(captured));
@@ -584,13 +566,8 @@ public class UIManager : MonoBehaviour
         {
             if (building.WorkerSlots <= 0) continue; // nobody can work here (homes, city hall...)
 
-            GameObject buttonGO = Instantiate(buttonPrefab, assignButtonContainer);
-            buttonGO.name = $"{building.name}AssignButton";
+            GameObject buttonGO = MenuPanels.MakeRow(buttonPrefab, assignButtonContainer, $"{building.name}AssignButton", $"{building.DisplayName} ({building.Workers.Count}/{building.WorkerSlots})", building.buildingType.sprite);
             Button button = buttonGO.GetComponent<Button>();
-
-            // Assuming you have an Image and Text on the button prefab
-            buttonGO.GetComponent<Image>().sprite = building.buildingType.sprite;
-            buttonGO.GetComponentInChildren<TMP_Text>().text = $"{building.DisplayName} ({building.Workers.Count}/{building.WorkerSlots})";
 
             button.onClick.AddListener(() =>
             {

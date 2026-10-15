@@ -8,6 +8,7 @@ using UnityEngine;
 public class CharacterMovement : MonoBehaviour
 {
     public float speed = 3f;            // world units per second on open ground (set from the character type)
+    public Vector3 offset;              // where on the road this character walks, relative to the cell centres (so crowds spread out a little)
     public float speedMultiplier = 1f;  // extra hook for things that slow / speed up walking (e.g. being tired)
 
     public bool IsMoving { get; private set; }
@@ -69,7 +70,7 @@ public class CharacterMovement : MonoBehaviour
         Vector3 position = transform.position;
         while (budget > 0f && nextWaypoint < path.Count)
         {
-            Vector3 target = path[nextWaypoint];
+            Vector3 target = path[nextWaypoint] + offset;
             float distance = Vector3.Distance(position, target);
             if (distance <= budget)
             {
