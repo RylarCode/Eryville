@@ -53,7 +53,7 @@ public class ResourceManager : MonoBehaviour
     {
         while (true)
         {
-            if (GameManager.Instance.currentGameState == GameManager.gameState.Normal)
+            if (!GameManager.Instance.SimulationPaused)
             {
                 //foreach (var res in resources.Values)
                 //{

@@ -105,18 +105,40 @@ public class GachaSystem : MonoBehaviour
         if (amount > 0) ResourceManager.Instance.changeResourceAmount(ResourceManager.Letters, amount);
     }
 
-    // Buys one letter for gold
+    // Buys one letter for gold. The backend decides (and reports the balances afterwards).
+    // Returns true when it went through; with an online backend that answers later it returns true
+    // once the request is sent, and the balances change when the answer arrives.
     public bool BuyLetter()
     {
-        if (ResourceManager.Instance.GetResourceAmount(ResourceManager.Gold) < letterGoldCost)
+        bool answered = false, success = false;
+        Backend.Current.BuyLetter(response =>
         {
-            LastMessage = $"A letter costs {letterGoldCost} gold.";
+            answered = true;
+            success = OnBuyLetterResponse(response);
+        });
+        return answered ? success : true;
+    }
+
+    private bool OnBuyLetterResponse(BuyLetterResponse response)
+    {
+        if (response == null || !response.ok)
+        {
+            LastMessage = response != null && !string.IsNullOrEmpty(response.error) ? response.error : "Could not buy a letter.";
             return false;
         }
-        ResourceManager.Instance.changeResourceAmount(ResourceManager.Gold, -letterGoldCost);
-        ResourceManager.Instance.changeResourceAmount(ResourceManager.Letters, 1);
+        ResourceManager.Instance.SetResourceAmount(ResourceManager.Gold, response.goldAfter);
+        ResourceManager.Instance.SetResourceAmount(ResourceManager.Letters, response.lettersAfter);
         LastMessage = $"Bought a recruitment letter for {letterGoldCost} gold.";
         return true;
+    }
+
+    // What an offline backend answers when asked to sell a letter (the game itself plays the part of the server).
+    // An online backend does this on its own server instead.
+    public BuyLetterResponse LocalBuyLetter()
+    {
+        float gold = ResourceManager.Instance.GetResourceAmount(ResourceManager.Gold);
+        if (gold < letterGoldCost) return BuyLetterResponse.Failed($"A letter costs {letterGoldCost} gold.");
+        return new BuyLetterResponse { goldAfter = gold - letterGoldCost, lettersAfter = Letters + 1 };
     }
 
     // --- Tavern ---
@@ -135,7 +157,8 @@ public class GachaSystem : MonoBehaviour
     public bool CanPull(int count, out string reason)
     {
         reason = "";
-        if (FindTavern() == null) reason = "Build a tavern first: recruits are met there.";
+        if (waitingForBackend) reason = "Waiting for the server...";
+        else if (FindTavern() == null) reason = "Build a tavern first: recruits are met there.";
         else if (PullableTypes().Count == 0) reason = "Nobody can be recruited right now.";
         else if (Letters < CostOf(count)) reason = $"You need {CostOf(count)} recruitment letters (you have {Letters}).";
         return reason.Length == 0;
@@ -143,6 +166,10 @@ public class GachaSystem : MonoBehaviour
 
     // --- Pulling ---
 
+    private bool waitingForBackend;
+
+    // Asks the backend for the rolls and applies what it answers. Returns the results when the backend answers at
+    // once (the local one does); an online one answers later, and the results then arrive through the Pulled event.
     public List<PullResult> Pull(int count = 1)
     {
         List<PullResult> results = new List<PullResult>();
@@ -153,22 +180,45 @@ public class GachaSystem : MonoBehaviour
             return results;
         }
 
-        Tavern tavern = FindTavern();
-        List<CharacterType> types = PullableTypes();
-        List<GachaRoller.Candidate> candidates = new List<GachaRoller.Candidate>();
-        foreach (CharacterType type in types) candidates.Add(new GachaRoller.Candidate(type.rarity, type.pullWeight));
-
-        EnsurePityCounters();
-        ResourceManager.Instance.changeResourceAmount(ResourceManager.Letters, -CostOf(count));
-
-        for (int i = 0; i < count; i++)
+        waitingForBackend = true;
+        bool answered = false;
+        List<PullResult> answer = null;
+        Backend.Current.Pull(new PullRequest { poolId = Pool.poolName, count = count }, response =>
         {
-            GachaRoller.Result roll = GachaRoller.Pick(candidates, Pool.odds, Pool.pity, pityCounters, random);
-            TotalPulls++;
-            if (roll.candidate < 0) continue; // nothing with a chance to be pulled: cannot happen after CanPull, but never crash
+            answered = true;
+            waitingForBackend = false;
+            answer = OnPullResponse(response);
+        });
+        return answered && answer != null ? answer : results;
+    }
 
-            PullResult result = Grant(types[roll.candidate], tavern.SpawnPoint);
-            result.Rarity = roll.rarity;
+    private List<PullResult> OnPullResponse(PullResponse response)
+    {
+        List<PullResult> results = new List<PullResult>();
+        if (response == null || !response.ok)
+        {
+            LastMessage = response != null && !string.IsNullOrEmpty(response.error) ? response.error : "The server did not answer.";
+            return results;
+        }
+
+        // The server's word is final: balances and pity counters become what it says
+        ResourceManager.Instance.SetResourceAmount(ResourceManager.Letters, response.lettersAfter);
+        RestoreState(response.totalPulls, response.pity);
+
+        Tavern tavern = FindTavern();
+        Vector3 spawnPoint = tavern != null ? tavern.SpawnPoint : Vector3.zero;
+        List<CharacterType> types = PullableTypes();
+        foreach (PullRollData roll in response.rolls)
+        {
+            CharacterType type = types.Find(t => t.typeId == roll.typeId);
+            if (type == null)
+            {
+                Debug.LogWarning($"The server gave character type {roll.typeId}, which this version of the game does not know; skipped.");
+                continue;
+            }
+
+            PullResult result = Grant(type, spawnPoint);
+            result.Rarity = (Rarity)roll.rarity;
             result.PityApplied = roll.pityApplied;
             results.Add(result);
         }
@@ -176,6 +226,35 @@ public class GachaSystem : MonoBehaviour
         LastMessage = $"Recruited {results.Count}.";
         Pulled?.Invoke(results);
         return results;
+    }
+
+    // What an offline backend answers when asked to pull (the game itself plays the part of the server): checks
+    // and charges the letters, rolls with the pool's odds and pity rules, and reports the result. An online backend
+    // does exactly this on its own server, with its own copy of the odds.
+    public PullResponse LocalPull(PullRequest request)
+    {
+        int count = request.count;
+        if (count < 1) return PullResponse.Failed("Nothing to pull.");
+        if (Letters < CostOf(count)) return PullResponse.Failed($"You need {CostOf(count)} recruitment letters (you have {Letters}).");
+
+        List<CharacterType> types = PullableTypes();
+        if (types.Count == 0) return PullResponse.Failed("Nobody can be recruited right now.");
+
+        List<GachaRoller.Candidate> candidates = new List<GachaRoller.Candidate>();
+        foreach (CharacterType type in types) candidates.Add(new GachaRoller.Candidate(type.rarity, type.pullWeight));
+
+        EnsurePityCounters();
+        PullResponse response = new PullResponse { lettersAfter = Letters - CostOf(count) };
+        for (int i = 0; i < count; i++)
+        {
+            GachaRoller.Result roll = GachaRoller.Pick(candidates, Pool.odds, Pool.pity, pityCounters, random);
+            TotalPulls++;
+            if (roll.candidate < 0) continue; // nothing with a chance to be pulled: cannot happen after the checks, but never crash
+            response.rolls.Add(new PullRollData { typeId = types[roll.candidate].typeId, rarity = (int)roll.rarity, pityApplied = roll.pityApplied });
+        }
+        response.totalPulls = TotalPulls;
+        response.pity.AddRange(pityCounters);
+        return response;
     }
 
     // A new character joins, or (when none more can be owned) the duplicate makes one stronger

@@ -170,6 +170,8 @@ public class StressTest : MonoBehaviour
         buildingTypeTurn = 0;
         Benchmark = null;
         Churn = false;
+        // Churn moved the real-time clock around to keep everybody commuting: put it back to the real time
+        if (GameClock.Instance != null && GameClock.Instance.IsRealTime) GameClock.Instance.ResetDebugOffset();
     }
 
     // --- Benchmark ---

@@ -143,6 +143,7 @@ public class UIManager : MonoBehaviour
     {
         if (openPanel != null && (openPanel == town.Panel || openPanel == recruit.Panel)) TogglePanel(openPanel);
         if (cheats != null && openPanel == cheats.Panel) TogglePanel(openPanel);
+        recruit.Dispose();
         List<GameObject> oldPanels = new List<GameObject> { town.Panel, recruit.Panel };
         if (cheats != null) oldPanels.Add(cheats.Panel);
         foreach (GameObject old in oldPanels)
@@ -227,6 +228,7 @@ public class UIManager : MonoBehaviour
         if (InputManager.Instance != null) InputManager.Instance.OnPointerClick -= HandleWorldClick;
         if (BuildingPlacer.Instance != null) BuildingPlacer.Instance.MovingEnded -= OnMovingEnded;
         if (CharacterManager.Instance != null) CharacterManager.Instance.RosterChanged -= RefreshHireButtons;
+        recruit?.Dispose();
         if (BuildingPlacer.Instance != null) BuildingPlacer.Instance.PlacingEnded -= OnPlacementEnded;
         if (RoadPlacer.Instance != null) RoadPlacer.Instance.ModeEnded -= OnPlacementEnded;
     }

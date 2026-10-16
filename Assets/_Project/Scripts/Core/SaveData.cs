@@ -64,6 +64,9 @@ public class GameData
     public List<RoadData> roads = new List<RoadData>();               // added in version 2
     public List<CharacterData> characters = new List<CharacterData>();
 
+    public long lastSeenUtcTicks;                             // added in version 5: when the game was saved (the backend's clock), for catching up on time away
+    public int payrollDay = -1;                               // added in version 5: the game day wages were last paid for (real-time clock)
+
     public int gachaTotalPulls;                               // added in version 4
     public List<int> gachaPity = new List<int>();             // pulls since the last result of each pity rule's rarity
 }

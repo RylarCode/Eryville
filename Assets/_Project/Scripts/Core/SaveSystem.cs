@@ -11,40 +11,34 @@ using UnityEngine;
 // so everything a loaded building or character needs (sprite, size, registration, assignments) is set up.
 public static class SaveSystem
 {
-    public const int CurrentVersion = 4; // 2 added roads, 3 added mood, 4 added wages (and recruitment); older saves still load with defaults
+    public const int CurrentVersion = 5; // 2 added roads, 3 added mood, 4 added wages (and recruitment), 5 the real-time clock; older saves still load with defaults
     public const string DefaultFileName = "savegame.json";
 
-    private static string PathFor(string fileName)
+    private static string SlotFor(string fileName)
     {
-        if (string.IsNullOrEmpty(fileName)) fileName = DefaultFileName;
-        return Path.Combine(Application.persistentDataPath, Path.GetFileName(fileName)); // file name only, no folders
+        return string.IsNullOrEmpty(fileName) ? DefaultFileName : fileName;
     }
 
     public static bool HasSave(string fileName = DefaultFileName)
     {
-        return File.Exists(PathFor(fileName));
+        bool has = false;
+        Backend.Current.HasBlob(SlotFor(fileName), result => has = result);
+        return has;
     }
 
-    // Deletes the save file (if there is one)
+    // Deletes the save (if there is one)
     public static bool Delete(string fileName = DefaultFileName)
     {
-        string path = PathFor(fileName);
-        if (!File.Exists(path)) return false;
-        try
-        {
-            File.Delete(path);
-            Debug.Log($"Deleted save file {path}");
-            return true;
-        }
-        catch (Exception e)
-        {
-            Debug.LogError($"Could not delete {path}: {e.Message}");
-            return false;
-        }
+        bool existed = HasSave(fileName);
+        bool ok = false;
+        Backend.Current.DeleteBlob(SlotFor(fileName), result => ok = result.ok);
+        return existed && ok;
     }
 
     // --- Save ---
 
+    // Hands the game to the backend as one piece of text. Returns whether it went through; with a backend that
+    // answers later it returns true once the request is sent.
     public static bool Save(string fileName = DefaultFileName)
     {
         if (StressTest.IsActive)
@@ -53,25 +47,20 @@ public static class SaveSystem
             return false;
         }
 
-        string path = PathFor(fileName);
+        string json;
         try
         {
-            string json = JsonUtility.ToJson(Capture(), true);
-
-            // Write to a temp file first so a failed write can't destroy the previous save
-            string temp = path + ".tmp";
-            File.WriteAllText(temp, json);
-            File.Copy(temp, path, true);
-            File.Delete(temp);
-
-            Debug.Log($"Game saved to {path}");
-            return true;
+            json = JsonUtility.ToJson(Capture(), true);
         }
         catch (Exception e)
         {
-            Debug.LogError($"Failed to save game to {path}: {e}");
+            Debug.LogError($"Failed to save game: {e}");
             return false;
         }
+
+        bool answered = false, ok = false;
+        Backend.Current.SaveBlob(SlotFor(fileName), json, result => { answered = true; ok = result.ok; });
+        return answered ? ok : true;
     }
 
     private static GameData Capture()
@@ -124,6 +113,9 @@ public static class SaveSystem
             });
         }
 
+        data.lastSeenUtcTicks = Backend.Current.ServerUtcNow.Ticks;
+        if (WageSystem.Instance != null) data.payrollDay = WageSystem.Instance.LastPayrollDay;
+
         if (GachaSystem.Instance != null)
         {
             data.gachaTotalPulls = GachaSystem.Instance.TotalPulls;
@@ -135,24 +127,31 @@ public static class SaveSystem
 
     // --- Load ---
 
+    // Asks the backend for the saved game and rebuilds the world from it. Returns whether it worked; with a backend
+    // that answers later it returns true once the request is sent.
     public static bool Load(string fileName = DefaultFileName)
     {
-        string path = PathFor(fileName);
-        if (!File.Exists(path))
+        bool answered = false, ok = false;
+        Backend.Current.LoadBlob(SlotFor(fileName), (result, json) =>
         {
-            Debug.LogWarning($"No save file at {path}.");
-            return false;
-        }
+            answered = true;
+            ok = result.ok && json != null && Apply(json);
+        });
+        return answered ? ok : true;
+    }
 
-        // 1. Read and check the file BEFORE touching the running game, so a bad file loses nothing
+    // Rebuilds the world from the text of a save. Checks it first and changes nothing if it is no good.
+    private static bool Apply(string json)
+    {
+        // 1. Read and check the text BEFORE touching the running game, so a bad file loses nothing
         GameData data;
         try
         {
-            data = JsonUtility.FromJson<GameData>(File.ReadAllText(path));
+            data = JsonUtility.FromJson<GameData>(json);
         }
         catch (Exception e)
         {
-            Debug.LogError($"Could not read save file {path}: {e.Message}");
+            Debug.LogError($"Could not read save file: {e.Message}");
             return false;
         }
         if (data == null || data.version < 1 || data.version > CurrentVersion)
@@ -249,7 +248,16 @@ public static class SaveSystem
             else GachaSystem.Instance.RestoreState(0, null);
         }
 
-        Debug.Log($"Game loaded from {path}: {buildingsById.Count} buildings, {roadCount} road cells, {CharacterManager.Instance.Roster.Count} characters.");
+        if (data.version >= 5 && WageSystem.Instance != null) WageSystem.Instance.LastPayrollDay = data.payrollDay;
+
+        // Time away: in real time the world carried on while the game was closed
+        if (data.version >= 5 && data.lastSeenUtcTicks > 0 && GameClock.Instance != null && GameClock.Instance.IsRealTime)
+        {
+            DateTime lastSeen = new DateTime(data.lastSeenUtcTicks, DateTimeKind.Utc);
+            OfflineProgress.Apply((float)(Backend.Current.ServerUtcNow - lastSeen).TotalSeconds);
+        }
+
+        Debug.Log($"Game loaded: {buildingsById.Count} buildings, {roadCount} road cells, {CharacterManager.Instance.Roster.Count} characters.");
         return true;
     }
 

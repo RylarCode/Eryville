@@ -41,7 +41,7 @@ public class MoodSystem : MonoBehaviour
 
     private void Update()
     {
-        if (GameManager.Instance != null && GameManager.Instance.currentGameState != GameManager.gameState.Normal) return;
+        if (GameManager.Instance != null && GameManager.Instance.SimulationPaused) return;
         if (CharacterManager.Instance == null) return;
 
         elapsed += Time.deltaTime;

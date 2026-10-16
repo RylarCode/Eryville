@@ -50,11 +50,15 @@ public class CheatMenu
     private void Section(string name) { entries.Add(new Entry { section = name }); }
     private void Add(string label, Action run, bool confirm = false) { entries.Add(new Entry { label = () => label, run = run, confirm = confirm }); }
     private void Add(Func<string> label, Action run, bool confirm = false) { entries.Add(new Entry { label = label, run = run, confirm = confirm }); }
+    private void Info(Func<string> label) { entries.Add(new Entry { label = label }); } // text only, not a button
 
     private void BuildEntries()
     {
         Section("Time");
-        Add("Next time of day", Cheats.NextTimeOfDay);
+        Info(Cheats.DescribeClock);
+        Add(() => GameClock.Instance.IsRealTime ? "Switch to the in-game clock (30 s per time of day, for testing)" : "Switch to the real-time clock", () => Cheats.ToggleClockMode());
+        Add(() => GameClock.Instance.IsRealTime ? "Put the clock back to the real time" : "(real-time clock only) put the clock back", Cheats.ResetTimeOffset);
+        Add("Next time of day (moves the real-time clock too)", Cheats.NextTimeOfDay);
         Add("Skip to next morning (wages are paid)", Cheats.SkipToMorning);
         Add(() => $"Game speed: x{Time.timeScale:0.#} (tap to change)", () => Cheats.CycleGameSpeed());
         Add("Pay wages now", Cheats.RunPayroll);
@@ -80,6 +84,12 @@ public class CheatMenu
         Add(() => $"World state: {GameManager.Instance.worldState} (tap to change)", () => Cheats.CycleWorldState());
         Add("Remove all buildings", Cheats.RemoveAllBuildings, true);
         Add("Remove all roads", Cheats.RemoveAllRoads, true);
+
+        Section("Saving");
+        Add(() => "Auto-load and autosave (real time only): " + (PlayerPrefs.GetInt(GameSession.AutoPreference, 1) == 1 ? "on" : "off"), () => Cheats.ToggleAutomaticSession());
+        Add("Pretend the game was closed for 3 hours", () => Cheats.SimulateTimeAway(3f));
+        Info(() => OfflineProgress.LastReport.seconds > 0f ? "Last time away: " + OfflineProgress.LastReport : "Last time away: nothing yet");
+        Info(() => "Backend: " + Backend.Current.Name);
 
         Section("Recruitment");
         Add("Reset pity and pull count", Cheats.ResetRecruitment);
@@ -114,6 +124,11 @@ public class CheatMenu
             if (entry.label == null)
             {
                 MenuPanels.MakeRow(buttonPrefab, content, "Section", entry.section, null, false);
+                continue;
+            }
+            if (entry.run == null) // text only
+            {
+                MenuPanels.MakeRow(buttonPrefab, content, "Info", LabelOf(entry), null, false);
                 continue;
             }
             Entry captured = entry;

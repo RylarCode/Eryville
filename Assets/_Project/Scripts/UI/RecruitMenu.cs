@@ -47,6 +47,32 @@ public class RecruitMenu
 
         content = MenuPanels.CreateScrollList(panel, listPanel, MenuPanels.HeaderHeight(3));
         panel.SetActive(false);
+
+        EnsureListening();
+    }
+
+    // Results can arrive later (an online backend answers after a moment): show whatever a pull gives
+    private GachaSystem listeningTo;
+
+    private void EnsureListening()
+    {
+        if (listeningTo == GachaSystem.Instance) return;
+        if (listeningTo != null) listeningTo.Pulled -= OnPulled;
+        listeningTo = GachaSystem.Instance;
+        if (listeningTo != null) listeningTo.Pulled += OnPulled;
+    }
+
+    private void OnPulled(List<PullResult> results)
+    {
+        lastResults = results;
+        if (panel != null && panel.activeInHierarchy) Refresh(true);
+    }
+
+    // Stops listening (the menu is being replaced)
+    public void Dispose()
+    {
+        if (listeningTo != null) listeningTo.Pulled -= OnPulled;
+        listeningTo = null;
     }
 
     private TMP_Text Add(Transform header, System.Action onClick, out Button button)
@@ -62,6 +88,7 @@ public class RecruitMenu
     // Brings the labels, button states and list up to date (the list only when it changed)
     public void Refresh(bool force = false)
     {
+        EnsureListening();
         GachaSystem gacha = GachaSystem.Instance;
         if (gacha == null) return;
 
@@ -108,8 +135,7 @@ public class RecruitMenu
     private void Pull(int count)
     {
         GachaSystem gacha = GachaSystem.Instance;
-        List<PullResult> results = gacha.Pull(count);
-        if (results.Count > 0) lastResults = results;
+        gacha.Pull(count); // the results come back through OnPulled
         Refresh(true);
     }
 

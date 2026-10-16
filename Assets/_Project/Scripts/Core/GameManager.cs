@@ -10,6 +10,10 @@ public class GameManager : MonoBehaviour
     public enum gameState { Normal, Menu }
     public gameState currentGameState = gameState.Normal;
 
+    // Whether the game's clock, production and mood stand still. They do while a menu is open, except in real time:
+    // the real clock cannot be paused, so neither can the game.
+    public bool SimulationPaused => currentGameState != gameState.Normal && !(GameClock.Instance != null && GameClock.Instance.IsRealTime);
+
     // Overall situation of the world; characters pick rest places based on it (see CharacterType.restOptions)
     public WorldState worldState = WorldState.Peace;
 

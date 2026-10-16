@@ -2,7 +2,9 @@ using System;
 using UnityEngine;
 
 // Pays the wages. At the start of every day (the Morning phase) each owned character is paid their
-// daily wage out of gold, in roster order. Whoever cannot be paid is marked unpaid: they refuse to work
+// daily wage out of gold, in roster order. In the game's own clock that is when Morning begins. In real time
+// it is the first moment the game sees that a new real day has started (which can be when it is opened):
+// one payday for the new day, however many days were missed. Whoever cannot be paid is marked unpaid: they refuse to work
 // until the next payday covers them, and lose some loyalty and mood.
 public class WageSystem : MonoBehaviour
 {
@@ -15,6 +17,9 @@ public class WageSystem : MonoBehaviour
     public int LastDue { get; private set; }
     public int LastPaid { get; private set; }
     public int LastUnpaidCount { get; private set; }
+
+    // The game day the last payday was for (real time only; -1 = none yet). Saved with the game.
+    public int LastPayrollDay { get; set; } = -1;
 
     // Raised after every payday
     public event Action PayrollRun;
@@ -41,7 +46,21 @@ public class WageSystem : MonoBehaviour
 
     private void OnTimeOfDayChanged(TimeOfDay time)
     {
+        if (GameClock.Instance != null && GameClock.Instance.IsRealTime) return; // real time works by the day, see Update
         if (time == TimeOfDay.Morning && !StressTest.IsActive) RunPayroll(); // a stress test makes the days fly by: no wages meanwhile
+    }
+
+    private void Update()
+    {
+        GameClock clock = GameClock.Instance;
+        if (clock == null || !clock.IsRealTime || StressTest.IsActive) return;
+
+        int day = clock.DayNumber;
+        if (LastPayrollDay < 0) { LastPayrollDay = day; return; } // a new game: the first payday is the next morning
+        if (day <= LastPayrollDay) return;
+
+        LastPayrollDay = day;
+        RunPayroll();
     }
 
     // What everyone costs per day

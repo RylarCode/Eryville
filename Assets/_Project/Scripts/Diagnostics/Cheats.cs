@@ -35,6 +35,41 @@ public static class Cheats
         return Time.timeScale;
     }
 
+    // Switches between the game's own clock and the real-time clock (remembered for next time)
+    public static ClockMode ToggleClockMode()
+    {
+        GameClock clock = GameClock.Instance;
+        clock.SetMode(clock.IsRealTime ? ClockMode.InGame : ClockMode.RealTime);
+        return clock.Mode;
+    }
+
+    // Puts the real-time clock back to the real time after skipping around
+    public static void ResetTimeOffset()
+    {
+        GameClock.Instance.ResetDebugOffset();
+    }
+
+    // Turns the automatic loading and saving (real time only) on or off
+    public static bool ToggleAutomaticSession()
+    {
+        GameSession.Automatic = !(PlayerPrefs.GetInt(GameSession.AutoPreference, 1) == 1);
+        return PlayerPrefs.GetInt(GameSession.AutoPreference, 1) == 1;
+    }
+
+    // Pretends the game was closed for this many hours and gives what that would have earned
+    public static OfflineProgress.Report SimulateTimeAway(float hours)
+    {
+        return OfflineProgress.Apply(hours * 3600f);
+    }
+
+    public static string DescribeClock()
+    {
+        GameClock clock = GameClock.Instance;
+        if (!clock.IsRealTime) return $"Clock: in-game, {clock.Current}, {clock.Elapsed:0}s into it";
+        string offset = clock.DebugOffset > System.TimeSpan.Zero ? $"  (testing offset +{clock.DebugOffset.TotalHours:0.#} h)" : "";
+        return $"Clock: real time {clock.LocalNow:HH:mm}, {clock.Current}, day {clock.DayNumber}{offset}";
+    }
+
     public static void RunPayroll()
     {
         if (WageSystem.Instance != null) WageSystem.Instance.RunPayroll();
@@ -131,7 +166,9 @@ public static class Cheats
         RoadManager.Instance.ClearAll();
         ResourceManager.Instance.ResetResources();
         GameManager.Instance.worldState = WorldState.Peace;
-        GameClock.Instance.SetTime(TimeOfDay.Morning, 0f);
+        GameClock.Instance.SetTime(TimeOfDay.Morning, 0f); // (does nothing in real time)
+        GameClock.Instance.ResetDebugOffset();
+        if (WageSystem.Instance != null) WageSystem.Instance.LastPayrollDay = -1;
         ResetRecruitment();
         Time.timeScale = 1f;
         SaveSystem.Delete();
