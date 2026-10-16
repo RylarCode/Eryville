@@ -20,6 +20,29 @@ public static class SaveSystem
         return Path.Combine(Application.persistentDataPath, Path.GetFileName(fileName)); // file name only, no folders
     }
 
+    public static bool HasSave(string fileName = DefaultFileName)
+    {
+        return File.Exists(PathFor(fileName));
+    }
+
+    // Deletes the save file (if there is one)
+    public static bool Delete(string fileName = DefaultFileName)
+    {
+        string path = PathFor(fileName);
+        if (!File.Exists(path)) return false;
+        try
+        {
+            File.Delete(path);
+            Debug.Log($"Deleted save file {path}");
+            return true;
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"Could not delete {path}: {e.Message}");
+            return false;
+        }
+    }
+
     // --- Save ---
 
     public static bool Save(string fileName = DefaultFileName)

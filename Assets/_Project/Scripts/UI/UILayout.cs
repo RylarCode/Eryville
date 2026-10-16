@@ -160,7 +160,7 @@ public class UILayout
         }
 
         // Every panel becomes a sheet above the bottom bar
-        string[] sheets = { "BuildingMenuPanel", "HireMenuPanel", "CharacterPanel", "TownPanel", "RecruitPanel" };
+        string[] sheets = { "BuildingMenuPanel", "HireMenuPanel", "CharacterPanel", "TownPanel", "RecruitPanel", "CheatPanel" };
         foreach (string sheetName in sheets)
         {
             RectTransform sheet = Find(sheetName);

@@ -130,6 +130,11 @@ public class PerfOverlay : MonoBehaviour
         if (capLabel != null) capLabel.text = "Cap: " + (Application.targetFrameRate <= 0 ? "default" : Application.targetFrameRate.ToString());
     }
 
+    public void Toggle()
+    {
+        SetExpanded(!Expanded);
+    }
+
     private void SetExpanded(bool expanded)
     {
         Expanded = expanded;

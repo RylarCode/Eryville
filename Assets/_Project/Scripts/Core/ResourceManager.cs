@@ -32,15 +32,21 @@ public class ResourceManager : MonoBehaviour
 
     private void Start()
     {
-        resources.Clear();
-        AddResource("Gold", 100, 0);
-        AddResource("Wood", 50, 0);
-        AddResource(Letters, 2, 0);
-        UIManager.Instance?.UpdateResourceUI(resources); // Update UI
+        ResetResources();
 
 
         StartCoroutine(ResourceLoop());
 
+    }
+
+    // What a new game starts with
+    public void ResetResources()
+    {
+        resources.Clear();
+        AddResource(Gold, 100, 0);
+        AddResource(Wood, 50, 0);
+        AddResource(Letters, 2, 0);
+        UIManager.Instance?.UpdateResourceUI(resources); // Update UI
     }
 
     IEnumerator ResourceLoop()

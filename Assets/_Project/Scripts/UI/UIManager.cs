@@ -45,6 +45,10 @@ public class UIManager : MonoBehaviour
     // The Recruit menu (the tavern's gacha)
     private RecruitMenu recruit;
     private float nextRecruitRefresh;
+
+    // The testing tools (editor and Development Builds only)
+    private CheatMenu cheats;
+    private float nextCheatRefresh;
     private const float BuildingRefreshInterval = 0.5f;
 
     // Phone layout: the screen-shape dependent layout, and whether a menu was tucked away while placing something
@@ -109,6 +113,7 @@ public class UIManager : MonoBehaviour
         CreateMenuButton("OpenTownButton", "Town", 1, ToggleTownMenu);
         recruit = new RecruitMenu(this, buttonPrefab, characterPanel, assignPanel);
         CreateMenuButton("OpenRecruitButton", "Recruit", 2, ToggleRecruitMenu);
+        SetUpCheats();
         if (BuildingPlacer.Instance != null) BuildingPlacer.Instance.MovingEnded += OnMovingEnded;
 
         // The panel now shows more text than a character used to need: shrink it to fit instead of overflowing
@@ -137,7 +142,10 @@ public class UIManager : MonoBehaviour
     private void RebuildForNewLayout()
     {
         if (openPanel != null && (openPanel == town.Panel || openPanel == recruit.Panel)) TogglePanel(openPanel);
-        foreach (GameObject old in new[] { town.Panel, recruit.Panel })
+        if (cheats != null && openPanel == cheats.Panel) TogglePanel(openPanel);
+        List<GameObject> oldPanels = new List<GameObject> { town.Panel, recruit.Panel };
+        if (cheats != null) oldPanels.Add(cheats.Panel);
+        foreach (GameObject old in oldPanels)
         {
             old.name += "(old)";
             old.SetActive(false);
@@ -145,6 +153,7 @@ public class UIManager : MonoBehaviour
         }
         town = new TownMenu(this, buttonPrefab, characterPanel, assignPanel);
         recruit = new RecruitMenu(this, buttonPrefab, characterPanel, assignPanel);
+        if (cheats != null) cheats = new CheatMenu(this, buttonPrefab, characterPanel, assignPanel);
 
         foreach (Transform container in new[] { buildingButtonContainer, hireButtonContainer })
         {
@@ -230,6 +239,11 @@ public class UIManager : MonoBehaviour
             RebuildForNewLayout();
         }
         if (layout != null) UpdatePlacementBar();
+        if (cheats != null && cheats.Panel.activeInHierarchy && Time.unscaledTime >= nextCheatRefresh)
+        {
+            nextCheatRefresh = Time.unscaledTime + BuildingRefreshInterval;
+            cheats.Refresh();
+        }
 
         // Escape cancels a move in progress, or closes the character panels, or else whatever menu is open
         // (Android's Back button counts as Escape)
@@ -278,6 +292,20 @@ public class UIManager : MonoBehaviour
     }
 
     // Closes the details panel together with the list panel beside it
+    // Closes every menu and cancels any placing, leaving the game running (used when something resets the world)
+    public void CloseEverything()
+    {
+        if (BuildingPlacer.Instance != null) BuildingPlacer.Instance.CancelPlacing();
+        if (RoadPlacer.Instance != null) RoadPlacer.Instance.Cancel();
+        panelCollapsed = false;
+        GameObject menu = openPanel; // CloseCharacterPanels forgets it
+        CloseCharacterPanels();
+        if (menu != null) menu.SetActive(false);
+        openPanel = null;
+        GameManager.Instance.currentGameState = GameManager.gameState.Normal;
+        if (GridlinesGO != null) GridlinesGO.SetActive(false);
+    }
+
     private void CloseCharacterPanels()
     {
         characterPanel.SetActive(false);
@@ -614,6 +642,53 @@ public class UIManager : MonoBehaviour
 
         TMP_Text label = menuButton.GetComponentInChildren<TMP_Text>();
         if (label != null) label.text = text;
+    }
+
+    // The testing tools: a "Cheats" button in the game menu (a copy of its Quit button, below it) opens them.
+    // The old test button that skipped the time of day is part of these tools now, so it goes away.
+    private void SetUpCheats()
+    {
+        Transform canvas = characterPanel.transform.parent;
+        Transform oldTestButton = canvas.Find("TestButtonforFunctions");
+        if (oldTestButton != null) oldTestButton.gameObject.SetActive(false);
+
+        if (!Cheats.Available) return;
+
+        cheats = new CheatMenu(this, buttonPrefab, characterPanel, assignPanel);
+
+        Transform menuPanel = canvas.Find("MenuPanel");
+        Transform quit = menuPanel != null ? menuPanel.Find("QuitButton") : null;
+        if (quit == null)
+        {
+            Debug.LogWarning("Could not find the game menu's Quit button to copy, so there is no Cheats button.");
+            return;
+        }
+
+        GameObject cheatsButton = Instantiate(quit.gameObject, menuPanel);
+        cheatsButton.name = "CheatsButton";
+        RectTransform quitRect = quit.GetComponent<RectTransform>();
+        RectTransform rect = cheatsButton.GetComponent<RectTransform>();
+        float step = quitRect.sizeDelta.y + 10f;
+        rect.anchoredPosition = quitRect.anchoredPosition + new Vector2(0f, -step);
+        RectTransform menuRect = menuPanel.GetComponent<RectTransform>();
+        if (menuRect != null) menuRect.sizeDelta += new Vector2(0f, step); // the panel grows upward (its pivot is at the bottom)
+
+        Button button = cheatsButton.GetComponent<Button>();
+        for (int i = 0; i < button.onClick.GetPersistentEventCount(); i++)
+        {
+            button.onClick.SetPersistentListenerState(i, UnityEventCallState.Off);
+        }
+        button.onClick.AddListener(ToggleCheatMenu);
+        TMP_Text label = cheatsButton.GetComponentInChildren<TMP_Text>();
+        if (label != null) label.text = "Cheats";
+    }
+
+    public void ToggleCheatMenu()
+    {
+        if (cheats == null) return;
+        bool opening = !cheats.Panel.activeInHierarchy;
+        TogglePanel(cheats.Panel);
+        if (opening) cheats.Show();
     }
 
     public void ToggleRecruitMenu()
