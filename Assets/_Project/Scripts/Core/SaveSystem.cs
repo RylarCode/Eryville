@@ -24,6 +24,12 @@ public static class SaveSystem
 
     public static bool Save(string fileName = DefaultFileName)
     {
+        if (StressTest.IsActive)
+        {
+            Debug.LogWarning("Not saving: a stress test is running (Clear it first), so its characters and buildings do not end up in the save.");
+            return false;
+        }
+
         string path = PathFor(fileName);
         try
         {

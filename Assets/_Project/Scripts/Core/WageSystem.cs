@@ -41,7 +41,7 @@ public class WageSystem : MonoBehaviour
 
     private void OnTimeOfDayChanged(TimeOfDay time)
     {
-        if (time == TimeOfDay.Morning) RunPayroll();
+        if (time == TimeOfDay.Morning && !StressTest.IsActive) RunPayroll(); // a stress test makes the days fly by: no wages meanwhile
     }
 
     // What everyone costs per day
