@@ -29,6 +29,14 @@ public class BuildingPlacer : MonoBehaviour, IPlacementMode
     // Raised when move mode ends, whether the building was dropped or the move cancelled
     public event System.Action MovingEnded;
 
+    // Raised when placing a new building ends (it was built, or the player cancelled)
+    public event System.Action PlacingEnded;
+
+    // On a touch screen the building is not put down by the tap that aims it: the finger drags the ghost
+    // around and a separate Place button builds it where the ghost is. Set by the UI.
+    public bool RequireConfirm { get; set; }
+    private Vector3Int? ghostCell;   // the cell the ghost is over right now
+
     private BuildingType ActiveType => moveActive && buildingToMove != null ? buildingToMove.buildingType : buildingToPlace;
 
     // Optional: Visual feedback for placement
@@ -111,6 +119,13 @@ public class BuildingPlacer : MonoBehaviour, IPlacementMode
 
         buildingToPlace = buildingSO;
         ShowIndicator(buildingSO);
+        if (RequireConfirm) PutGhostInView();
+    }
+
+    // With nothing pointing at the map yet, the ghost starts in the middle of the screen
+    private void PutGhostInView()
+    {
+        HandlePointerMove(new Vector2(Screen.width * 0.5f, Screen.height * 0.6f));
     }
 
     // Activates the ghost and sizes it for the given building type
@@ -154,6 +169,7 @@ public class BuildingPlacer : MonoBehaviour, IPlacementMode
 
         ShowIndicator(building.buildingType);
         if (currentIndicatorInstance != null) currentIndicatorInstance.transform.position = building.transform.position;
+        if (RequireConfirm) PutGhostInView();
     }
 
     public void CancelMoving()
@@ -169,7 +185,20 @@ public class BuildingPlacer : MonoBehaviour, IPlacementMode
         {
             buildingToPlace = null;
             if (currentIndicatorInstance != null) currentIndicatorInstance.SetActive(false);
+            PlacingEnded?.Invoke();
         }
+    }
+
+    // Builds (or moves) at the cell the ghost is over. For touch screens, where a Place button does this.
+    public bool ConfirmPlacement()
+    {
+        if (!IsPlacing || !ghostCell.HasValue) return false;
+
+        bool wasMoving = moveActive;
+        Vector3Int cell = ghostCell.Value;
+        if (wasMoving) TryMoveBuilding(cell);
+        else TryPlaceBuilding(cell);
+        return wasMoving ? !moveActive : buildingToPlace == null;
     }
 
     private void EndMove()
@@ -193,6 +222,7 @@ public class BuildingPlacer : MonoBehaviour, IPlacementMode
 
         Vector3 worldPosition = mainCamera.ScreenToWorldPoint(new Vector3(screenPosition.x, screenPosition.y, mainCamera.nearClipPlane + 10)); // +10 to be in front of background
         Vector3Int cellPosition = buildingGrid.WorldToCell(worldPosition);
+        ghostCell = cellPosition;
 
         currentIndicatorInstance.transform.position = GetBuildingWorldPosition(cellPosition, type.size);
 
@@ -213,6 +243,12 @@ public class BuildingPlacer : MonoBehaviour, IPlacementMode
         }
 
         // Convert screen pos to world pos, then to grid cell
+        if (RequireConfirm)
+        {
+            HandlePointerMove(screenPosition); // aim only; the Place button does the building
+            return;
+        }
+
         Vector3 worldPosition = mainCamera.ScreenToWorldPoint(new Vector3(screenPosition.x, screenPosition.y, mainCamera.nearClipPlane + 10));
         Vector3Int cellPosition = buildingGrid.WorldToCell(worldPosition);
 
@@ -254,6 +290,7 @@ public class BuildingPlacer : MonoBehaviour, IPlacementMode
         // 5. Deselect building after placement (optional, maybe allow multi-place)
         buildingToPlace = null;
         if (currentIndicatorInstance != null) currentIndicatorInstance.SetActive(false);
+        PlacingEnded?.Invoke();
         Debug.Log($"Placed {newBuilding.name} successfully.");
     }
 

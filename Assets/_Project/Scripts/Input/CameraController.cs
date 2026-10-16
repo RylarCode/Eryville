@@ -21,7 +21,16 @@ public class CameraController : MonoBehaviour
     // Jumps the camera so the given world position is in the middle of the view
     public void FocusOn(Vector3 world)
     {
-        transform.position = new Vector3(world.x, world.y, transform.position.z);
+        FocusOn(world, 0f);
+    }
+
+    // Same, but the target ends up higher on the screen: screenLift is the share of the screen height above the centre
+    // (0.2 puts it 20% of the screen above the middle, clear of a menu sheet covering the bottom of the screen)
+    public void FocusOn(Vector3 world, float screenLift)
+    {
+        if (cam == null) cam = Camera.main;
+        float lift = cam != null ? screenLift * 2f * cam.orthographicSize : 0f;
+        transform.position = new Vector3(world.x, world.y - lift, transform.position.z);
     }
 
     private void Awake()
@@ -30,6 +39,26 @@ public class CameraController : MonoBehaviour
         input = new PlayerInputActions();
         cam = Camera.main;
         targetPosition = transform.position;
+        if (GetComponent<TouchCameraControls>() == null) gameObject.AddComponent<TouchCameraControls>(); // drag / pinch on touch screens
+    }
+
+    // Moves the view so the world follows the fingers: dragging right by N pixels shows what is N pixels further left
+    public void PanByPixels(Vector2 pixels)
+    {
+        if (cam == null) cam = Camera.main;
+        if (cam == null || Screen.height <= 0) return;
+
+        float worldPerPixel = 2f * cam.orthographicSize / Screen.height;
+        transform.position += new Vector3(-pixels.x * worldPerPixel, -pixels.y * worldPerPixel, 0f);
+    }
+
+    // Zooms in when ratio is above 1 (the fingers moved apart), out when below
+    public void ZoomBy(float ratio)
+    {
+        if (cam == null) cam = Camera.main;
+        if (cam == null || ratio <= 0f) return;
+
+        cam.orthographicSize = Mathf.Clamp(cam.orthographicSize / ratio, zoomLimits.x, zoomLimits.y);
     }
 
     private void OnEnable()

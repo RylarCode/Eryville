@@ -67,7 +67,7 @@ public class InputManager : MonoBehaviour
                 if (candidate != null && (target == null || candidate.ClickPriority > target.ClickPriority)) target = candidate;
             }
 
-            if (EventSystem.current.IsPointerOverGameObject())
+            if (UiHit.IsOver(pendingClick.Value))
             {
                 //Debug.Log("Clicked on UI — skip placing.");
             }

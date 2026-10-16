@@ -47,6 +47,10 @@ public class UIManager : MonoBehaviour
     private float nextRecruitRefresh;
     private const float BuildingRefreshInterval = 0.5f;
 
+    // Phone layout: the screen-shape dependent layout, and whether a menu was tucked away while placing something
+    private UILayout layout;
+    private bool panelCollapsed;
+
     // Gridlines
     [Header("Gridlines")]
     [SerializeField] private GameObject GridlinesGO; // Assign GridlinesTilemap
@@ -95,6 +99,10 @@ public class UIManager : MonoBehaviour
             if (found != null) assignJobButton = found.gameObject;
         }
 
+        layout = new UILayout(characterPanel.transform.parent, buttonPrefab);
+        layout.OnBarConfirm = ConfirmPlacementFromBar;
+        layout.OnBarCancel = CancelPlacementFromBar;
+
         MenuPanels.ConfigureListContent(assignButtonContainer);
         CreateMoveButton();
         town = new TownMenu(this, buttonPrefab, characterPanel, assignPanel);
@@ -110,6 +118,99 @@ public class UIManager : MonoBehaviour
 
         GenerateBuildingPanelButtons();
         GenerateHirePanelButtons();
+        CharacterManager.Instance.RosterChanged += RefreshHireButtons;
+
+        if (BuildingPlacer.Instance != null) BuildingPlacer.Instance.PlacingEnded += OnPlacementEnded;
+        if (RoadPlacer.Instance != null) RoadPlacer.Instance.ModeEnded += OnPlacementEnded;
+
+        layout.Apply();
+        ApplyTouchMode();
+    }
+
+    // On a phone the finger only aims and a Place button builds
+    private void ApplyTouchMode()
+    {
+        if (BuildingPlacer.Instance != null) BuildingPlacer.Instance.RequireConfirm = layout.IsPortrait;
+    }
+
+    // The screen changed between portrait and landscape: menus and cards were sized for the old shape, so make them again
+    private void RebuildForNewLayout()
+    {
+        if (openPanel != null && (openPanel == town.Panel || openPanel == recruit.Panel)) TogglePanel(openPanel);
+        foreach (GameObject old in new[] { town.Panel, recruit.Panel })
+        {
+            old.name += "(old)";
+            old.SetActive(false);
+            Destroy(old);
+        }
+        town = new TownMenu(this, buttonPrefab, characterPanel, assignPanel);
+        recruit = new RecruitMenu(this, buttonPrefab, characterPanel, assignPanel);
+
+        foreach (Transform container in new[] { buildingButtonContainer, hireButtonContainer })
+        {
+            foreach (Transform card in container)
+            {
+                card.gameObject.SetActive(false);
+                Destroy(card.gameObject);
+            }
+        }
+        hireButtons.Clear();
+        GenerateBuildingPanelButtons();
+        GenerateHirePanelButtons();
+
+        layout.Apply();
+    }
+
+    // --- Placing on a phone ---
+
+    // Choosing something to place hides the menu so the map is visible; the game stays paused until placing ends
+    private void CollapsePanelForPlacement()
+    {
+        if (!layout.IsPortrait || openPanel == null || !openPanel.activeSelf) return;
+        openPanel.SetActive(false);
+        panelCollapsed = true;
+    }
+
+    // Placing ended (built, cancelled, or a menu took over): if the menu was tucked away, the menu mode ends with it
+    private void OnPlacementEnded()
+    {
+        if (!panelCollapsed) return;
+        panelCollapsed = false;
+        openPanel = null;
+        GameManager.Instance.currentGameState = GameManager.gameState.Normal;
+        if (GridlinesGO != null) GridlinesGO.SetActive(false);
+    }
+
+    private void ConfirmPlacementFromBar()
+    {
+        BuildingPlacer buildings = BuildingPlacer.Instance;
+        if (buildings != null && buildings.IsPlacing) buildings.ConfirmPlacement();
+        else if (RoadPlacer.Instance != null && RoadPlacer.Instance.IsPlacing) RoadPlacer.Instance.Cancel(); // "Done"
+    }
+
+    private void CancelPlacementFromBar()
+    {
+        if (BuildingPlacer.Instance != null) BuildingPlacer.Instance.CancelPlacing();
+    }
+
+    private void UpdatePlacementBar()
+    {
+        PlacementBar bar = layout.Bar;
+        if (bar == null) return;
+
+        BuildingPlacer buildings = BuildingPlacer.Instance;
+        bool placingBuilding = buildings != null && buildings.IsPlacing;
+        bool placingRoad = RoadPlacer.Instance != null && RoadPlacer.Instance.IsPlacing;
+        bool menuInTheWay = openPanel != null && openPanel.activeInHierarchy;
+
+        if (layout.IsPortrait && (placingBuilding || placingRoad) && !menuInTheWay)
+        {
+            bar.Show(placingBuilding ? (buildings.IsMoving ? "Move here" : "Place") : "Done", placingBuilding);
+        }
+        else
+        {
+            bar.Hide();
+        }
     }
 
     private void OnDestroy()
@@ -117,14 +218,25 @@ public class UIManager : MonoBehaviour
         if (InputManager.Instance != null) InputManager.Instance.OnPointerClick -= HandleWorldClick;
         if (BuildingPlacer.Instance != null) BuildingPlacer.Instance.MovingEnded -= OnMovingEnded;
         if (CharacterManager.Instance != null) CharacterManager.Instance.RosterChanged -= RefreshHireButtons;
+        if (BuildingPlacer.Instance != null) BuildingPlacer.Instance.PlacingEnded -= OnPlacementEnded;
+        if (RoadPlacer.Instance != null) RoadPlacer.Instance.ModeEnded -= OnPlacementEnded;
     }
 
     private void Update()
     {
+        if (layout != null && layout.Tick())
+        {
+            ApplyTouchMode();
+            RebuildForNewLayout();
+        }
+        if (layout != null) UpdatePlacementBar();
+
         // Escape cancels a move in progress, or closes the character panels, or else whatever menu is open
+        // (Android's Back button counts as Escape)
         if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
         {
             if (RoadPlacer.Instance != null && RoadPlacer.Instance.IsPlacing) RoadPlacer.Instance.Cancel();
+            else if (panelCollapsed && BuildingPlacer.Instance != null && BuildingPlacer.Instance.IsPlacing) BuildingPlacer.Instance.CancelPlacing();
             else if (BuildingPlacer.Instance != null && BuildingPlacer.Instance.IsMoving) BuildingPlacer.Instance.CancelMoving();
             else if (CharacterPanelsOpen) CloseCharacterPanels();
             else if (openPanel != null) TogglePanel(openPanel);
@@ -203,6 +315,7 @@ public class UIManager : MonoBehaviour
 
     public void TogglePanel(GameObject panel)
     {
+        panelCollapsed = false; // opening or closing a menu by hand ends the tucked-away state
         if (!panel.activeInHierarchy)
         {
             //Debug.Log("Opening Menu" + panel.name);
@@ -247,7 +360,11 @@ public class UIManager : MonoBehaviour
 
             // Capture the variable for the listener
             BuildingType captured = building;
-            button.onClick.AddListener(() => BuildingPlacer.Instance.SelectBuildingToPlace(captured));
+            button.onClick.AddListener(() =>
+            {
+                BuildingPlacer.Instance.SelectBuildingToPlace(captured);
+                CollapsePanelForPlacement();
+            });
         }
 
         GenerateRoadButtons();
@@ -263,11 +380,19 @@ public class UIManager : MonoBehaviour
             GameObject buttonGO = MenuPanels.MakeCard(buttonPrefab, buildingButtonContainer, $"{road.displayName}Button", road.sprite, $"{road.displayName} ({road.goldCost}G)");
 
             RoadType captured = road;
-            buttonGO.GetComponent<Button>().onClick.AddListener(() => RoadPlacer.Instance.StartPainting(captured));
+            buttonGO.GetComponent<Button>().onClick.AddListener(() =>
+            {
+                RoadPlacer.Instance.StartPainting(captured);
+                CollapsePanelForPlacement();
+            });
         }
 
         GameObject eraser = MenuPanels.MakeCard(buttonPrefab, buildingButtonContainer, "RemoveRoadButton", null, "Remove Road");
-        eraser.GetComponent<Button>().onClick.AddListener(() => RoadPlacer.Instance.StartErasing());
+        eraser.GetComponent<Button>().onClick.AddListener(() =>
+        {
+            RoadPlacer.Instance.StartErasing();
+            CollapsePanelForPlacement();
+        });
     }
 
     // One hire button per character type; each shows how many you own out of the limit and
@@ -293,7 +418,6 @@ public class UIManager : MonoBehaviour
             button.onClick.AddListener(() => CharacterManager.Instance.Hire(character, new Vector3(0,0,0)));
         }
 
-        CharacterManager.Instance.RosterChanged += RefreshHireButtons;
         RefreshHireButtons();
     }
 

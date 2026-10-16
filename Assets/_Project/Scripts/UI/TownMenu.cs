@@ -158,6 +158,9 @@ public class TownMenu
 
     private static void Focus(Vector3 world)
     {
-        if (CameraController.Instance != null) CameraController.Instance.FocusOn(world);
+        if (CameraController.Instance == null) return;
+        // On a phone the details sheet covers the lower part of the screen: look at the target from higher up
+        bool sheet = UILayout.Instance != null && UILayout.Instance.IsPortrait;
+        CameraController.Instance.FocusOn(world, sheet ? 0.2f : 0f);
     }
 }

@@ -15,6 +15,7 @@ public class RoadPlacer : MonoBehaviour, IPlacementMode
     private RoadType paintType;
 
     private bool stroking;          // a press has started a stroke that has not been released yet
+    private bool touchStroke;       // the stroke is a finger drag (a touch screen has no "button held" to ask the InputManager about)
     private Vector2Int lastCell;
     private bool outOfMoneyLogged;
 
@@ -85,6 +86,7 @@ public class RoadPlacer : MonoBehaviour, IPlacementMode
         if (mode == Mode.None) return;
         mode = Mode.None;
         stroking = false;
+        touchStroke = false;
         if (cursor != null) cursor.SetActive(false);
         ModeEnded?.Invoke();
     }
@@ -121,7 +123,7 @@ public class RoadPlacer : MonoBehaviour, IPlacementMode
         MoveCursor(cell);
 
         InputManager input = InputManager.Instance;
-        if (stroking && input != null && input.IsPointerHeld && cell != lastCell)
+        if (stroking && ((input != null && input.IsPointerHeld) || touchStroke) && cell != lastCell)
         {
             // Fast drags jump over cells: fill in the straight line from where the last one was
             foreach (Vector2Int onTheWay in Line(lastCell, cell))
@@ -134,6 +136,27 @@ public class RoadPlacer : MonoBehaviour, IPlacementMode
 
     private void HandleRelease(Vector2 screenPosition)
     {
+        stroking = false;
+    }
+
+    // --- Finger strokes (a touch drag paints or erases like a held mouse button does) ---
+
+    public void BeginTouchStroke(Vector2 screenPosition)
+    {
+        if (!IsPlacing) return;
+        touchStroke = true;
+        HandlePress(screenPosition);
+    }
+
+    public void ContinueTouchStroke(Vector2 screenPosition)
+    {
+        if (!IsPlacing || !touchStroke) return;
+        HandleMove(screenPosition);
+    }
+
+    public void EndTouchStroke()
+    {
+        touchStroke = false;
         stroking = false;
     }
 

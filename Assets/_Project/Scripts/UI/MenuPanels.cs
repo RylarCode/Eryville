@@ -10,9 +10,12 @@ using UnityEngine.UI;
 //    that replace the old button prefab, whose caption sat on top of its picture.
 public static class MenuPanels
 {
-    public const float HeaderRowHeight = 34f;
-    public const float HeaderSpacing = 6f;
-    public const float RowHeight = 44f;
+    // Everything below is sized for a mouse on a desktop window. On a phone (portrait layout) the same
+    // things are made bigger by Scale, so they are as large as a finger needs.
+    public static float Scale => UILayout.Instance != null && UILayout.Instance.IsPortrait ? UILayout.TouchScale : 1f;
+    public static float HeaderRowHeight => 34f * Scale;
+    public static float HeaderSpacing => 6f * Scale;
+    public static float RowHeight => 44f * Scale;
 
     private static readonly Color RowColor = new Color(0.96f, 0.96f, 0.96f, 1f);
     private static readonly Color InfoColor = new Color(0.80f, 0.86f, 0.93f, 1f);
@@ -31,11 +34,15 @@ public static class MenuPanels
         RectTransform detailsRect = detailsPanel.GetComponent<RectTransform>();
         if (detailsRect != null)
         {
-            rect.anchorMin = detailsRect.anchorMin;
-            rect.anchorMax = detailsRect.anchorMax;
-            rect.pivot = detailsRect.pivot;
-            rect.anchoredPosition = detailsRect.anchoredPosition;
-            rect.sizeDelta = detailsRect.sizeDelta;
+            // The slot as the scene has it (not as a phone layout may have moved it): the layout places the panel itself
+            if (UILayout.Instance == null || !UILayout.Instance.CopyOriginalRect(detailsRect, rect))
+            {
+                rect.anchorMin = detailsRect.anchorMin;
+                rect.anchorMax = detailsRect.anchorMax;
+                rect.pivot = detailsRect.pivot;
+                rect.anchoredPosition = detailsRect.anchoredPosition;
+                rect.sizeDelta = detailsRect.sizeDelta;
+            }
         }
         Image detailsImage = detailsPanel.GetComponent<Image>();
         if (detailsImage != null)
@@ -62,8 +69,8 @@ public static class MenuPanels
         rect.anchorMin = new Vector2(0f, 1f);
         rect.anchorMax = new Vector2(1f, 1f);
         rect.pivot = new Vector2(0.5f, 1f);
-        rect.anchoredPosition = new Vector2(0f, -10f);
-        rect.sizeDelta = new Vector2(-20f, HeaderHeight(rows));
+        rect.anchoredPosition = new Vector2(0f, -10f * Scale);
+        rect.sizeDelta = new Vector2(-20f * Scale, HeaderHeight(rows));
         VerticalLayoutGroup layout = header.GetComponent<VerticalLayoutGroup>();
         layout.spacing = HeaderSpacing;
         layout.childControlWidth = true;
@@ -94,7 +101,7 @@ public static class MenuPanels
             button.onClick.AddListener(() => onClick());
         }
 
-        return AddLabel(cell.transform, buttonPrefab, 9f, 16f, TextAlignmentOptions.Center, 4f, 4f);
+        return AddLabel(cell.transform, buttonPrefab, 9f * Scale, 16f * Scale, TextAlignmentOptions.Center, 4f * Scale, 4f * Scale);
     }
 
     private static Transform NewHeaderRow(Transform header)
@@ -125,8 +132,8 @@ public static class MenuPanels
             RectTransform scrollRect = scroll.GetComponent<RectTransform>();
             scrollRect.anchorMin = new Vector2(0f, 0f);
             scrollRect.anchorMax = new Vector2(1f, 1f);
-            scrollRect.offsetMin = new Vector2(10f, 10f);
-            scrollRect.offsetMax = new Vector2(-10f, -(headerHeight + 20f));
+            scrollRect.offsetMin = new Vector2(10f * Scale, 10f * Scale);
+            scrollRect.offsetMax = new Vector2(-10f * Scale, -(headerHeight + 20f * Scale));
             content = scroll.transform.Find("Viewport/Content");
             if (content != null)
             {
@@ -148,7 +155,7 @@ public static class MenuPanels
     {
         VerticalLayoutGroup layout = content.GetComponent<VerticalLayoutGroup>();
         if (layout == null) layout = content.gameObject.AddComponent<VerticalLayoutGroup>();
-        layout.spacing = 4f;
+        layout.spacing = 4f * Scale;
         layout.childControlWidth = true;
         layout.childControlHeight = true;
         layout.childForceExpandWidth = true;
@@ -188,8 +195,8 @@ public static class MenuPanels
             button.targetGraphic = image;
         }
 
-        if (icon != null) AddIcon(row.transform, icon, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(36f, 36f), new Vector2(6f, 0f));
-        AddLabel(row.transform, buttonPrefab, 10f, 16f, TextAlignmentOptions.Left, icon != null ? 48f : 8f, 6f).text = text;
+        if (icon != null) AddIcon(row.transform, icon, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(36f * Scale, 36f * Scale), new Vector2(6f * Scale, 0f));
+        AddLabel(row.transform, buttonPrefab, 10f * Scale, 16f * Scale, TextAlignmentOptions.Left, (icon != null ? 48f : 8f) * Scale, 6f * Scale).text = text;
         return row;
     }
 
@@ -208,8 +215,8 @@ public static class MenuPanels
         labelRect.offsetMax = new Vector2(-2f, -2f);
         label.text = text;
         label.enableAutoSizing = true;
-        label.fontSizeMin = 8f;
-        label.fontSizeMax = 18f;
+        label.fontSizeMin = 8f * Scale;
+        label.fontSizeMax = 18f * Scale;
         label.color = TextColor;
         label.alignment = TextAlignmentOptions.Center;
 
@@ -219,6 +226,22 @@ public static class MenuPanels
             picture.transform.SetAsFirstSibling();
         }
         return card;
+    }
+
+    // A big flat button for a bar (Place / Cancel): shares the width of its row. Returns the object; its label is the TMP_Text child.
+    public static GameObject MakeBarButton(GameObject fontSource, Transform parent, string name, string text, Action onClick)
+    {
+        GameObject go = new GameObject(name, typeof(RectTransform), typeof(Image), typeof(LayoutElement));
+        go.transform.SetParent(parent, false);
+        Image image = go.GetComponent<Image>();
+        image.color = RowColor;
+        LayoutElement element = go.GetComponent<LayoutElement>();
+        element.flexibleWidth = 1f;
+        Button button = go.AddComponent<Button>();
+        button.targetGraphic = image;
+        if (onClick != null) button.onClick.AddListener(() => onClick());
+        AddLabel(go.transform, fontSource, 12f * Scale, 22f * Scale, TextAlignmentOptions.Center, 6f * Scale, 6f * Scale).text = text;
+        return go;
     }
 
     // Greys a button's text along with the button itself, so a disabled button reads as disabled
