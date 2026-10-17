@@ -11,6 +11,29 @@ public static class Cheats
 
     // --- Time ---
 
+    // Lighting: switch the day / night tint off, or look at one hour of the day (every tap moves it 3 hours on; after the last it follows the clock again)
+    public static void ToggleLighting()
+    {
+        if (DayNightCycle.Instance != null) DayNightCycle.Instance.LightingOn = !DayNightCycle.Instance.LightingOn;
+    }
+
+    public static void CyclePreviewHour()
+    {
+        DayNightCycle cycle = DayNightCycle.Instance;
+        if (cycle == null) return;
+        if (!cycle.PreviewHour.HasValue) cycle.PreviewHour = 0f;
+        else if (cycle.PreviewHour.Value >= 21f) cycle.PreviewHour = null;
+        else cycle.PreviewHour = cycle.PreviewHour.Value + 3f;
+    }
+
+    public static string DescribeLighting()
+    {
+        DayNightCycle cycle = DayNightCycle.Instance;
+        if (cycle == null) return "Lighting: not running";
+        string mode = cycle.PreviewHour.HasValue ? "previewing " : "clock ";
+        return $"Lighting {(cycle.LightingOn ? "on" : "off")}: {mode}{cycle.Hour:00.0}h, {cycle.Stage}";
+    }
+
     public static void NextTimeOfDay()
     {
         GameClock.Instance.Advance();

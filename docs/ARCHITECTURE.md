@@ -53,6 +53,7 @@ Created at runtime (nothing to add to the scene):
 **Core/** - time, resources, saving
 - `GameManager`: `currentGameState` (Normal / Menu), `worldState` (Peace / War), `SimulationPaused`.
 - `GameClock`: the time of day. Two modes: *InGame* (30 s per phase, pauses in menus) or *RealTime* (follows the real clock, never pauses). Raises `TimeOfDayChanged`.
+- `DayNightCycle` / `LightingProfile` / `NightLight`: tint the world through dawn, day, dusk and night from `GameClock.HourOfDay` (`docs/DAY_NIGHT.md`).
 - `ResourceManager`: Gold, Wood, Letters; income tick once a second (sums every building's producer).
 - `WageSystem`: pays every character's daily wage; unpaid characters refuse to work.
 - `SaveSystem` + `SaveData`: builds a `GameData` (version 5) from the managers and rebuilds the world from one. It does no file work itself: it hands text to the backend.
@@ -130,6 +131,7 @@ Data assets (`Assets/_Project/ScriptableObjects`): Buildings (Gold Mine, Lumbery
 | Mood, speed, wage numbers | `CharacterType` (mood profile, speed effects, daily wage) |
 | A new character | Eryville > New Character... (`docs/NEW_CHARACTER.md`) |
 | A character's pictures / animations | `CharacterType` Art section + a Character Animations asset (`docs/NEW_CHARACTER.md`) |
+| Day / night colours, lamps | `LightingProfile` asset + `DayNightCycle.Profile`; `NightLight` (`docs/DAY_NIGHT.md`) |
 | Time-of-day hours | `RealTimeCalendar` |
 | Offline reward | `OfflineProgress` (efficiency, cap) |
 | A new building | Eryville > New Building... (`docs/NEW_BUILDING.md`) |

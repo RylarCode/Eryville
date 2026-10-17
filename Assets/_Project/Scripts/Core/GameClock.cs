@@ -36,6 +36,26 @@ public class GameClock : MonoBehaviour
     public float PhaseProgress => IsRealTime ? (phaseLength > 0f ? Mathf.Clamp(elapsed / phaseLength, 0f, 1f) : 0f)
                                              : (secondsPerPhase > 0f ? elapsed / secondsPerPhase : 0f);
 
+    // Where we are in the day on the clock face, 0..24 (6.5 = half past six in the morning). In real time it is the player's
+    // local time; in the game's own clock each phase covers the hours it stands for, so the day sweeps by in four phases.
+    // Used for the lighting (DayNightCycle).
+    public float HourOfDay
+    {
+        get
+        {
+            if (IsRealTime) return (float)LocalNow.TimeOfDay.TotalHours;
+            float start; float length;
+            switch (Current)
+            {
+                case TimeOfDay.Morning: start = Calendar.morningHour; length = Calendar.afternoonHour - Calendar.morningHour; break;
+                case TimeOfDay.Afternoon: start = Calendar.afternoonHour; length = Calendar.eveningHour - Calendar.afternoonHour; break;
+                case TimeOfDay.Evening: start = Calendar.eveningHour; length = Calendar.nightHour - Calendar.eveningHour; break;
+                default: start = Calendar.nightHour; length = 24f - Calendar.nightHour + Calendar.morningHour; break;
+            }
+            return LightingProfile.Wrap(start + length * Mathf.Clamp(PhaseProgress, 0f, 1f));
+        }
+    }
+
     // Seconds spent in the current phase (saved so a loaded game continues mid-phase)
     public float Elapsed => elapsed;
 
@@ -71,6 +91,7 @@ public class GameClock : MonoBehaviour
             return;
         }
         Instance = this;
+        if (GetComponent<DayNightCycle>() == null) gameObject.AddComponent<DayNightCycle>(); // the lighting follows the clock
 
         int saved = PlayerPrefs.GetInt(ModePreference, (int)defaultMode);
         Mode = Enum.IsDefined(typeof(ClockMode), saved) ? (ClockMode)saved : defaultMode;

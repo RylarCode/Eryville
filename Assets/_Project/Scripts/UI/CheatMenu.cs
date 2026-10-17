@@ -62,6 +62,9 @@ public class CheatMenu
         Add("Skip to next morning (wages are paid)", Cheats.SkipToMorning);
         Add(() => $"Game speed: x{Time.timeScale:0.#} (tap to change)", () => Cheats.CycleGameSpeed());
         Add("Pay wages now", Cheats.RunPayroll);
+        Info(Cheats.DescribeLighting);
+        Add(() => "Lighting (day / night tint): " + (DayNightCycle.Instance != null && DayNightCycle.Instance.LightingOn ? "on" : "off") + " (tap to change)", Cheats.ToggleLighting);
+        Add(() => DayNightCycle.Instance != null && DayNightCycle.Instance.PreviewHour.HasValue ? $"Look at {DayNightCycle.Instance.PreviewHour.Value:0}:00 (tap for 3 hours later)" : "Look at an hour of the day (tap to start)", Cheats.CyclePreviewHour);
 
         Section("Resources");
         Add("+1000 gold", () => Cheats.AddGold(1000));
