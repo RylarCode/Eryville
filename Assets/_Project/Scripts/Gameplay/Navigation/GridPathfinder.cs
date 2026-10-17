@@ -6,7 +6,7 @@ using UnityEngine;
 // it only asks two questions about a cell, "can you walk here?" and "how fast can you walk here?",
 // so it can be tested on its own and does not care whether the speed comes from roads, mud or traffic.
 //
-// - 8 directions; a diagonal step is only allowed if neither side cell is blocked (no cutting corners)
+// - 4 directions (up, down, left, right): characters never walk diagonally
 // - a step takes distance / speed, so a faster road can beat a shorter straight line
 // - any number of start cells and goal cells (e.g. every cell next to a building's walls)
 // - its working arrays are reused between searches, so searching a lot does not create garbage
@@ -15,13 +15,11 @@ public sealed class GridPathfinder
     public delegate bool BlockedFunc(Vector2Int cell);
     public delegate float SpeedFunc(Vector2Int cell);
 
-    private const float Diagonal = 1.41421356f;
     private const float MinSpeed = 0.01f;
 
     private static readonly Vector2Int[] Directions =
     {
         new Vector2Int(1, 0), new Vector2Int(-1, 0), new Vector2Int(0, 1), new Vector2Int(0, -1),
-        new Vector2Int(1, 1), new Vector2Int(1, -1), new Vector2Int(-1, 1), new Vector2Int(-1, -1),
     };
 
     private readonly Vector2Int min;
@@ -119,19 +117,10 @@ public sealed class GridPathfinder
                 Vector2Int next = current + direction;
                 if (!InBounds(next) || isBlocked(next)) continue;
 
-                bool diagonal = direction.x != 0 && direction.y != 0;
-                if (diagonal)
-                {
-                    // no cutting the corner of something solid
-                    Vector2Int sideA = new Vector2Int(current.x + direction.x, current.y);
-                    Vector2Int sideB = new Vector2Int(current.x, current.y + direction.y);
-                    if (isBlocked(sideA) || isBlocked(sideB)) continue;
-                }
-
                 int nextIndex = IndexOf(next);
                 if (closedStamp[nextIndex] == stamp) continue;
 
-                float stepTime = (diagonal ? Diagonal : 1f) / Math.Min(currentSpeed, Speed(next));
+                float stepTime = 1f / Math.Min(currentSpeed, Speed(next));
                 float newCost = cost[currentIndex] + stepTime;
                 if (seenStamp[nextIndex] == stamp && newCost >= cost[nextIndex]) continue;
 
@@ -145,7 +134,7 @@ public sealed class GridPathfinder
         return null; // every reachable cell was tried and none is a goal
     }
 
-    // Lower bound on the time still needed: straight-line (8-direction) distance to the nearest goal at top speed
+    // Lower bound on the time still needed: walking distance (up/down/left/right) to the nearest goal at top speed
     private float Estimate(Vector2Int cell)
     {
         float best = float.MaxValue;
@@ -153,7 +142,7 @@ public sealed class GridPathfinder
         {
             int dx = Math.Abs(goal.x - cell.x);
             int dy = Math.Abs(goal.y - cell.y);
-            float distance = Math.Max(dx, dy) + (Diagonal - 1f) * Math.Min(dx, dy);
+            float distance = dx + dy;
             if (distance < best) best = distance;
         }
         return best / maxSpeed;

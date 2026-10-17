@@ -2,7 +2,7 @@ using System;
 using UnityEngine;
 
 // Shows a character's animations on its body: walking (happy / ordinary / sad by mood, faster or slower with its speed,
-// mirrored to face the way it walks), standing, and the one-off animations for going into and coming out of a building.
+// drawn for the way it faces: up, down, left or right, never mirrored), standing, and the one-off animations for going into and coming out of a building.
 // Added to the body by Character when the character's type has a CharacterAnimationSet; without one nothing changes.
 public class CharacterAnimator : MonoBehaviour
 {
@@ -13,7 +13,10 @@ public class CharacterAnimator : MonoBehaviour
     private Sprite stillSprite;
     private readonly AnimationPlayer player = new AnimationPlayer();
 
+    private Facing facing = Facing.Down;
+
     public AnimationPlayer Player => player;
+    public Facing Facing => facing;
 
     public void Setup(Character character, CharacterMovement movement, SpriteRenderer spriteRenderer, CharacterAnimationSet set, Sprite stillSprite)
     {
@@ -27,13 +30,14 @@ public class CharacterAnimator : MonoBehaviour
     // Whether the character has something to show for this (so the caller can wait for it, or skip it)
     public bool Has(AnimKey key)
     {
-        return set != null && set.Resolve(key) != null;
+        return set != null && set.Resolve(key, Facing.Down) != null;
     }
 
     // Plays the animation once and calls done when it has finished (at once if there is none)
     public void PlayOnce(AnimKey key, Action done)
     {
-        player.PlayOnce(set != null ? set.Resolve(key) : null, done);
+        if (movement != null) facing = movement.Facing;
+        player.PlayOnce(set != null ? set.Resolve(key, facing) : null, done);
     }
 
     public void CancelOneShot()
@@ -46,10 +50,11 @@ public class CharacterAnimator : MonoBehaviour
         if (set == null || spriteRenderer == null || !spriteRenderer.enabled) return; // out of sight: nothing to draw
 
         bool moving = movement != null && movement.IsMoving;
+        if (movement != null) facing = movement.Facing;
         if (!player.OneShotRunning)
         {
             float mood = character != null && character.Owned != null ? character.Owned.Mood : 50f;
-            player.Play(set.Resolve(moving ? set.WalkFor(mood) : AnimKey.Idle));
+            player.Play(set.Resolve(moving ? set.WalkFor(mood) : AnimKey.Idle, facing));
         }
 
         // Walking faster (on a road, or in a good mood) plays the walk faster too
@@ -61,10 +66,5 @@ public class CharacterAnimator : MonoBehaviour
 
         Sprite frame = player.Tick(Time.deltaTime, rate);
         spriteRenderer.sprite = frame != null ? frame : stillSprite;
-
-        if (moving && Mathf.Abs(movement.Direction.x) > 0.01f)
-        {
-            spriteRenderer.flipX = (movement.Direction.x < 0f) == set.facesRight;
-        }
     }
 }

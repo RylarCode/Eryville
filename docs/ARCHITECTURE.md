@@ -57,8 +57,11 @@ Created at runtime (nothing to add to the scene):
 - `WageSystem`: pays every character's daily wage; unpaid characters refuse to work.
 - `SaveSystem` + `SaveData`: builds a `GameData` (version 5) from the managers and rebuilds the world from one. It does no file work itself: it hands text to the backend.
 
-**Gameplay/Characters/ (art)** - see `docs/CHARACTER_ART.md`
-- `CharacterAnimationSet`: a ScriptableObject of flip-book animations (idle, walk, walk happy, walk sad, enter building, exit building) with fallbacks.
+**Gameplay/Characters/ (art)** - see `docs/NEW_CHARACTER.md`
+- `CharacterAnimationSet`: a ScriptableObject of flip-book animations (idle, walk, walk happy, walk sad, enter building, exit building), each drawn in four directions (`DirectionalAnimation`, no mirroring), with fallbacks.
+- `Facing` (Down/Up/Left/Right): characters only walk along axes (the pathfinder uses 4 directions and `CharacterMovement` goes x first, then y), so these are all the directions there are.
+- `AnimationNaming`: fills a set from sprite names like `walk_down_0`. `CharacterChecks`: finds the usual mistakes in character types.
+- `Scripts/Editor/`: *Eryville > New Character...* (`NewCharacterWizard`), *Check Characters*, and the "Fill from sprite sheet" box on animation sets.
 - `AnimationPlayer` (pure frame logic) and `CharacterAnimator` (drives the SpriteRenderer: mood-based walk, mirroring, speed-scaled playback, enter/exit one-shots that `Character` waits for).
 - `CharacterType` also holds `portrait` (full image) and `face` (small icon); both fall back to `sprite`.
 - `UI/RevealPopup`: full-screen reveal after a pull.
@@ -120,7 +123,8 @@ Data assets (`Assets/_Project/ScriptableObjects`): Buildings (Gold Mine, Lumbery
 | Tune a building / character / road | its ScriptableObject in `ScriptableObjects/` |
 | Gacha odds, pity, who can be pulled | `ScriptableObjects/Gacha/TavernPool` and each character's rarity / pull weight |
 | Mood, speed, wage numbers | `CharacterType` (mood profile, speed effects, daily wage) |
-| A character's pictures / animations | `CharacterType` Art section + a Character Animations asset (`docs/CHARACTER_ART.md`) |
+| A new character | Eryville > New Character... (`docs/NEW_CHARACTER.md`) |
+| A character's pictures / animations | `CharacterType` Art section + a Character Animations asset (`docs/NEW_CHARACTER.md`) |
 | Time-of-day hours | `RealTimeCalendar` |
 | Offline reward | `OfflineProgress` (efficiency, cap) |
 | A new menu | follow `TownMenu` / `CheatMenu`; use `MenuPanels` |

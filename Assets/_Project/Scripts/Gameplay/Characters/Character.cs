@@ -278,6 +278,7 @@ public class Character : MonoBehaviour, IClickable
         {
             // Come out of the door first, then walk off
             Vector3[] waypoints = route.Waypoints;
+            if (waypoints.Length > 1) movement.FaceToward(waypoints[1]); // comes out facing the way it is about to walk
             animator.PlayOnce(AnimKey.ExitBuilding, () =>
             {
                 if (CurrentActivity == Activity.Traveling && destination != null) movement.FollowPath(waypoints);

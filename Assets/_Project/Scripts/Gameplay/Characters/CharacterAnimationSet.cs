@@ -24,28 +24,74 @@ public enum AnimKey
     ExitBuilding,   // coming out (plays once, at the door, before walking off)
 }
 
-// All the animations of one character. Every one is optional: a missing one falls back to a plainer one
-// (WalkHappy and WalkSad to Walk, Walk to Idle), and with nothing at all the character keeps its still picture.
-// Give each character type its own set (or share one between similar characters).
+// One animation drawn four times, once for each way the character can face. Nothing is mirrored: each direction has its own pictures.
+[Serializable]
+public class DirectionalAnimation
+{
+    public SpriteAnimation down = new SpriteAnimation();
+    public SpriteAnimation up = new SpriteAnimation();
+    public SpriteAnimation left = new SpriteAnimation();
+    public SpriteAnimation right = new SpriteAnimation();
+
+    public DirectionalAnimation() { }
+
+    // For one-off animations (entering / leaving a building), which play once instead of looping
+    public DirectionalAnimation(bool loop)
+    {
+        down.loop = up.loop = left.loop = right.loop = loop;
+    }
+
+    // Exactly this direction (may be empty)
+    public SpriteAnimation Get(Facing facing)
+    {
+        switch (facing)
+        {
+            case Facing.Up: return up;
+            case Facing.Left: return left;
+            case Facing.Right: return right;
+            default: return down;
+        }
+    }
+
+    // This direction, or if it was not drawn the first one that was (down, up, left, right); null if nothing is drawn at all
+    public SpriteAnimation Resolve(Facing facing)
+    {
+        SpriteAnimation exact = Get(facing);
+        if (exact != null && !exact.IsEmpty) return exact;
+        foreach (Facing other in AllFacings)
+        {
+            SpriteAnimation candidate = Get(other);
+            if (candidate != null && !candidate.IsEmpty) return candidate;
+        }
+        return null;
+    }
+
+    public bool IsEmpty => Resolve(Facing.Down) == null;
+
+    private static readonly Facing[] AllFacings = { Facing.Down, Facing.Up, Facing.Left, Facing.Right };
+}
+
+// All the animations of one character, each in four directions. Every one is optional: a missing one falls back to a
+// plainer one (WalkHappy and WalkSad to Walk, Walk to Idle), a missing direction to a direction that was drawn, and with
+// nothing at all the character keeps its still picture.
+// Give each character type its own set. The quickest way to fill one in is "Fill from sprites" (right-click the asset
+// in the Project window), which reads the names of a sliced sprite sheet: see docs/NEW_CHARACTER.md.
 [CreateAssetMenu(fileName = "NewCharacterAnimations", menuName = "Scriptable Objects/Character Animations")]
 public class CharacterAnimationSet : ScriptableObject
 {
-    public SpriteAnimation idle = new SpriteAnimation();
-    public SpriteAnimation walk = new SpriteAnimation();
-    public SpriteAnimation walkHappy = new SpriteAnimation();
-    public SpriteAnimation walkSad = new SpriteAnimation();
-    public SpriteAnimation enterBuilding = new SpriteAnimation { loop = false };
-    public SpriteAnimation exitBuilding = new SpriteAnimation { loop = false };
+    public DirectionalAnimation idle = new DirectionalAnimation();
+    public DirectionalAnimation walk = new DirectionalAnimation();
+    public DirectionalAnimation walkHappy = new DirectionalAnimation();
+    public DirectionalAnimation walkSad = new DirectionalAnimation();
+    public DirectionalAnimation enterBuilding = new DirectionalAnimation(false);
+    public DirectionalAnimation exitBuilding = new DirectionalAnimation(false);
 
     [Header("Mood")]
     public float happyMood = 70f;   // at or above this the character walks happily
     public float sadMood = 30f;     // at or below this the character walks sadly
 
-    [Header("Drawing")]
-    public bool facesRight = true;  // which way the pictures look; the character is mirrored when it walks the other way
-
-    // The animation made for this exact situation (may be empty)
-    public SpriteAnimation Get(AnimKey key)
+    // The four-direction animation made for this exact situation (may be empty)
+    public DirectionalAnimation Get(AnimKey key)
     {
         switch (key)
         {
@@ -58,19 +104,19 @@ public class CharacterAnimationSet : ScriptableObject
         }
     }
 
-    // The animation to show for this situation, falling back to a plainer one; null if there is none
-    public SpriteAnimation Resolve(AnimKey key)
+    // The animation to show for this situation while facing this way, falling back to a plainer one; null if there is none
+    public SpriteAnimation Resolve(AnimKey key, Facing facing)
     {
-        SpriteAnimation exact = Get(key);
-        if (exact != null && !exact.IsEmpty) return exact;
+        DirectionalAnimation exact = Get(key);
+        if (exact != null && !exact.IsEmpty) return exact.Resolve(facing);
 
         switch (key)
         {
             case AnimKey.WalkHappy:
             case AnimKey.WalkSad:
-                return Resolve(AnimKey.Walk);
+                return Resolve(AnimKey.Walk, facing);
             case AnimKey.Walk:
-                return Resolve(AnimKey.Idle);
+                return Resolve(AnimKey.Idle, facing);
             default:
                 return null;
         }
