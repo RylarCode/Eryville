@@ -89,7 +89,12 @@ public class CheatMenu
         Add(() => "Auto-load and autosave (real time only): " + (PlayerPrefs.GetInt(GameSession.AutoPreference, 1) == 1 ? "on" : "off"), () => Cheats.ToggleAutomaticSession());
         Add("Pretend the game was closed for 3 hours", () => Cheats.SimulateTimeAway(3f));
         Info(() => OfflineProgress.LastReport.seconds > 0f ? "Last time away: " + OfflineProgress.LastReport : "Last time away: nothing yet");
-        Info(() => "Backend: " + Backend.Current.Name);
+        Info(Cheats.DescribeBackend);
+        if (BackendSelector.FirebaseConfigured)
+        {
+            Add(() => BackendSelector.WantsLocal ? "Next start: use the LOCAL backend (tap for Firebase)" : "Next start: use FIREBASE (tap for local)", () => Cheats.ToggleBackendPreference());
+            Add("Forget this device's online account (a new player next start)", Cheats.ForgetAccount, true);
+        }
 
         Section("Recruitment");
         Add("Reset pity and pull count", Cheats.ResetRecruitment);

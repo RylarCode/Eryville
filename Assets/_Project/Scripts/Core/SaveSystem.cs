@@ -129,13 +129,15 @@ public static class SaveSystem
 
     // Asks the backend for the saved game and rebuilds the world from it. Returns whether it worked; with a backend
     // that answers later it returns true once the request is sent.
-    public static bool Load(string fileName = DefaultFileName)
+    // finished (optional) is called with the outcome once the load is over, whenever the backend answers.
+    public static bool Load(string fileName = DefaultFileName, Action<bool> finished = null)
     {
         bool answered = false, ok = false;
         Backend.Current.LoadBlob(SlotFor(fileName), (result, json) =>
         {
             answered = true;
             ok = result.ok && json != null && Apply(json);
+            finished?.Invoke(ok);
         });
         return answered ? ok : true;
     }

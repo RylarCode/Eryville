@@ -79,7 +79,21 @@ public static class Cheats
 
     public static void AddGold(float amount) { ResourceManager.Instance.changeResourceAmount(ResourceManager.Gold, amount); }
     public static void AddWood(float amount) { ResourceManager.Instance.changeResourceAmount(ResourceManager.Wood, amount); }
-    public static void AddLetters(int amount) { ResourceManager.Instance.changeResourceAmount(ResourceManager.Letters, amount); }
+    // With a server that owns the letters, only the server can grant them (and only a development server will)
+    public static void AddLetters(int amount)
+    {
+        IGameBackend backend = Backend.Current;
+        if (!backend.ServerOwnsBalances)
+        {
+            ResourceManager.Instance.changeResourceAmount(ResourceManager.Letters, amount);
+            return;
+        }
+        backend.DevAction(new DevRequest { action = "grantLetters", amount = amount }, response =>
+        {
+            if (response.ok) ResourceManager.Instance.SetResourceAmount(ResourceManager.Letters, response.lettersAfter);
+            else Debug.LogWarning("The server did not grant letters: " + response.error);
+        });
+    }
 
     // Sets gold to exactly zero (to see what happens when wages cannot be paid)
     public static void ZeroGold()
@@ -149,7 +163,37 @@ public static class Cheats
 
     public static void ResetRecruitment()
     {
+        if (Backend.Current.ServerOwnsBalances)
+        {
+            Backend.Current.DevAction(new DevRequest { action = "resetPity" }, response =>
+            {
+                if (!response.ok) Debug.LogWarning("The server did not reset the pity: " + response.error);
+            });
+        }
         if (GachaSystem.Instance != null) GachaSystem.Instance.RestoreState(0, null);
+    }
+
+    // Which backend is in use, and who the player is on it
+    public static string DescribeBackend()
+    {
+        IGameBackend backend = Backend.Current;
+        FirebaseBackend online = backend as FirebaseBackend;
+        string who = online != null && !string.IsNullOrEmpty(online.UserId) ? " as " + online.UserId.Substring(0, Mathf.Min(8, online.UserId.Length)) + "..." : "";
+        return "Backend: " + backend.Name + who + (BackendSelector.FirebaseConfigured ? "" : " (no FirebaseConfig.json: Firebase is not set up)");
+    }
+
+    // Use the local backend even though Firebase is set up (or the other way round). Takes effect at the next start.
+    public static bool ToggleBackendPreference()
+    {
+        BackendSelector.SetLocal(!BackendSelector.WantsLocal);
+        return BackendSelector.WantsLocal;
+    }
+
+    // Makes this device a new player on the server at the next start
+    public static void ForgetAccount()
+    {
+        FirebaseBackend online = Backend.Current as FirebaseBackend;
+        if (online != null) online.Auth.ForgetAccount();
     }
 
     // --- Data ---
@@ -160,6 +204,14 @@ public static class Cheats
     {
         if (StressTest.Instance != null) StressTest.Instance.Clear();
         if (UIManager.Instance != null) UIManager.Instance.CloseEverything();
+        if (Backend.Current.ServerOwnsBalances)
+        {
+            // The server forgets this player's letters, pity and saves too (a development server only)
+            Backend.Current.DevAction(new DevRequest { action = "reset" }, response =>
+            {
+                if (!response.ok) Debug.LogWarning("The server did not reset: " + response.error);
+            });
+        }
 
         CharacterManager.Instance.ClearAll();
         BuildingManager.Instance.ClearAll();

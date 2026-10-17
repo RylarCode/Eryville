@@ -12,6 +12,13 @@ public interface IGameBackend
 {
     string Name { get; }
 
+    // True when the server is the authority for letters, pity and pull counts (the game then shows what the server
+    // says and cannot change them). False for the local stand-in, where the game keeps them itself.
+    bool ServerOwnsBalances { get; }
+
+    // Signs in (if needed) and syncs the clock. Safe to call again.
+    void Connect(Action<BackendResult> done);
+
     // The server's idea of the current time (UTC). Local: the device's clock. Online: the device clock corrected
     // by the difference to the server, so changing the phone's clock does not help a cheater.
     DateTime ServerUtcNow { get; }
@@ -26,6 +33,10 @@ public interface IGameBackend
     void DeleteBlob(string slot, Action<BackendResult> done);
 
     // Things the server decides. The answer says what the player's balances are afterwards; the game shows them.
+    void GetPlayerState(Action<PlayerStateResponse> done);
     void Pull(PullRequest request, Action<PullResponse> done);
-    void BuyLetter(Action<BuyLetterResponse> done);
+    void BuyLetter(BuyLetterRequest request, Action<BuyLetterResponse> done);
+
+    // Testing tools (only development servers accept them)
+    void DevAction(DevRequest request, Action<DevResponse> done);
 }

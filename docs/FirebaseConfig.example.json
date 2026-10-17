@@ -1,0 +1,9 @@
+{
+  "projectId": "YOUR-DEV-PROJECT-ID",
+  "apiKey": "YOUR-WEB-API-KEY",
+  "region": "us-central1",
+  "useEmulator": false,
+  "emulatorHost": "127.0.0.1",
+  "authPort": 9099,
+  "functionsPort": 5001
+}

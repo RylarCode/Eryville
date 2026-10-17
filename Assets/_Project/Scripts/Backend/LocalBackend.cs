@@ -8,6 +8,22 @@ using UnityEngine;
 public class LocalBackend : IGameBackend
 {
     public string Name => "Local";
+    public bool ServerOwnsBalances => false;
+
+    public void Connect(Action<BackendResult> done)
+    {
+        done?.Invoke(BackendResult.Ok());
+    }
+
+    public void GetPlayerState(Action<PlayerStateResponse> done)
+    {
+        done?.Invoke(new PlayerStateResponse()); // nothing to report: the game keeps its own
+    }
+
+    public void DevAction(DevRequest request, Action<DevResponse> done)
+    {
+        done?.Invoke(new DevResponse { ok = false, error = "The local backend has no testing actions: the game changes its own data." });
+    }
 
     public DateTime ServerUtcNow => DateTime.UtcNow;
 
@@ -98,7 +114,7 @@ public class LocalBackend : IGameBackend
         done?.Invoke(gacha != null ? gacha.LocalPull(request) : PullResponse.Failed("Recruitment is not available."));
     }
 
-    public void BuyLetter(Action<BuyLetterResponse> done)
+    public void BuyLetter(BuyLetterRequest request, Action<BuyLetterResponse> done)
     {
         GachaSystem gacha = GachaSystem.Instance;
         done?.Invoke(gacha != null ? gacha.LocalBuyLetter() : BuyLetterResponse.Failed("Recruitment is not available."));

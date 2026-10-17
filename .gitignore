@@ -75,3 +75,13 @@ ignore.conf
 .DS_Store
 Thumbs.db
 Desktop.ini
+
+# Firebase / Cloud Functions
+/firebase/functions/node_modules/
+/firebase/functions/lib/
+/firebase/.firebaserc
+/firebase/functions/.env.*
+!/firebase/functions/.env.example
+firebase-debug.log
+firestore-debug.log
+ui-debug.log

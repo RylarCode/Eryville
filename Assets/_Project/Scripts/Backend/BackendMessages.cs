@@ -9,6 +9,7 @@ public class BackendResult
 {
     public bool ok = true;
     public string error = "";
+    public bool offline;   // true when the server could not be reached at all (as opposed to refusing)
 
     public static BackendResult Ok() { return new BackendResult(); }
     public static BackendResult Fail(string message) { return new BackendResult { ok = false, error = message }; }
@@ -43,10 +44,86 @@ public class PullResponse : BackendResult
 }
 
 [Serializable]
+public class BuyLetterRequest
+{
+    public float clientGold;   // the gold the game says the player has (the server cannot see it, so it bounds it)
+}
+
+[Serializable]
 public class BuyLetterResponse : BackendResult
 {
     public int lettersAfter;
     public float goldAfter;
 
     public static BuyLetterResponse Failed(string message) { return new BuyLetterResponse { ok = false, error = message }; }
+}
+
+// --- The player's record on the server ---
+
+[Serializable]
+public class PlayerStateResponse : BackendResult
+{
+    public int letters;
+    public int totalPulls;
+    public List<int> pity = new List<int>();
+    public long serverMs;       // the server's clock, in milliseconds since 1970 (UTC)
+}
+
+[Serializable]
+public class TimeResponse : BackendResult
+{
+    public long serverMs;
+}
+
+// A saved game on the server. (The save itself is text: the same JSON the game writes to a file.)
+[Serializable]
+public class SaveGameRequest
+{
+    public string slot;
+    public string json;
+}
+
+[Serializable]
+public class SaveGameResponse : BackendResult
+{
+    public long savedAtMs;
+}
+
+[Serializable]
+public class LoadGameRequest
+{
+    public string slot;
+    public bool includeJson = true;
+}
+
+[Serializable]
+public class LoadGameResponse : BackendResult
+{
+    public bool exists;
+    public string json = "";
+    public long savedAtMs;
+    public int letters;
+    public int totalPulls;
+    public List<int> pity = new List<int>();
+    public long serverMs;
+}
+
+[Serializable]
+public class SlotRequest
+{
+    public string slot;
+}
+
+// Testing actions (grant letters, reset); only development servers accept them
+[Serializable]
+public class DevRequest
+{
+    public string action;   // "grantLetters", "resetPity", "reset"
+    public int amount;
+}
+
+[Serializable]
+public class DevResponse : BackendResult
+{
+    public int lettersAfter;
 }

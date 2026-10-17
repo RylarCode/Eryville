@@ -111,7 +111,7 @@ public class GachaSystem : MonoBehaviour
     public bool BuyLetter()
     {
         bool answered = false, success = false;
-        Backend.Current.BuyLetter(response =>
+        Backend.Current.BuyLetter(new BuyLetterRequest { clientGold = ResourceManager.Instance.GetResourceAmount(ResourceManager.Gold) }, response =>
         {
             answered = true;
             success = OnBuyLetterResponse(response);
@@ -292,6 +292,14 @@ public class GachaSystem : MonoBehaviour
         }
         result.AwarenessLevel = target.AwarenessLevel;
         return result;
+    }
+
+    // What the server says about this player (letters, pull count, pity): the game shows it as it is
+    public void ApplyServerState(PlayerStateResponse state)
+    {
+        if (state == null || !state.ok) return;
+        ResourceManager.Instance.SetResourceAmount(ResourceManager.Letters, state.letters);
+        RestoreState(state.totalPulls, state.pity);
     }
 
     // --- Saving ---

@@ -71,7 +71,9 @@ Created at runtime (nothing to add to the scene):
 **Gameplay/Gacha/** - `GachaPool` (SO: characters, rarity odds, pity), `GachaRoller` (pure dice), `GachaSystem` (letters, pulls, duplicates -> self-awareness), `Tavern`, `Rarity`, `SelfAwareness`.
 
 **Backend/** - everything "server-like"
-- `IGameBackend` (the interface), `LocalBackend` (files + device clock + local rolls), `Backend.Current` (which one is in use), `BackendMessages` (request / response data).
+- `IGameBackend` (the interface), `LocalBackend` (files + device clock + local rolls), `Backend.Current` (which one is in use), `BackendMessages` (request / response data), `BackendSelector` (picks Firebase if `Resources/FirebaseConfig.json` exists, else local).
+- `Firebase/`: `FirebaseBackend` (calls the server's functions over HTTP; keeps a copy of saves on the device for offline), `FirebaseAuth` (anonymous sign-in, token renewal), `FirebaseConfig`, `IHttpClient` (+ `UnityHttpClient`), `JsonExtract`.
+- The server itself is in `firebase/` (Cloud Functions in TypeScript, Firestore rules); see `docs/FIREBASE_SETUP.md`.
 - `TimeSources`, `RealTimeCalendar` (real hours -> Morning/Afternoon/Evening/Night, game days), `OfflineProgress` (what buildings made while away), `GameSession` (auto load / save).
 
 **Input/** - `InputManager` (click -> clickable or placement mode), `IClickable` (`Building`, `Character`), `IPlacementMode`, `CameraController`, `TouchGestures` (pure), `TouchCameraControls`, `UiHit`.
@@ -119,7 +121,7 @@ Data assets (`Assets/_Project/ScriptableObjects`): Buildings (Gold Mine, Lumbery
 | Testing | Game menu -> Cheats; the performance panel (tap the fps box) |
 
 ## 6. Known gaps
-- Roster and city are still client-side; only pulls and letters go through the backend contract. The online (Firebase) backend, login and server-side rules are not built yet.
+- Roster, city and gold are still client-side (the server only bounds the gold it is told). Letters, pity, pulls and time are the server's. Not built yet: Google Play Games / Apple sign-in, purchases, App Check, rate limits.
 - Phone layout and touch controls are untested on a real device; the performance budget is unmeasured.
 - The tavern uses the Home sprite as a placeholder; art, sound and a main-menu flow are minimal.
 - Three `FormerlySerializedAs` attributes remain until the project has been re-saved in Unity.

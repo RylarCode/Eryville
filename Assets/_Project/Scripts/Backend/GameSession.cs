@@ -13,6 +13,7 @@ public class GameSession : MonoBehaviour
     public const string AutoPreference = "AutoSession";
 
     public float autosaveSeconds = 60f;
+    public const float OnlineAutosaveSeconds = 180f;
 
     private float sinceSave;
     private bool ready;                 // the first load is done: only then may it save over the file
@@ -72,10 +73,63 @@ public class GameSession : MonoBehaviour
         yield return null; // let every manager finish starting before the saved game is put into them
         if (GameManager.Instance != null)
         {
-            if (Automatic && SaveSystem.HasSave()) SaveSystem.Load();
-            ready = true; // from now on it may save
+            IGameBackend backend = Backend.Current;
+            if (backend.ServerOwnsBalances)
+            {
+                IEnumerator connecting = ConnectToServer(backend);
+                while (connecting.MoveNext()) yield return connecting.Current;
+            }
+
+            if (Automatic)
+            {
+                // Ask whether there is a saved game, and wait for the answer (an online backend answers later)
+                bool asked = false, hasSave = false;
+                backend.HasBlob(SaveSystem.DefaultFileName, has => { asked = true; hasSave = has; });
+                foreach (object frame in WaitUntil(() => asked, 30f)) yield return null;
+
+                bool loaded = !(asked && hasSave);
+                if (!loaded)
+                {
+                    SaveSystem.Load(SaveSystem.DefaultFileName, ok => loaded = true);
+                    foreach (object frame in WaitUntil(() => loaded, 30f)) yield return null;
+                }
+            }
+            ready = true; // from now on it may save (and not before: saving an empty game over the real one would lose it)
         }
         starting = null;
+    }
+
+    // Signs in, syncs the clock and takes the player's letters / pity from the server
+    private IEnumerator ConnectToServer(IGameBackend backend)
+    {
+        bool connected = false;
+        BackendResult connection = null;
+        backend.Connect(result => { connection = result; connected = true; });
+        foreach (object frame in WaitUntil(() => connected, 30f)) yield return null;
+        if (connection == null || !connection.ok)
+        {
+            Debug.LogWarning("Could not connect to the server: " + (connection != null ? connection.error : "no answer") + ". Playing with the copy on this device.");
+            yield break;
+        }
+
+        bool got = false;
+        backend.GetPlayerState(state =>
+        {
+            if (GachaSystem.Instance != null) GachaSystem.Instance.ApplyServerState(state);
+            got = true;
+        });
+        foreach (object frame in WaitUntil(() => got, 30f)) yield return null;
+    }
+
+    // Frames to wait (without freezing the game) until something is true, for at most this many seconds
+    private static System.Collections.IEnumerable WaitUntil(System.Func<bool> condition, float seconds)
+    {
+        float waited = 0f;
+        while (!condition() && waited < seconds)
+        {
+            waited += Time.unscaledDeltaTime;
+            yield return null;
+        }
     }
 
     private void Update()
@@ -83,7 +137,9 @@ public class GameSession : MonoBehaviour
         if (!ready || !Automatic) return;
 
         sinceSave += Time.unscaledDeltaTime;
-        if (sinceSave >= autosaveSeconds) SaveNow();
+        // An online save is a write to the server's database, so it happens less often than saving to a file
+        float interval = Backend.Current.ServerOwnsBalances ? Mathf.Max(autosaveSeconds, OnlineAutosaveSeconds) : autosaveSeconds;
+        if (sinceSave >= interval) SaveNow();
     }
 
     public void SaveNow()

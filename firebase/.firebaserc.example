@@ -1,0 +1,6 @@
+{
+  "projects": {
+    "default": "YOUR-DEV-PROJECT-ID",
+    "dev": "YOUR-DEV-PROJECT-ID"
+  }
+}
