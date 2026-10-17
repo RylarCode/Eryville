@@ -46,9 +46,11 @@ public class GameManager : MonoBehaviour
         GameClock.Instance.Advance();
     }
 
+    // Back to the front page (saves first)
     public void LoadMainMenu()
     {
-        SceneManager.LoadScene("MainMenuScene");
+        if (GameSession.Instance != null) GameSession.Instance.SaveNow();
+        SceneTransition.Go(TitleScreen.TitleSceneName);
     }
 
     public void QuitGame()

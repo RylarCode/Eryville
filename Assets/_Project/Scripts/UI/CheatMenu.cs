@@ -107,6 +107,7 @@ public class CheatMenu
         Add("Delete the save file only", () => Cheats.DeleteSaveFile(), true);
 
         Section("Tools");
+        Add("Back to the title screen (saves first)", () => GameManager.Instance.LoadMainMenu());
         Add("Show / hide the performance panel", () => { if (PerfOverlay.Instance != null) PerfOverlay.Instance.Toggle(); });
     }
 

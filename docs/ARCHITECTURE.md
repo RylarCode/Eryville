@@ -50,6 +50,9 @@ Created at runtime (nothing to add to the scene):
 
 ## 3. The scripts, by folder (`Assets/_Project/Scripts`)
 
+**Menu/** - the title screen (`docs/TITLE_SCREEN.md`)
+- `TitleScreen` (+ `TitleBootstrap`): the front page, built in code in `MainMenuScene`; click anywhere to start. `SceneTransition`: fade out, load, fade in, for every scene change.
+
 **Core/** - time, resources, saving
 - `GameManager`: `currentGameState` (Normal / Menu), `worldState` (Peace / War), `SimulationPaused`.
 - `GameClock`: the time of day. Two modes: *InGame* (30 s per phase, pauses in menus) or *RealTime* (follows the real clock, never pauses). Raises `TimeOfDayChanged`.
