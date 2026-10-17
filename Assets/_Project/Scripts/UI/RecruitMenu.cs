@@ -65,6 +65,7 @@ public class RecruitMenu
     private void OnPulled(List<PullResult> results)
     {
         lastResults = results;
+        ui.ShowReveal(results); // the full pictures of whoever came out
         if (panel != null && panel.activeInHierarchy) Refresh(true);
     }
 
@@ -113,7 +114,7 @@ public class RecruitMenu
         foreach (PullResult result in lastResults)
         {
             PullResult captured = result;
-            AddRow("Result", Describe(result), result.Type != null ? result.Type.sprite : null,
+            AddRow("Result", Describe(result), result.Type != null ? result.Type.FaceOrSprite : null,
                 result.Character != null ? (System.Action)(() => ui.ShowCharacterDetails(captured.Character)) : null);
         }
     }

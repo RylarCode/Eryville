@@ -180,46 +180,69 @@ public class UILayout
             grid.constraintCount = 4;
         }
 
-        // The details sheet: the text on top, the buttons along the bottom, the occupant / job list over the text
-        RectTransform details = Find("CharacterPanel");
-        if (details != null)
-        {
-            RectTransform info = Child(details, "CharacterInfo");
-            if (info != null)
-            {
-                Place(info, new Vector2(0f, 0.26f), new Vector2(1f, 1f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
-                info.offsetMin = new Vector2(24f, 0f);
-                info.offsetMax = new Vector2(-24f, -24f);
-                TMP_Text text = info.GetComponentInChildren<TMP_Text>();
-                if (text != null) { Touch(text); text.enableAutoSizing = true; text.fontSizeMin = 26f; text.fontSizeMax = 56f; }
-            }
-            string[] buttons = { "AssignButton", "MoveButton" };
-            for (int i = 0; i < buttons.Length; i++)
-            {
-                RectTransform button = Child(details, buttons[i]);
-                if (button == null) continue;
-                Place(button, new Vector2(i * 0.5f, 0f), new Vector2((i + 1) * 0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, Gap), new Vector2(-2f * Gap, 120f));
-                Fit(button, 20f, 56f);
-            }
-            RectTransform list = Child(details, "AssignPanel");
-            if (list != null)
-            {
-                Place(list, new Vector2(0f, 0.26f), new Vector2(1f, 1f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
-                list.offsetMin = Vector2.zero;
-                list.offsetMax = Vector2.zero;
-                RectTransform scroll = Child(list, "Scroll View");
-                if (scroll != null)
-                {
-                    Place(scroll, new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
-                    scroll.offsetMin = new Vector2(16f, 16f);
-                    scroll.offsetMax = new Vector2(-16f, -16f);
-                }
-            }
-        }
+        PlaceDetails();
 
         // The Place / Cancel strip sits just above the bottom bar
         if (Bar == null && fontSource != null) Bar = new PlacementBar(canvas, fontSource, () => OnBarConfirm?.Invoke(), () => OnBarCancel?.Invoke());
         if (Bar != null) Place(Bar.Rect, new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, sheetBottom), new Vector2(0f, 130f));
+    }
+
+    // The details sheet: the picture on the left (when the character has one), the text beside it, the buttons along the
+    // bottom, and the occupant / job list over the text
+    private void PlaceDetails()
+    {
+        RectTransform details = Find("CharacterPanel");
+        if (details == null) return;
+
+        float textLeft = detailsHavePortrait ? 0.4f : 0f;
+        RectTransform info = Child(details, "CharacterInfo");
+        if (info != null)
+        {
+            Place(info, new Vector2(textLeft, 0.26f), new Vector2(1f, 1f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+            info.offsetMin = new Vector2(24f, 0f);
+            info.offsetMax = new Vector2(-24f, -24f);
+            TMP_Text text = info.GetComponentInChildren<TMP_Text>();
+            if (text != null) { Touch(text); text.enableAutoSizing = true; text.fontSizeMin = 26f; text.fontSizeMax = 56f; }
+        }
+        RectTransform picture = Child(details, "PortraitImage");
+        if (picture != null)
+        {
+            Place(picture, new Vector2(0f, 0.26f), new Vector2(0.4f, 1f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+            picture.offsetMin = new Vector2(16f, 0f);
+            picture.offsetMax = new Vector2(-8f, -24f);
+        }
+        string[] buttons = { "AssignButton", "MoveButton" };
+        for (int i = 0; i < buttons.Length; i++)
+        {
+            RectTransform button = Child(details, buttons[i]);
+            if (button == null) continue;
+            Place(button, new Vector2(i * 0.5f, 0f), new Vector2((i + 1) * 0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, Gap), new Vector2(-2f * Gap, 120f));
+            Fit(button, 20f, 56f);
+        }
+        RectTransform list = Child(details, "AssignPanel");
+        if (list != null)
+        {
+            Place(list, new Vector2(0f, 0.26f), new Vector2(1f, 1f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+            list.offsetMin = Vector2.zero;
+            list.offsetMax = Vector2.zero;
+            RectTransform scroll = Child(list, "Scroll View");
+            if (scroll != null)
+            {
+                Place(scroll, new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+                scroll.offsetMin = new Vector2(16f, 16f);
+                scroll.offsetMax = new Vector2(-16f, -16f);
+            }
+        }
+    }
+
+    private bool detailsHavePortrait;
+
+    // Whether the character on the details sheet has a picture (the text then makes room for it). Only matters on a phone.
+    public void SetDetailsHavePortrait(bool has)
+    {
+        if (detailsHavePortrait == has) return;
+        detailsHavePortrait = has;
+        if (laidOut && IsPortrait) PlaceDetails();
     }
 
     // Drops the part of the layout that belongs to the old shape (the strip is rebuilt for the new sizes)

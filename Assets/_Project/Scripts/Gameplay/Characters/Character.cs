@@ -33,6 +33,7 @@ public class Character : MonoBehaviour, IClickable
     private Building destination;         // the building we are travelling to
     private Activity activityOnArrival;   // what we start doing when we get there
 
+    private CharacterAnimator animator;           // only when the character's type has animations
     private PathService.PathRequest pendingRoute; // a route we asked for and are still waiting for
     private Building routeOrigin;                 // the building that route starts from (null: from where we stand)
     private Activity routeOriginActivity;         // what we were doing there, to carry on with if there is no way out
@@ -86,6 +87,12 @@ public class Character : MonoBehaviour, IClickable
         movement.offset = new Vector3(((hash >> 4) % 100 / 100f - 0.5f) * 0.3f, ((hash >> 11) % 100 / 100f - 0.5f) * 0.3f, 0f);
 
         spriteRenderer.sprite = owned.Type.sprite;
+        if (owned.Type.animations != null)
+        {
+            animator = GetComponent<CharacterAnimator>();
+            if (animator == null) animator = gameObject.AddComponent<CharacterAnimator>();
+            animator.Setup(this, movement, spriteRenderer, owned.Type.animations, owned.Type.sprite);
+        }
         movement.speed = owned.MoveSpeed;
         owned.StatsChanged += OnStatsChanged;
         schedule = new CharacterSchedule(owned.Type.defaultSchedule); // own copy, so we never edit the asset's list
@@ -236,6 +243,7 @@ public class Character : MonoBehaviour, IClickable
     {
         pendingRoute?.Cancel();
         movement.Stop();
+        animator?.CancelOneShot(); // an unfinished entering / leaving animation no longer applies
 
         routeOrigin = origin;
         if (origin != null) SetVisible(false); // still "inside" until the route is known, then step out at the entrance
@@ -265,6 +273,17 @@ public class Character : MonoBehaviour, IClickable
 
         SetVisible(true);
         if (route.StartsAtBuilding) transform.position = route.Waypoints[0]; // step out of the building at its entrance
+
+        if (route.StartsAtBuilding && animator != null && animator.Has(AnimKey.ExitBuilding))
+        {
+            // Come out of the door first, then walk off
+            Vector3[] waypoints = route.Waypoints;
+            animator.PlayOnce(AnimKey.ExitBuilding, () =>
+            {
+                if (CurrentActivity == Activity.Traveling && destination != null) movement.FollowPath(waypoints);
+            });
+            return;
+        }
         movement.FollowPath(route.Waypoints);
     }
 
@@ -280,8 +299,28 @@ public class Character : MonoBehaviour, IClickable
             return;
         }
 
-        // The assignment may have changed on the way; only start work where we still work
         Activity activity = activityOnArrival;
+        bool goingIn = activity == Activity.Working || activity == Activity.Resting;
+        if (goingIn && animator != null && animator.Has(AnimKey.EnterBuilding))
+        {
+            // Go in through the door first (the character stays in view while it plays), then be inside
+            CurrentActivity = Activity.Idle;
+            animator.PlayOnce(AnimKey.EnterBuilding, () => FinishArrival(place, activity));
+            return;
+        }
+
+        FinishArrival(place, activity);
+    }
+
+    private void FinishArrival(Building place, Activity activity)
+    {
+        if (place == null) // the building was removed while we were going in
+        {
+            CurrentActivity = Activity.Idle;
+            return;
+        }
+
+        // The assignment may have changed on the way; only start work where we still work
         if (activity == Activity.Working && place != WorkBuilding) activity = Activity.Idle;
 
         EnterActivity(activity, place);
@@ -308,6 +347,7 @@ public class Character : MonoBehaviour, IClickable
 
     private void LeaveCurrentActivity()
     {
+        animator?.CancelOneShot();
         if (CurrentActivity == Activity.Working && currentPlace != null) currentPlace.WorkerLeft(this);
         currentPlace = null;
         CurrentActivity = Activity.Idle;

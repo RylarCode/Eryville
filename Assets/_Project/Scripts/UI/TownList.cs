@@ -71,7 +71,7 @@ public static class TownList
         if (c.HomeBuilding == null) label += " - no home";
         if (c.WorkBuilding == null) label += " - no job";
         if (!c.WagePaid) label += " - unpaid";
-        return new TownRow { Key = "c:" + c.Id, Label = label, Sprite = c.Type.sprite, Character = c };
+        return new TownRow { Key = "c:" + c.Id, Label = label, Sprite = c.Type.FaceOrSprite, Character = c };
     }
 
     // --- Buildings ---

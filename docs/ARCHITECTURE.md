@@ -57,6 +57,12 @@ Created at runtime (nothing to add to the scene):
 - `WageSystem`: pays every character's daily wage; unpaid characters refuse to work.
 - `SaveSystem` + `SaveData`: builds a `GameData` (version 5) from the managers and rebuilds the world from one. It does no file work itself: it hands text to the backend.
 
+**Gameplay/Characters/ (art)** - see `docs/CHARACTER_ART.md`
+- `CharacterAnimationSet`: a ScriptableObject of flip-book animations (idle, walk, walk happy, walk sad, enter building, exit building) with fallbacks.
+- `AnimationPlayer` (pure frame logic) and `CharacterAnimator` (drives the SpriteRenderer: mood-based walk, mirroring, speed-scaled playback, enter/exit one-shots that `Character` waits for).
+- `CharacterType` also holds `portrait` (full image) and `face` (small icon); both fall back to `sprite`.
+- `UI/RevealPopup`: full-screen reveal after a pull.
+
 **Gameplay/City/** - buildings and the map
 - `BuildingType` (SO), `Building` (id, cell, workers, residents, which avatars are on site), `BuildingManager` (build / move / remove, registry), `MapGrid` (cells: bounds, buildings, roads, speed), `BuildingPlacer` (placing and moving; ghost; place-and-confirm on phones).
 - Components on building prefabs: `ResourceProducer` (output; only runs with a worker on site), `Housing`, `CityHall`, `Tavern` (marks the recruitment building; gives the spawn point).
@@ -114,6 +120,7 @@ Data assets (`Assets/_Project/ScriptableObjects`): Buildings (Gold Mine, Lumbery
 | Tune a building / character / road | its ScriptableObject in `ScriptableObjects/` |
 | Gacha odds, pity, who can be pulled | `ScriptableObjects/Gacha/TavernPool` and each character's rarity / pull weight |
 | Mood, speed, wage numbers | `CharacterType` (mood profile, speed effects, daily wage) |
+| A character's pictures / animations | `CharacterType` Art section + a Character Animations asset (`docs/CHARACTER_ART.md`) |
 | Time-of-day hours | `RealTimeCalendar` |
 | Offline reward | `OfflineProgress` (efficiency, cap) |
 | A new menu | follow `TownMenu` / `CheatMenu`; use `MenuPanels` |

@@ -13,6 +13,10 @@ public class CharacterMovement : MonoBehaviour
 
     public bool IsMoving { get; private set; }
 
+    // Which way the character moved in the latest frame, and how fast it is going (world units per second, roads included)
+    public Vector2 Direction { get; private set; }
+    public float EffectiveSpeed { get; private set; }
+
     public event Action Arrived;
 
     private IReadOnlyList<Vector3> path;
@@ -84,6 +88,9 @@ public class CharacterMovement : MonoBehaviour
                 budget = 0f;
             }
         }
+        Vector3 moved = position - transform.position;
+        if (moved.sqrMagnitude > 0f) Direction = new Vector2(moved.x, moved.y);
+        EffectiveSpeed = speed * speedMultiplier * terrain;
         transform.position = position;
 
         if (nextWaypoint >= path.Count)

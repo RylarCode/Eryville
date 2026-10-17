@@ -8,7 +8,13 @@ public class CharacterType : ScriptableObject
 {
     public string displayName;
     public int typeId;               // unique per CharacterType asset
-    public Sprite sprite;
+
+    [Header("Art")]
+    public Sprite sprite;            // the small picture of the character in the world (its still picture; animations replace it while walking)
+    public Sprite portrait;          // the full picture: shown when the character is recruited and when you look at it. Optional.
+    public Sprite face;              // just the face, small: for lists and buttons. Optional.
+    public CharacterAnimationSet animations; // walking, walking happy / sad, entering and leaving buildings. Optional.
+
     public int dailyWage = 10;       // gold this character costs every day (paid at the start of each morning)
     public GameObject characterPrefab;
     public enum Role { Resource, Defense, Offense, Others }
@@ -34,6 +40,10 @@ public class CharacterType : ScriptableObject
 
     [Header("Mood")]
     public MoodProfile mood = new MoodProfile();
+
+    // What to show where a picture of the character is needed. Anything left empty falls back to the next best one.
+    public Sprite PortraitOrSprite => portrait != null ? portrait : sprite;
+    public Sprite FaceOrSprite => face != null ? face : PortraitOrSprite;
 
     public List<ScheduleEntry> defaultSchedule;
 

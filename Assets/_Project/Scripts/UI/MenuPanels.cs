@@ -244,6 +244,17 @@ public static class MenuPanels
         return go;
     }
 
+    // A piece of text for a custom layout (the reveal screen): shrinks to fit its rectangle, in the same font as the rest of the UI
+    public static TMP_Text MakeLabel(GameObject fontSource, Transform parent, string name, float minSize, float maxSize, TextAlignmentOptions alignment)
+    {
+        TMP_Text text = AddLabel(parent, fontSource, minSize, maxSize, alignment, 0f, 0f);
+        text.gameObject.name = name;
+        RectTransform rect = text.GetComponent<RectTransform>();
+        rect.offsetMin = Vector2.zero;
+        rect.offsetMax = Vector2.zero;
+        return text;
+    }
+
     // Greys a button's text along with the button itself, so a disabled button reads as disabled
     public static void SetButtonEnabled(Button button, TMP_Text label, bool enabled)
     {

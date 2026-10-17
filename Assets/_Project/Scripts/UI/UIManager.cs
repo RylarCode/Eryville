@@ -46,6 +46,10 @@ public class UIManager : MonoBehaviour
     private RecruitMenu recruit;
     private float nextRecruitRefresh;
 
+    // The screen that shows who was recruited, and the character's full picture on the details panel
+    private RevealPopup reveal;
+    private Image detailsPortrait;
+
     // The testing tools (editor and Development Builds only)
     private CheatMenu cheats;
     private float nextCheatRefresh;
@@ -108,6 +112,8 @@ public class UIManager : MonoBehaviour
         layout.OnBarCancel = CancelPlacementFromBar;
 
         MenuPanels.ConfigureListContent(assignButtonContainer);
+        CreateDetailsPortrait();
+        reveal = new RevealPopup(characterPanel.transform.parent, buttonPrefab);
         CreateMoveButton();
         town = new TownMenu(this, buttonPrefab, characterPanel, assignPanel);
         CreateMenuButton("OpenTownButton", "Town", 1, ToggleTownMenu);
@@ -144,6 +150,8 @@ public class UIManager : MonoBehaviour
         if (openPanel != null && (openPanel == town.Panel || openPanel == recruit.Panel)) TogglePanel(openPanel);
         if (cheats != null && openPanel == cheats.Panel) TogglePanel(openPanel);
         recruit.Dispose();
+        reveal.Destroy();
+        reveal = new RevealPopup(characterPanel.transform.parent, buttonPrefab);
         List<GameObject> oldPanels = new List<GameObject> { town.Panel, recruit.Panel };
         if (cheats != null) oldPanels.Add(cheats.Panel);
         foreach (GameObject old in oldPanels)
@@ -241,6 +249,7 @@ public class UIManager : MonoBehaviour
             RebuildForNewLayout();
         }
         if (layout != null) UpdatePlacementBar();
+        SyncPortraitVisibility();
         if (cheats != null && cheats.Panel.activeInHierarchy && Time.unscaledTime >= nextCheatRefresh)
         {
             nextCheatRefresh = Time.unscaledTime + BuildingRefreshInterval;
@@ -251,7 +260,8 @@ public class UIManager : MonoBehaviour
         // (Android's Back button counts as Escape)
         if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
         {
-            if (RoadPlacer.Instance != null && RoadPlacer.Instance.IsPlacing) RoadPlacer.Instance.Cancel();
+            if (reveal != null && reveal.IsOpen) reveal.Close();
+            else if (RoadPlacer.Instance != null && RoadPlacer.Instance.IsPlacing) RoadPlacer.Instance.Cancel();
             else if (panelCollapsed && BuildingPlacer.Instance != null && BuildingPlacer.Instance.IsPlacing) BuildingPlacer.Instance.CancelPlacing();
             else if (BuildingPlacer.Instance != null && BuildingPlacer.Instance.IsMoving) BuildingPlacer.Instance.CancelMoving();
             else if (CharacterPanelsOpen) CloseCharacterPanels();
@@ -439,7 +449,7 @@ public class UIManager : MonoBehaviour
     {
         foreach (CharacterType character in CharacterManager.Instance.AllCharacters)
         {
-            GameObject buttonGO = MenuPanels.MakeCard(buttonPrefab, hireButtonContainer, $"{character.displayName}Button", character.sprite, character.displayName);
+            GameObject buttonGO = MenuPanels.MakeCard(buttonPrefab, hireButtonContainer, $"{character.displayName}Button", character.FaceOrSprite, character.displayName);
             Button button = buttonGO.GetComponent<Button>();
 
             hireButtons.Add(new HireButton { type = character, button = button, label = buttonGO.GetComponentInChildren<TMP_Text>() });
@@ -496,6 +506,7 @@ public class UIManager : MonoBehaviour
 
         assignPanel.SetActive(false); // the assign-job list only opens when its button is pressed
         ClearList();
+        SetDetailsPortrait(character.Type.PortraitOrSprite);
         if (assignJobButton != null) assignJobButton.SetActive(true);
         if (moveButton != null) moveButton.SetActive(false);
         RefreshCharacterText();
@@ -521,6 +532,7 @@ public class UIManager : MonoBehaviour
         selectedBuilding = building;
         selectedCharacter = null;
 
+        SetDetailsPortrait(null);
         if (assignJobButton != null) assignJobButton.SetActive(false); // assigning a job makes no sense here
         if (moveButton != null) moveButton.SetActive(building.buildingType != null && building.buildingType.movable);
         ClearList();
@@ -606,7 +618,7 @@ public class UIManager : MonoBehaviour
     // One clickable row: clicking it opens that character's details (even if they are hidden inside the building)
     private void AddOccupantButton(OwnedCharacter occupant, string role)
     {
-        GameObject buttonGO = MenuPanels.MakeRow(buttonPrefab, assignButtonContainer, $"{occupant.DisplayName}OccupantButton", $"{occupant.DisplayName} - {role}", occupant.Type.sprite);
+        GameObject buttonGO = MenuPanels.MakeRow(buttonPrefab, assignButtonContainer, $"{occupant.DisplayName}OccupantButton", $"{occupant.DisplayName} - {role}", occupant.Type.FaceOrSprite);
 
         OwnedCharacter captured = occupant;
         buttonGO.GetComponent<Button>().onClick.AddListener(() => ShowCharacterDetails(captured));
@@ -691,6 +703,49 @@ public class UIManager : MonoBehaviour
         bool opening = !cheats.Panel.activeInHierarchy;
         TogglePanel(cheats.Panel);
         if (opening) cheats.Show();
+    }
+
+    // Shows the full pictures of whoever was just recruited, one after another
+    public void ShowReveal(List<PullResult> results)
+    {
+        if (reveal != null) reveal.Show(results);
+    }
+
+    // The character's full picture: beside the details panel on a wide screen, in the left part of the sheet on a phone
+    private void CreateDetailsPortrait()
+    {
+        GameObject go = new GameObject("PortraitImage", typeof(RectTransform), typeof(Image));
+        go.transform.SetParent(characterPanel.transform, false);
+        go.transform.SetAsFirstSibling();
+        RectTransform rect = go.GetComponent<RectTransform>();
+        // Wide screen: just left of the panel (the job list, when open, covers it)
+        rect.anchorMin = new Vector2(0f, 0.5f);
+        rect.anchorMax = new Vector2(0f, 0.5f);
+        rect.pivot = new Vector2(1f, 0.5f);
+        rect.anchoredPosition = new Vector2(-10f, 0f);
+        rect.sizeDelta = new Vector2(300f, 450f);
+        detailsPortrait = go.GetComponent<Image>();
+        detailsPortrait.preserveAspect = true;
+        detailsPortrait.raycastTarget = false;
+        go.SetActive(false);
+    }
+
+    // Shows (or hides, with null) the portrait on the details panel
+    private void SetDetailsPortrait(Sprite sprite)
+    {
+        if (detailsPortrait == null) return;
+        detailsPortrait.sprite = sprite;
+        if (layout != null) layout.SetDetailsHavePortrait(sprite != null);
+        SyncPortraitVisibility();
+    }
+
+    // The portrait shows while a character's details are open (on a wide screen the job list takes its place)
+    private void SyncPortraitVisibility()
+    {
+        if (detailsPortrait == null) return;
+        bool want = detailsPortrait.sprite != null && panelMode == PanelMode.Character && characterPanel.activeInHierarchy;
+        if (want && layout != null && !layout.IsPortrait && assignPanel.activeSelf) want = false;
+        if (detailsPortrait.gameObject.activeSelf != want) detailsPortrait.gameObject.SetActive(want);
     }
 
     public void ToggleRecruitMenu()
