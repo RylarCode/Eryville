@@ -136,13 +136,13 @@ public class BuildingPlacer : MonoBehaviour, IPlacementMode
         currentIndicatorInstance.SetActive(true);
         currentIndicatorInstance.GetComponent<SpriteRenderer>().sprite = type.sprite;
 
-        // Scale the ghost so the sprite covers the building's size in tiles
-        Vector2 spriteWorldSize = type.sprite.bounds.size; // in Unity units
-        currentIndicatorInstance.transform.localScale = new Vector3(
-            type.size.x / spriteWorldSize.x,
-            type.size.y / spriteWorldSize.y,
-            1f
-        );
+        // Size the ghost like the real building will be. A raised (3/4) picture is centred above the building's cells, so the
+        // ghost is shifted by the same amount, and a flat marker shows which cells on the ground it will take.
+        BuildingLayout layout = BuildingLayout.For(type);
+        ghostOffset = layout.ArtOffset;
+        currentIndicatorInstance.transform.localScale = new Vector3(layout.Scale.x, layout.Scale.y, 1f);
+        currentIndicatorInstance.GetComponent<SpriteRenderer>().sortingOrder = DepthSorting.Ghost;
+        ShowFootprintMarker(type, layout);
         SetIndicatorColor(Color.white);
     }
 
@@ -160,7 +160,7 @@ public class BuildingPlacer : MonoBehaviour, IPlacementMode
         buildingToMove = building;
         moveActive = true;
 
-        SpriteRenderer original = building.GetComponent<SpriteRenderer>();
+        SpriteRenderer original = building.Body != null ? building.Body : building.GetComponent<SpriteRenderer>();
         if (original != null)
         {
             movedBuildingOriginalColor = original.color;
@@ -168,7 +168,7 @@ public class BuildingPlacer : MonoBehaviour, IPlacementMode
         }
 
         ShowIndicator(building.buildingType);
-        if (currentIndicatorInstance != null) currentIndicatorInstance.transform.position = building.transform.position;
+        if (currentIndicatorInstance != null) currentIndicatorInstance.transform.position = building.transform.position + (Vector3)ghostOffset;
         if (RequireConfirm) PutGhostInView();
     }
 
@@ -205,7 +205,7 @@ public class BuildingPlacer : MonoBehaviour, IPlacementMode
     {
         if (buildingToMove != null)
         {
-            SpriteRenderer original = buildingToMove.GetComponent<SpriteRenderer>();
+            SpriteRenderer original = buildingToMove.Body != null ? buildingToMove.Body : buildingToMove.GetComponent<SpriteRenderer>();
             if (original != null) original.color = movedBuildingOriginalColor;
         }
         buildingToMove = null;
@@ -224,7 +224,7 @@ public class BuildingPlacer : MonoBehaviour, IPlacementMode
         Vector3Int cellPosition = buildingGrid.WorldToCell(worldPosition);
         ghostCell = cellPosition;
 
-        currentIndicatorInstance.transform.position = GetBuildingWorldPosition(cellPosition, type.size);
+        currentIndicatorInstance.transform.position = GetBuildingWorldPosition(cellPosition, type.size) + (Vector3)ghostOffset;
 
         // Green where the building can go, red where it can not
         Vector2Int anchorCell = new Vector2Int(cellPosition.x, cellPosition.y);
@@ -351,5 +351,30 @@ public class BuildingPlacer : MonoBehaviour, IPlacementMode
         if (currentIndicatorInstance == null) return;
         SpriteRenderer indicator = currentIndicatorInstance.GetComponent<SpriteRenderer>();
         if (indicator != null) indicator.color = new Color(color.r, color.g, color.b, 0.5f);
+        if (footprintMarker != null) footprintMarker.color = new Color(color.r, color.g, color.b, 0.45f);
+    }
+
+    // The ghost's offset from the centre of the building's cells (zero for flat, top-down pictures)
+    private Vector2 ghostOffset;
+    private SpriteRenderer footprintMarker;
+
+    // A one-cell white square stretched over the building's cells, child of the ghost, shown only for raised pictures
+    private void ShowFootprintMarker(BuildingType type, BuildingLayout layout)
+    {
+        if (footprintMarker == null)
+        {
+            GameObject marker = new GameObject("Footprint");
+            marker.transform.SetParent(currentIndicatorInstance.transform, false);
+            footprintMarker = marker.AddComponent<SpriteRenderer>();
+            Texture2D white = Texture2D.whiteTexture;
+            footprintMarker.sprite = Sprite.Create(white, new Rect(0, 0, white.width, white.height), new Vector2(0.5f, 0.5f), white.width); // exactly one unit
+            footprintMarker.sortingOrder = DepthSorting.Ghost - 1;
+        }
+        footprintMarker.gameObject.SetActive(layout.Raised);
+        if (!layout.Raised) return;
+
+        // The ghost's transform is scaled, so what is set here is in the picture's own units
+        footprintMarker.transform.localPosition = new Vector3(-layout.ArtOffset.x / layout.Scale.x, -layout.ArtOffset.y / layout.Scale.y, 0f);
+        footprintMarker.transform.localScale = new Vector3(type.size.x / layout.Scale.x, type.size.y / layout.Scale.y, 1f);
     }
 }

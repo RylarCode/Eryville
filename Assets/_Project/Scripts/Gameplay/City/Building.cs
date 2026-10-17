@@ -24,12 +24,16 @@ public class Building : MonoBehaviour, IClickable
 
     // Where the building is on the grid. Only BuildingManager changes it (Build / Move), together with the cell map.
     public Vector2Int Cell => cell;
-    internal void SetCell(Vector2Int anchorCell) { cell = anchorCell; }
+    internal void SetCell(Vector2Int anchorCell) { cell = anchorCell; UpdateDepth(); }
 
     // Stable identity, for saving and for referring to a building without holding a reference
     public string Id { get; internal set; } = System.Guid.NewGuid().ToString("N");
 
     public string DisplayName => buildingType != null ? buildingType.buildingName : name;
+
+    // The renderer that shows the building: the one on the prefab itself, or (3/4 art, which is raised above the building's
+    // cells) one on a child. Use this, not GetComponent<SpriteRenderer>(), to colour or hide the picture.
+    public SpriteRenderer Body { get; private set; }
 
     // Present only on buildings that produce resources (see ResourceProducer)
     public ResourceProducer Producer { get; private set; }
@@ -45,6 +49,19 @@ public class Building : MonoBehaviour, IClickable
     public IReadOnlyList<OwnedCharacter> Residents => residents;
     public IReadOnlyList<Character> WorkersOnSite => workersOnSite;
 
+    // Avatars resting inside right now (residents at home, or anyone at a place of leisure)
+    private readonly List<Character> resting = new List<Character>();
+    public int RestingInside
+    {
+        get
+        {
+            resting.RemoveAll(avatar => avatar == null);
+            return resting.Count;
+        }
+    }
+    public void RestingArrived(Character avatar) { if (!resting.Contains(avatar)) resting.Add(avatar); }
+    public void RestingLeft(Character avatar) { resting.Remove(avatar); }
+
     // Capacity comes from the BuildingType
     public int WorkerSlots => buildingType != null ? buildingType.workerSlots : 0;
     public int HousingSlots => buildingType != null ? buildingType.housingSlots : 0;
@@ -56,6 +73,18 @@ public class Building : MonoBehaviour, IClickable
     private void Awake()
     {
         Producer = GetComponent<ResourceProducer>();
+        if (Body == null) Body = GetComponent<SpriteRenderer>();
+    }
+
+    // Drawing order: a building is at the front edge of its cells, so characters further down the screen are drawn in front
+    // of it and characters further up (behind it) are hidden by its picture.
+    public void UpdateDepth()
+    {
+        if (buildingType == null) return;
+        int order = DepthSorting.Order(transform.position.y - buildingType.size.y * 0.5f);
+        if (Body != null) Body.sortingOrder = order;
+        SpriteRenderer root = GetComponent<SpriteRenderer>();
+        if (root != null) root.sortingOrder = order; // the click handling reads the order from here
     }
 
     // Optional: Called when placed
@@ -88,25 +117,66 @@ public class Building : MonoBehaviour, IClickable
     {
         buildingType = type;
         cell = anchorCell;
-        GetComponent<SpriteRenderer>().sprite = buildingType.sprite;
-        Vector2 spriteWorldSize = buildingType.sprite.bounds.size; // in Unity units
-        Vector3 scale = new Vector3(
-            buildingType.size.x / spriteWorldSize.x,
-            buildingType.size.y / spriteWorldSize.y,
-            1f
-        );
-        transform.localScale = scale;
-
-        // Adjust the collider to match the intended size
+        SpriteRenderer root = GetComponent<SpriteRenderer>();
+        BuildingLayout layout = BuildingLayout.For(type);
+        Body = root;
         BoxCollider2D collider = GetComponent<BoxCollider2D>();
-        if (collider != null)
+
+        if (layout.Raised)
         {
-            // Since the object is already scaled, divide to counteract it
-            collider.size = new Vector2(
-                buildingType.size.x / scale.x,
-                buildingType.size.y / scale.y
-            );
-            collider.offset = Vector2.zero; // Optional: reset offset
+            // 3/4 art: the picture rises above the cells, so it lives on a child that is shifted up; the building itself stays
+            // centred on its cells (workers walk to its position, entrances are worked out from its cells)
+            Transform art = transform.Find("Art");
+            if (art == null)
+            {
+                GameObject child = new GameObject("Art");
+                child.transform.SetParent(transform, false);
+                art = child.transform;
+                SpriteRenderer childRenderer = child.AddComponent<SpriteRenderer>();
+                if (root != null)
+                {
+                    childRenderer.sharedMaterial = root.sharedMaterial;
+                    childRenderer.sortingLayerID = root.sortingLayerID;
+                    childRenderer.color = root.color;
+                }
+            }
+            Body = art.GetComponent<SpriteRenderer>();
+            Body.sprite = buildingType.sprite;
+            if (root != null) root.enabled = false;
+            transform.localScale = Vector3.one;
+            art.localPosition = new Vector3(layout.ArtOffset.x, layout.ArtOffset.y, 0f);
+            art.localScale = new Vector3(layout.Scale.x, layout.Scale.y, 1f);
+
+            // Clicking anywhere on the picture counts
+            if (collider != null)
+            {
+                collider.size = layout.ArtSize;
+                collider.offset = layout.ArtOffset;
+            }
+        }
+        else
+        {
+            if (root != null) root.sprite = buildingType.sprite;
+            transform.localScale = new Vector3(layout.Scale.x, layout.Scale.y, 1f);
+
+            // Adjust the collider to match the intended size
+            if (collider != null)
+            {
+                // Since the object is already scaled, divide to counteract it
+                collider.size = new Vector2(
+                    buildingType.size.x / layout.Scale.x,
+                    buildingType.size.y / layout.Scale.y
+                );
+                collider.offset = Vector2.zero; // Optional: reset offset
+            }
+        }
+        UpdateDepth();
+
+        if (type.animations != null && Body != null)
+        {
+            BuildingAnimator animator = GetComponent<BuildingAnimator>();
+            if (animator == null) animator = gameObject.AddComponent<BuildingAnimator>();
+            animator.Setup(this, Body, type.animations, type.sprite);
         }
 
         if (Producer == null && (type.goldGenerationPerSec > 0 || type.woodGenerationPerSec > 0))

@@ -225,7 +225,7 @@ public class RoadPlacer : MonoBehaviour, IPlacementMode
         cursorRenderer = cursor.AddComponent<SpriteRenderer>();
         Texture2D white = Texture2D.whiteTexture;
         cursorRenderer.sprite = Sprite.Create(white, new Rect(0, 0, white.width, white.height), new Vector2(0.5f, 0.5f), white.width); // exactly one cell
-        cursorRenderer.sortingOrder = 5;
+        cursorRenderer.sortingOrder = DepthSorting.Ghost; // above buildings, so it can be seen behind them too
         cursor.SetActive(false);
     }
 

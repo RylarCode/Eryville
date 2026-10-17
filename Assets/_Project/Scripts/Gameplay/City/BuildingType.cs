@@ -14,7 +14,7 @@ public class BuildingType : ScriptableObject
     public bool movable = true;   // can the player pick this building up and put it somewhere else?
     public int moveGoldCost;      // free for now; raise to charge for moving
     public int moveWoodCost;
-    public Vector2Int size = new Vector2Int(1, 1); // Size in grid cells
+    public Vector2Int size = new Vector2Int(1, 1); // Size in grid cells (the ground it stands on)
     [FormerlySerializedAs("buildingcategoryprefab")]
     public GameObject buildingPrefab;
     public enum Role { Resource, Home, Special }
@@ -23,6 +23,16 @@ public class BuildingType : ScriptableObject
 
 
 
+
+    [Header("Art")]
+    [Tooltip("FitFootprint: the picture is stretched over the building's cells (top-down). ThreeQuarter: the picture keeps its shape, stands on the cells and rises above them, hiding what is behind it.")]
+    public BuildingArtStyle artStyle = BuildingArtStyle.FitFootprint;
+    [Tooltip("ThreeQuarter only: how wide the picture is, in cells. 0 = as wide as the building's cells.")]
+    public float artWidth = 0f;
+    [Tooltip("ThreeQuarter only: nudge the picture (in cells) if it does not line up with the ground it stands on.")]
+    public Vector2 artOffset = Vector2.zero;
+    public BuildingAnimationSet animations;           // closed / open animations. Optional.
+    public BuildingOpenRule openRule = BuildingOpenRule.Auto;
 
     public int goldGenerationPerSec;
     public int woodGenerationPerSec;

@@ -58,13 +58,21 @@ public class InputManager : MonoBehaviour
             Vector3 worldPosition = mainCamera.ScreenToWorldPoint(pendingClick.Value);
             RaycastHit2D[] hits = Physics2D.RaycastAll(worldPosition, Vector2.zero);
 
-            // Of everything under the cursor, the clickable with the highest priority wins
-            // (a character standing on a building is clicked, not the building)
+            // Of everything under the cursor, the one drawn in front gets the click (a character in front of a building is
+            // clicked, not the building; one hidden behind it is not). Among things drawn at the same depth, the highest priority wins.
             IClickable target = null;
+            int targetOrder = int.MinValue;
             foreach (RaycastHit2D hit in hits)
             {
                 IClickable candidate = hit.collider.gameObject.GetComponent<IClickable>();
-                if (candidate != null && (target == null || candidate.ClickPriority > target.ClickPriority)) target = candidate;
+                if (candidate == null) continue;
+                SpriteRenderer drawn = hit.collider.gameObject.GetComponent<SpriteRenderer>();
+                int order = drawn != null ? drawn.sortingOrder : 0;
+                if (target == null || order > targetOrder || (order == targetOrder && candidate.ClickPriority > target.ClickPriority))
+                {
+                    target = candidate;
+                    targetOrder = order;
+                }
             }
 
             if (UiHit.IsOver(pendingClick.Value))

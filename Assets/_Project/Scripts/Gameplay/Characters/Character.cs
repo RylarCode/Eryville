@@ -343,6 +343,7 @@ public class Character : MonoBehaviour, IClickable
         SetVisible(!inside);
         if (inside) transform.position = place.transform.position; // we reached its entrance and went in
         if (activity == Activity.Working) place.WorkerArrived(this);
+        if (activity == Activity.Resting) place.RestingArrived(this);
         Debug.Log($"{DisplayName} is now {activity} at {place.DisplayName}");
     }
 
@@ -350,6 +351,7 @@ public class Character : MonoBehaviour, IClickable
     {
         animator?.CancelOneShot();
         if (CurrentActivity == Activity.Working && currentPlace != null) currentPlace.WorkerLeft(this);
+        if (CurrentActivity == Activity.Resting && currentPlace != null) currentPlace.RestingLeft(this);
         currentPlace = null;
         CurrentActivity = Activity.Idle;
         SetVisible(true);

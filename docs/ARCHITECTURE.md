@@ -66,6 +66,11 @@ Created at runtime (nothing to add to the scene):
 - `CharacterType` also holds `portrait` (full image) and `face` (small icon); both fall back to `sprite`.
 - `UI/RevealPopup`: full-screen reveal after a pull.
 
+**Gameplay/City/ (art)** - see `docs/NEW_BUILDING.md`
+- `BuildingArt.cs`: `BuildingLayout` (where a picture goes: flat over the cells, or 3/4 raised above them), `DepthSorting` (draw order by height on the map: characters behind a building are hidden), `BuildingOpenState` (when a building counts as open).
+- `BuildingAnimationSet` / `BuildingAnimator`: closed / open loops and opening / closing transitions. `BuildingChecks`: finds the usual mistakes. `Building.Body` is the renderer that shows the picture (a child for 3/4 art).
+- Clicks go to whatever is drawn in front (`InputManager`).
+
 **Gameplay/City/** - buildings and the map
 - `BuildingType` (SO), `Building` (id, cell, workers, residents, which avatars are on site), `BuildingManager` (build / move / remove, registry), `MapGrid` (cells: bounds, buildings, roads, speed), `BuildingPlacer` (placing and moving; ghost; place-and-confirm on phones).
 - Components on building prefabs: `ResourceProducer` (output; only runs with a worker on site), `Housing`, `CityHall`, `Tavern` (marks the recruitment building; gives the spawn point).
@@ -127,6 +132,7 @@ Data assets (`Assets/_Project/ScriptableObjects`): Buildings (Gold Mine, Lumbery
 | A character's pictures / animations | `CharacterType` Art section + a Character Animations asset (`docs/NEW_CHARACTER.md`) |
 | Time-of-day hours | `RealTimeCalendar` |
 | Offline reward | `OfflineProgress` (efficiency, cap) |
+| A new building | Eryville > New Building... (`docs/NEW_BUILDING.md`) |
 | A new menu | follow `TownMenu` / `CheatMenu`; use `MenuPanels` |
 | Something the server decides | `IGameBackend` + `LocalBackend` (and later the Firebase one) |
 | Testing | Game menu -> Cheats; the performance panel (tap the fps box) |
