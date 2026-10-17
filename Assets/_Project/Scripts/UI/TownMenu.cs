@@ -20,6 +20,7 @@ public class TownMenu
     private readonly Transform content;
     private readonly TMP_Text charactersTabLabel;
     private readonly TMP_Text buildingsTabLabel;
+    private readonly TMP_Text stockTabLabel;
     private readonly TMP_Text sortLabel;
     private readonly TMP_Text filterLabel;
 
@@ -28,6 +29,10 @@ public class TownMenu
     private CharacterFilter characterFilter = CharacterFilter.All;
     private BuildingSort buildingSort = BuildingSort.Name;
     private BuildingFilter buildingFilter = BuildingFilter.All;
+    private ItemSort itemSort = ItemSort.Name;
+    private ItemFilter itemFilter = ItemFilter.All;
+    private readonly Dictionary<string, TMP_Text> rowLabels = new Dictionary<string, TMP_Text>(); // the stock rows, so their numbers can change in place
+    private string shownKeys;
 
     private string shownSignature; // what the list currently shows, so it is only rebuilt when it changes
 
@@ -42,8 +47,9 @@ public class TownMenu
 
         // Across the top: the two tabs, then the sort and filter buttons
         Transform header = MenuPanels.CreateHeader(panel, 2);
-        charactersTabLabel = AddHeaderButton(header, () => SelectTab(TownTab.Characters));
-        buildingsTabLabel = AddHeaderButton(header, () => SelectTab(TownTab.Buildings));
+        charactersTabLabel = AddHeaderButton(header, () => SelectTab(TownTab.Characters), 3);
+        buildingsTabLabel = AddHeaderButton(header, () => SelectTab(TownTab.Buildings), 3);
+        stockTabLabel = AddHeaderButton(header, () => SelectTab(TownTab.Stock), 3);
         sortLabel = AddHeaderButton(header, CycleSort);
         filterLabel = AddHeaderButton(header, CycleFilter);
 
@@ -62,12 +68,32 @@ public class TownMenu
     // Brings the list up to date. Does nothing (cheaply) when nothing it shows has changed.
     public void Refresh(bool force = false)
     {
-        List<TownRow> rows = tab == TownTab.Characters
-            ? TownList.CharacterRows(CharacterManager.Instance.Roster, characterSort, characterFilter)
-            : TownList.BuildingRows(BuildingManager.Instance.Buildings, buildingSort, buildingFilter);
+        List<TownRow> rows;
+        switch (tab)
+        {
+            case TownTab.Characters: rows = TownList.CharacterRows(CharacterManager.Instance.Roster, characterSort, characterFilter); break;
+            case TownTab.Buildings: rows = TownList.BuildingRows(BuildingManager.Instance.Buildings, buildingSort, buildingFilter); break;
+            default: rows = ResourceManager.Instance != null ? TownList.StockRows(ResourceManager.Instance, BuildingManager.Instance.Buildings, itemSort, itemFilter) : new List<TownRow>(); break;
+        }
 
         UpdateHeader();
 
+        // The stock changes every second: its numbers are updated in place (rebuilding would reset the scrolling and flicker)
+        if (tab == TownTab.Stock)
+        {
+            string keys = tab + "|" + SortName() + "|" + FilterName() + "|" + string.Join("\n", rows.Select(r => r.Key));
+            if (!force && keys == shownKeys)
+            {
+                foreach (TownRow row in rows) if (rowLabels.TryGetValue(row.Key, out TMP_Text label)) label.text = row.Label;
+                return;
+            }
+            shownKeys = keys;
+            shownSignature = null;
+            Rebuild(rows);
+            return;
+        }
+
+        shownKeys = null;
         string signature = tab + "|" + SortName() + "|" + FilterName() + "|" + string.Join("\n", rows.Select(r => r.Key + "|" + r.Label));
         if (!force && signature == shownSignature) return;
         shownSignature = signature;
@@ -76,9 +102,9 @@ public class TownMenu
 
     // --- Header ---
 
-    private TMP_Text AddHeaderButton(Transform header, Action onClick)
+    private TMP_Text AddHeaderButton(Transform header, Action onClick, int cellsPerRow = 2)
     {
-        return MenuPanels.AddHeaderButton(header, buttonPrefab, onClick, out Button unused);
+        return MenuPanels.AddHeaderButton(header, buttonPrefab, onClick, out Button unused, cellsPerRow);
     }
 
     private void UpdateHeader()
@@ -87,12 +113,13 @@ public class TownMenu
         int buildings = BuildingManager.Instance.Buildings.Count;
         charactersTabLabel.text = tab == TownTab.Characters ? $"[Characters ({characters})]" : $"Characters ({characters})";
         buildingsTabLabel.text = tab == TownTab.Buildings ? $"[Buildings ({buildings})]" : $"Buildings ({buildings})";
+        stockTabLabel.text = tab == TownTab.Stock ? "[Stock]" : "Stock";
         sortLabel.text = "Sort: " + SortName();
         filterLabel.text = "Filter: " + FilterName();
     }
 
-    private string SortName() { return tab == TownTab.Characters ? TownList.Describe(characterSort) : TownList.Describe(buildingSort); }
-    private string FilterName() { return tab == TownTab.Characters ? TownList.Describe(characterFilter) : TownList.Describe(buildingFilter); }
+    private string SortName() { return tab == TownTab.Characters ? TownList.Describe(characterSort) : tab == TownTab.Buildings ? TownList.Describe(buildingSort) : TownList.Describe(itemSort); }
+    private string FilterName() { return tab == TownTab.Characters ? TownList.Describe(characterFilter) : tab == TownTab.Buildings ? TownList.Describe(buildingFilter) : TownList.Describe(itemFilter); }
 
     private void SelectTab(TownTab newTab)
     {
@@ -103,14 +130,16 @@ public class TownMenu
     private void CycleSort()
     {
         if (tab == TownTab.Characters) characterSort = Next(characterSort);
-        else buildingSort = Next(buildingSort);
+        else if (tab == TownTab.Buildings) buildingSort = Next(buildingSort);
+        else itemSort = Next(itemSort);
         Refresh(true);
     }
 
     private void CycleFilter()
     {
         if (tab == TownTab.Characters) characterFilter = Next(characterFilter);
-        else buildingFilter = Next(buildingFilter);
+        else if (tab == TownTab.Buildings) buildingFilter = Next(buildingFilter);
+        else itemFilter = Next(itemFilter);
         Refresh(true);
     }
 
@@ -125,16 +154,22 @@ public class TownMenu
     private void Rebuild(List<TownRow> rows)
     {
         MenuPanels.ClearChildren(content);
+        rowLabels.Clear();
 
         if (rows.Count == 0)
         {
-            MenuPanels.MakeRow(buttonPrefab, content, "TownEmptyLabel", tab == TownTab.Characters ? "No characters to show." : "No buildings to show.", null, false);
+            string empty = tab == TownTab.Characters ? "No characters to show." : tab == TownTab.Buildings ? "No buildings to show." : "Nothing in stock yet.";
+            MenuPanels.MakeRow(buttonPrefab, content, "TownEmptyLabel", empty, null, false);
             return;
         }
 
         foreach (TownRow row in rows)
         {
-            GameObject go = MenuPanels.MakeRow(buttonPrefab, content, row.Key, row.Label, row.Sprite);
+            bool clickable = !row.Note;
+            GameObject go = MenuPanels.MakeRow(buttonPrefab, content, row.Key, row.Label, row.Sprite, clickable);
+            TMP_Text label = go.GetComponentInChildren<TMP_Text>();
+            if (label != null) rowLabels[row.Key] = label;
+            if (!clickable) continue;
 
             TownRow captured = row;
             go.GetComponent<Button>().onClick.AddListener(() => OnRowClicked(captured));

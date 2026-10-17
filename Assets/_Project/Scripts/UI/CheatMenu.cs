@@ -69,6 +69,8 @@ public class CheatMenu
         Section("Resources");
         Add("+1000 gold", () => Cheats.AddGold(1000));
         Add("+500 wood", () => Cheats.AddWood(500));
+        Add("+100 of every item (wheat, flour, bread...)", () => Cheats.AddItems(100f));
+        Add("Empty every item (to see shortages)", Cheats.EmptyItems, true);
         Add("+10 recruitment letters", () => Cheats.AddLetters(10));
         Add("Set gold to 0 (see unpaid wages)", Cheats.ZeroGold);
 

@@ -101,6 +101,27 @@ public static class Cheats
     // --- Resources ---
 
     public static void AddGold(float amount) { ResourceManager.Instance.changeResourceAmount(ResourceManager.Gold, amount); }
+    // 100 of every item the game knows (except gold, wood and letters, which have their own cheats), up to each limit
+    public static void AddItems(float amount = 100f)
+    {
+        foreach (ItemType item in ItemCatalog.All)
+        {
+            if (item.category == ItemCategory.Currency || item.Name == ResourceManager.Wood) continue;
+            ResourceManager.Instance.Add(item.Name, amount);
+        }
+        UIManager.Instance?.UpdateResourceUI(ResourceManager.Instance.resources);
+    }
+
+    // Empties the stock of every item except gold, wood and letters (to see shortages)
+    public static void EmptyItems()
+    {
+        foreach (ItemType item in ItemCatalog.All)
+        {
+            if (item.category == ItemCategory.Currency || item.Name == ResourceManager.Wood) continue;
+            ResourceManager.Instance.SetResourceAmount(item.Name, 0f);
+        }
+    }
+
     public static void AddWood(float amount) { ResourceManager.Instance.changeResourceAmount(ResourceManager.Wood, amount); }
     // With a server that owns the letters, only the server can grant them (and only a development server will)
     public static void AddLetters(int amount)

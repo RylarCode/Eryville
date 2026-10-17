@@ -179,9 +179,9 @@ public class Building : MonoBehaviour, IClickable
             animator.Setup(this, Body, type.animations, type.sprite);
         }
 
-        if (Producer == null && (type.goldGenerationPerSec > 0 || type.woodGenerationPerSec > 0))
+        if (Producer == null && type.Produces)
         {
-            Debug.LogWarning($"{type.buildingName} has resource output but its prefab has no ResourceProducer component, so it will produce nothing.");
+            Debug.LogWarning($"{type.buildingName} makes things but its prefab has no ResourceProducer component, so it will produce nothing.");
         }
 
         // Let the type-specific components (Housing, ...) do their setup now that the type is known

@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ccebb1b78f542184b855cc34edfa43ca, type: 3}
+  m_Name: Farm
+  m_EditorClassIdentifier: 
+  buildingName: Farm
+  typeId: 6
+  sprite: {fileID: -6753945329345433839, guid: 4b8b3a123194b4d45a5c5c9b9d0a662c, type: 3}
+  goldCost: 30
+  woodCost: 20
+  size: {x: 3, y: 3}
+  buildingPrefab: {fileID: 8735228474764763001, guid: 4e17966a91236304b84b7d83934a3934, type: 3}
+  recipes:
+  - {fileID: 11400000, guid: 8ef3140cddcf41c2b682c8b72c45c8c5, type: 2}
+  workerSlots: 2
+  housingSlots: 0

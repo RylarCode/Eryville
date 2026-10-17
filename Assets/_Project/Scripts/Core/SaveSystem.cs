@@ -11,7 +11,7 @@ using UnityEngine;
 // so everything a loaded building or character needs (sprite, size, registration, assignments) is set up.
 public static class SaveSystem
 {
-    public const int CurrentVersion = 5; // 2 added roads, 3 added mood, 4 added wages (and recruitment), 5 the real-time clock; older saves still load with defaults
+    public const int CurrentVersion = 6; // 2 added roads, 3 added mood, 4 added wages (and recruitment), 5 the real-time clock, 6 the chosen recipe of each building (items are saved with the resources); older saves still load with defaults
     public const string DefaultFileName = "savegame.json";
 
     private static string SlotFor(string fileName)
@@ -86,6 +86,7 @@ public static class SaveSystem
                 cellX = building.Cell.x,
                 cellY = building.Cell.y,
                 position = building.transform.position,
+                recipeIndex = building.Producer != null ? building.Producer.ActiveRecipeIndex : 0,
             });
         }
 
@@ -195,6 +196,7 @@ public static class SaveSystem
                 Debug.LogWarning($"Could not rebuild {type.buildingName} at ({saved.cellX},{saved.cellY}); skipped.");
                 continue;
             }
+            if (data.version >= 6 && building.Producer != null) building.Producer.ActiveRecipeIndex = saved.recipeIndex;
             buildingsById[building.Id] = building;
         }
 

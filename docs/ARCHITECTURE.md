@@ -57,7 +57,7 @@ Created at runtime (nothing to add to the scene):
 - `GameManager`: `currentGameState` (Normal / Menu), `worldState` (Peace / War), `SimulationPaused`.
 - `GameClock`: the time of day. Two modes: *InGame* (30 s per phase, pauses in menus) or *RealTime* (follows the real clock, never pauses). Raises `TimeOfDayChanged`.
 - `DayNightCycle` / `LightingProfile` / `NightLight`: tint the world through dawn, day, dusk and night from `GameClock.HourOfDay` (`docs/DAY_NIGHT.md`).
-- `ResourceManager`: Gold, Wood, Letters; income tick once a second (sums every building's producer).
+- `ResourceManager`: the town's stock of every item (Gold, Wood, Letters, Wheat...) with limits; once a second it runs the production step for every building and keeps smoothed made / used rates. Implements `IItemStock`.
 - `WageSystem`: pays every character's daily wage; unpaid characters refuse to work.
 - `SaveSystem` + `SaveData`: builds a `GameData` (version 5) from the managers and rebuilds the world from one. It does no file work itself: it hands text to the backend.
 
@@ -69,6 +69,10 @@ Created at runtime (nothing to add to the scene):
 - `AnimationPlayer` (pure frame logic) and `CharacterAnimator` (drives the SpriteRenderer: mood-based walk, mirroring, speed-scaled playback, enter/exit one-shots that `Character` waits for).
 - `CharacterType` also holds `portrait` (full image) and `face` (small icon); both fall back to `sprite`.
 - `UI/RevealPopup`: full-screen reveal after a pull.
+
+**Gameplay/Production/** - items and recipes (`docs/PRODUCTION.md`)
+- `ItemType` (+ `ItemCatalog`, from `Resources/Items`), `Recipe` / `ItemAmount`: pure data. `ProductionNetwork`: the solver that shares stock and room between all producing buildings (same code online and offline). `ResourceProducer` (on the building) holds the chosen recipe and the building's last status.
+- `OfflineProgress` plays the time away through the same solver, with workers where their schedules put them.
 
 **Gameplay/City/ (art)** - see `docs/NEW_BUILDING.md`
 - `BuildingArt.cs`: `BuildingLayout` (where a picture goes: flat over the cells, or 3/4 raised above them), `DepthSorting` (draw order by height on the map: characters behind a building are hidden), `BuildingOpenState` (when a building counts as open).
@@ -137,6 +141,7 @@ Data assets (`Assets/_Project/ScriptableObjects`): Buildings (Gold Mine, Lumbery
 | Day / night colours, lamps | `LightingProfile` asset + `DayNightCycle.Profile`; `NightLight` (`docs/DAY_NIGHT.md`) |
 | Time-of-day hours | `RealTimeCalendar` |
 | Offline reward | `OfflineProgress` (efficiency, cap) |
+| A new item, recipe or production chain | assets only: `docs/PRODUCTION.md` |
 | A new building | Eryville > New Building... (`docs/NEW_BUILDING.md`) |
 | A new menu | follow `TownMenu` / `CheatMenu`; use `MenuPanels` |
 | Something the server decides | `IGameBackend` + `LocalBackend` (and later the Firebase one) |

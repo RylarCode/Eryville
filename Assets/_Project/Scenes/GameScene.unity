@@ -36689,6 +36689,10 @@ MonoBehaviour:
   - {fileID: 11400000, guid: fa9f467ce5b9bab479adb3d3becd6ccc, type: 2}
   - {fileID: 11400000, guid: 694fe9c19fbb82843aca820a50796b0d, type: 2}
   - {fileID: 11400000, guid: ccd7f7791b844c2696dc0e50c60ab89b, type: 2}
+  - {fileID: 11400000, guid: 0625b85e9bf64e11baaebf2aa408f220, type: 2}
+  - {fileID: 11400000, guid: 1193000a70b949ed94421d0c722acdce, type: 2}
+  - {fileID: 11400000, guid: 78497b34147b4e0699b50b731d29105c, type: 2}
+  - {fileID: 11400000, guid: 31e5c68261574d51bf1ad30842543513, type: 2}
   buildingGrid: {fileID: 1944487659}
   placementTilemap: {fileID: 19178398}
   mainCamera: {fileID: 519420031}

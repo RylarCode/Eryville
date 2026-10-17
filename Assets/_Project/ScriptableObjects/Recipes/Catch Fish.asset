@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8d83f99e5cde4ec5a8bb5e50d8ad445e, type: 3}
+  m_Name: Catch Fish
+  m_EditorClassIdentifier: 
+  recipeName: Catch Fish
+  inputs: []
+  outputs:
+  - item: {fileID: 11400000, guid: be40a4656575453bb7d2ed22abbabdc5, type: 2}
+    amount: 4
+  cycleSeconds: 60

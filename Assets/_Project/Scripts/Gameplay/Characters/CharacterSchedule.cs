@@ -33,4 +33,18 @@ public class CharacterSchedule
     {
         return slots.TryGetValue(time, out slot);
     }
+
+    // Where the character wants to be during a time of day, carrying on with the previous time's plan when it has no row of its
+    // own (the character keeps doing what it was doing). False if the schedule has no rows at all.
+    public bool TrySlotDuring(TimeOfDay time, out ScheduleSlot slot)
+    {
+        TimeOfDay current = time;
+        for (int i = 0; i < 4; i++)
+        {
+            if (slots.TryGetValue(current, out slot)) return true;
+            current = (TimeOfDay)(((int)current + 3) % 4); // the time before it
+        }
+        slot = ScheduleSlot.Home;
+        return false;
+    }
 }

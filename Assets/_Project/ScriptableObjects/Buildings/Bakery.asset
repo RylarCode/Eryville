@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ccebb1b78f542184b855cc34edfa43ca, type: 3}
+  m_Name: Bakery
+  m_EditorClassIdentifier: 
+  buildingName: Bakery
+  typeId: 8
+  sprite: {fileID: 3345032760514067189, guid: 5668c60d880770a47bc493a8b3fed4ee, type: 3}
+  goldCost: 60
+  woodCost: 40
+  size: {x: 2, y: 2}
+  buildingPrefab: {fileID: 8735228474764763001, guid: 4e17966a91236304b84b7d83934a3934, type: 3}
+  recipes:
+  - {fileID: 11400000, guid: 9fc8ae9b3ca347a7bc9a9187c50efd58, type: 2}
+  workerSlots: 2
+  housingSlots: 0

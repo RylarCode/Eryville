@@ -340,7 +340,13 @@ public class UIManager : MonoBehaviour
             resourceTextInWords = "";
             foreach (var res in resources.Values)
             {
-                resourceTextInWords += $"{res.resourceName}: {Mathf.FloorToInt(res.currentAmount)}\n";
+                // Gold, wood and letters always; the other items once the town has some
+                bool core = res.resourceName == ResourceManager.Gold || res.resourceName == ResourceManager.Wood || res.resourceName == ResourceManager.Letters;
+                if (!core && res.currentAmount < 1f) continue;
+                float capacity = ResourceManager.Instance != null ? ResourceManager.Instance.Capacity(res.resourceName) : 0f;
+                resourceTextInWords += capacity > 0f
+                    ? $"{res.resourceName}: {Mathf.FloorToInt(res.currentAmount)}/{Mathf.FloorToInt(capacity)}\n"
+                    : $"{res.resourceName}: {Mathf.FloorToInt(res.currentAmount)}\n";
             }
             resourceText.text = resourceTextInWords;
         }
@@ -562,12 +568,18 @@ public class UIManager : MonoBehaviour
         text.AppendLine(building.DisplayName);
         if (type != null) text.AppendLine($"Size: {type.size.x}x{type.size.y}");
 
-        if (building.Producer != null)
+        if (building.Producer != null && type != null && type.Produces)
         {
-            if (type.goldGenerationPerSec > 0) text.AppendLine($"Gold: +{building.Producer.GoldPerSec:0.#}/s");
-            if (type.woodGenerationPerSec > 0) text.AppendLine($"Wood: +{building.Producer.WoodPerSec:0.#}/s");
-            if (!building.Producer.IsRunning) text.AppendLine("Not producing: nobody is working here right now");
-            if (building.WorkersOnSite.Count > 0) text.AppendLine($"Worker bonus: x{building.Producer.WorkerMultiplier:0.##}");
+            ResourceProducer producer = building.Producer;
+            Recipe recipe = producer.ActiveRecipe;
+            if (type.Recipes.Count > 1 && recipe != null) text.AppendLine($"Recipe: {recipe.DisplayName}");
+            if (recipe != null)
+            {
+                foreach (ItemAmount output in recipe.outputs) if (output.item != null) text.AppendLine($"{output.Name}: +{ResourceProducer.RateText(producer.OutputPerSec(output.Name))}");
+                foreach (ItemAmount input in recipe.inputs) if (input.item != null) text.AppendLine($"Uses {input.Name}: -{ResourceProducer.RateText(producer.InputPerSec(input.Name))}");
+            }
+            if (producer.Status != LineStatus.Working) text.AppendLine(producer.StatusText);
+            if (building.WorkersOnSite.Count > 0) text.AppendLine($"Worker bonus: x{producer.WorkerMultiplier:0.##}");
         }
         if (building.WorkerSlots > 0)
         {

@@ -8,6 +8,7 @@ Short version: **Eryville > New Building...**, name it, pick a similar building 
 |---|---|---|
 | **Building type** | name, size on the ground, costs, workers, housing, output, art settings | `ScriptableObjects/Buildings/<Name>/<Name>.asset` |
 | **Animation set** | closed / open / opening / closing frames | `.../<Name>/<Name> Animations.asset` |
+| **Recipes** | what it makes and uses (see `PRODUCTION.md`); empty = the old gold / wood per second fields | the type's *Recipes* |
 | **Prefab** | the object placed in the world (Building, SpriteRenderer, BoxCollider2D + behaviour scripts such as ResourceProducer, Housing, Tavern) | `Prefabs/Buildings/<Name>.prefab` |
 | **typeId** | unique number; saved games refer to the building by it | field on the type |
 | **List** | the BuildingPlacer in GameScene (build menu and loading saves) | scene |

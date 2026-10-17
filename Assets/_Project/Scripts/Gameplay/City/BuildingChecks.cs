@@ -32,8 +32,8 @@ public static class BuildingChecks
                 if (type.buildingPrefab.GetComponent<Building>() == null) problems.Add($"{who}: its prefab has no Building component.");
                 if (type.buildingPrefab.GetComponent<SpriteRenderer>() == null) problems.Add($"{who}: its prefab has no SpriteRenderer.");
                 if (type.buildingPrefab.GetComponent<BoxCollider2D>() == null) problems.Add($"{who}: its prefab has no BoxCollider2D, so it cannot be clicked.");
-                if ((type.goldGenerationPerSec > 0 || type.woodGenerationPerSec > 0) && type.buildingPrefab.GetComponent<ResourceProducer>() == null)
-                    problems.Add($"{who} has resource output but its prefab has no ResourceProducer, so it will produce nothing.");
+                if (type.Produces && type.buildingPrefab.GetComponent<ResourceProducer>() == null)
+                    problems.Add($"{who} makes things but its prefab has no ResourceProducer, so it will produce nothing.");
             }
 
             if (type.sprite == null) problems.Add($"{who} has no sprite.");
@@ -47,8 +47,60 @@ public static class BuildingChecks
                 else if (type.animations.open.IsEmpty) problems.Add($"{who}: no open frames; the closed ones are shown while it is open.");
             }
 
+            // Recipes
+            if (type.recipes != null)
+            {
+                foreach (Recipe recipe in type.recipes)
+                {
+                    if (recipe == null) { problems.Add($"{who} has an empty slot in its recipes list."); continue; }
+                    if (recipe.cycleSeconds <= 0f) problems.Add($"{who}: recipe \"{recipe.DisplayName}\" has a cycle time of 0 or less (it is treated as 1 second).");
+                    if (recipe.outputs == null || recipe.outputs.Count == 0) problems.Add($"{who}: recipe \"{recipe.DisplayName}\" makes nothing.");
+                    foreach (ItemAmount amount in Amounts(recipe))
+                    {
+                        if (amount.item == null) problems.Add($"{who}: recipe \"{recipe.DisplayName}\" has an input or output with no item.");
+                        else if (amount.amount <= 0f) problems.Add($"{who}: recipe \"{recipe.DisplayName}\" has {amount.Name} with an amount of 0 or less.");
+                    }
+                }
+            }
+            if (type.storageBonus != null)
+            {
+                foreach (ItemAmount bonus in type.storageBonus) if (bonus.item == null) problems.Add($"{who} has a storage bonus with no item.");
+            }
+
             if (inGame != null && !inGame.Contains(type)) problems.Add($"{who} is not on the BuildingPlacer's list (GameScene), so it cannot be built or loaded from a save.");
         }
+
+        // Items that are used up somewhere but made nowhere
+        HashSet<string> made = new HashSet<string>();
+        foreach (BuildingType type in allTypes)
+        {
+            if (type == null) continue;
+            foreach (Recipe recipe in type.Recipes)
+            {
+                if (recipe == null || recipe.outputs == null) continue;
+                foreach (ItemAmount output in recipe.outputs) if (output.item != null) made.Add(output.Name);
+            }
+        }
+        HashSet<string> reported = new HashSet<string>();
+        foreach (BuildingType type in allTypes)
+        {
+            if (type == null) continue;
+            foreach (Recipe recipe in type.Recipes)
+            {
+                if (recipe == null || recipe.inputs == null) continue;
+                foreach (ItemAmount input in recipe.inputs)
+                {
+                    if (input.item == null || made.Contains(input.Name) || !reported.Add(input.Name)) continue;
+                    problems.Add($"{input.Name} is used by {type.buildingName} but no building makes it, so it can only come from cheats or the starting stock.");
+                }
+            }
+        }
         return problems;
+    }
+
+    private static IEnumerable<ItemAmount> Amounts(Recipe recipe)
+    {
+        if (recipe.inputs != null) foreach (ItemAmount a in recipe.inputs) yield return a;
+        if (recipe.outputs != null) foreach (ItemAmount a in recipe.outputs) yield return a;
     }
 }

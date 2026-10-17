@@ -80,11 +80,11 @@ public static class MenuPanels
         return header.transform;
     }
 
-    // Adds a cell to the header (a new row is started after every two). With an onClick it is a button,
+    // Adds a cell to the header (a new row is started after every two, or every cellsPerRow). With an onClick it is a button,
     // without one it is a plain label. Returns its text.
-    public static TMP_Text AddHeaderButton(Transform header, GameObject buttonPrefab, Action onClick, out Button button)
+    public static TMP_Text AddHeaderButton(Transform header, GameObject buttonPrefab, Action onClick, out Button button, int cellsPerRow = 2)
     {
-        Transform row = header.childCount > 0 && header.GetChild(header.childCount - 1).childCount < 2
+        Transform row = header.childCount > 0 && header.GetChild(header.childCount - 1).childCount < cellsPerRow
             ? header.GetChild(header.childCount - 1)
             : NewHeaderRow(header);
 

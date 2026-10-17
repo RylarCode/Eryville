@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Serialization;
 
@@ -34,9 +35,43 @@ public class BuildingType : ScriptableObject
     public BuildingAnimationSet animations;           // closed / open animations. Optional.
     public BuildingOpenRule openRule = BuildingOpenRule.Auto;
 
+    [Header("Production")]
+    [Tooltip("What this building makes (and uses up). Empty: the old gold / wood per second below are used. Several recipes: the first is made unless another is chosen.")]
+    public List<Recipe> recipes = new List<Recipe>();
+    [Tooltip("Extra room this building adds to the town's stock, e.g. a Granary: 500 wheat.")]
+    public List<ItemAmount> storageBonus = new List<ItemAmount>();
+
+    [Header("Simple production (the original way; use Recipes for anything with inputs)")]
     public int goldGenerationPerSec;
     public int woodGenerationPerSec;
     public int workerSlots;   // how many characters can be assigned to work here
     public int housingSlots;  // how many characters can live here
-}
 
+    // What the building can make: its recipes, or if it has none a recipe made from the gold / wood per second fields
+    // (so the Gold Mine and Lumberyard are recipes with no inputs, and everything runs the same way)
+    public IReadOnlyList<Recipe> Recipes
+    {
+        get
+        {
+            if (recipes != null && recipes.Count > 0) return recipes;
+            if (goldGenerationPerSec <= 0 && woodGenerationPerSec <= 0) return NoRecipes;
+
+            if (legacyRecipes == null || legacyGold != goldGenerationPerSec || legacyWood != woodGenerationPerSec)
+            {
+                legacyGold = goldGenerationPerSec;
+                legacyWood = woodGenerationPerSec;
+                List<ItemAmount> outputs = new List<ItemAmount>();
+                if (goldGenerationPerSec > 0) outputs.Add(new ItemAmount(ItemCatalog.Get(ResourceManager.Gold), goldGenerationPerSec));
+                if (woodGenerationPerSec > 0) outputs.Add(new ItemAmount(ItemCatalog.Get(ResourceManager.Wood), woodGenerationPerSec));
+                legacyRecipes = new List<Recipe> { Recipe.Create(buildingName + " output", 1f, null, outputs) };
+            }
+            return legacyRecipes;
+        }
+    }
+
+    private static readonly List<Recipe> NoRecipes = new List<Recipe>();
+    [System.NonSerialized] private List<Recipe> legacyRecipes;
+    [System.NonSerialized] private int legacyGold, legacyWood;
+
+    public bool Produces => Recipes.Count > 0;
+}

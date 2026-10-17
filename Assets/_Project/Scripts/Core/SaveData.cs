@@ -20,6 +20,7 @@ public class BuildingData
     public int cellX;        // anchor cell
     public int cellY;
     public Vector3 position; // world position it was built at
+    public int recipeIndex;  // added in version 6: which of the building's recipes it makes
     // Add other building-specific saved data here (level, health...)
 }
 
