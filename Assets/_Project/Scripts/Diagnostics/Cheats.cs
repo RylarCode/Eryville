@@ -112,6 +112,26 @@ public static class Cheats
         UIManager.Instance?.UpdateResourceUI(ResourceManager.Instance.resources);
     }
 
+    // Sets everyone's satiety (100 = full, 10 = very hungry)
+    public static void SetEveryoneSatiety(float satiety)
+    {
+        foreach (OwnedCharacter c in CharacterManager.Instance.Roster) { c.Satiety = satiety; if (satiety >= 100f) c.Hunger.LastMealKey = -1; }
+    }
+
+    // Everyone who wants to eat tries now, whatever the time (a meal window is not needed)
+    public static void MealNow()
+    {
+        FoodSettings settings = FoodSettings.Current;
+        foreach (OwnedCharacter c in CharacterManager.Instance.Roster)
+        {
+            if (c.Satiety >= settings.mealRestore * 2f) continue;
+            MealResult meal = HungerRules.TryEat(c.Hunger, c.Type.favouriteFood, ResourceManager.Instance, 12f, GameClock.Instance.MealDay, settings);
+            if (meal.Any && c.Avatar != null && meal.Main != null) c.Avatar.ShowEating(meal.Main, settings.eatSeconds);
+            c.Mood += c.Hunger.PendingMood; c.Hunger.PendingMood = 0f;
+        }
+        UIManager.Instance?.UpdateResourceUI(ResourceManager.Instance.resources);
+    }
+
     // Empties the stock of every item except gold, wood and letters (to see shortages)
     public static void EmptyItems()
     {

@@ -74,6 +74,10 @@ Created at runtime (nothing to add to the scene):
 - `ItemType` (+ `ItemCatalog`, from `Resources/Items`), `Recipe` / `ItemAmount`: pure data. `ProductionNetwork`: the solver that shares stock and room between all producing buildings (same code online and offline). `ResourceProducer` (on the building) holds the chosen recipe and the building's last status.
 - `OfflineProgress` plays the time away through the same solver, with workers where their schedules put them.
 
+**Gameplay/Food/** - hunger and eating (`docs/FOOD.md`)
+- `FoodSettings` (asset `Resources/FoodSettings`): every number of the rules. `HungerRules` (pure): drain, meal windows, who eats what, forage. `HungerSystem`: the once-a-second tick while playing (food workers first, rotating order), the food picture (`EatBubble`) over eaters, and the `Hunger` filter / stock notes. `OfflineProgress` plays the same rules for the time away.
+- `OwnedCharacter.Hunger` (satiety, last meal) is saved with each character (save version 7); `Productivity` includes the hunger slowdown.
+
 **Gameplay/City/ (art)** - see `docs/NEW_BUILDING.md`
 - `BuildingArt.cs`: `BuildingLayout` (where a picture goes: flat over the cells, or 3/4 raised above them), `DepthSorting` (draw order by height on the map: characters behind a building are hidden), `BuildingOpenState` (when a building counts as open).
 - `BuildingAnimationSet` / `BuildingAnimator`: closed / open loops and opening / closing transitions. `BuildingChecks`: finds the usual mistakes. `Building.Body` is the renderer that shows the picture (a child for 3/4 art).
@@ -141,6 +145,7 @@ Data assets (`Assets/_Project/ScriptableObjects`): Buildings (Gold Mine, Lumbery
 | Day / night colours, lamps | `LightingProfile` asset + `DayNightCycle.Profile`; `NightLight` (`docs/DAY_NIGHT.md`) |
 | Time-of-day hours | `RealTimeCalendar` |
 | Offline reward | `OfflineProgress` (efficiency, cap) |
+| Hunger and meal numbers, starter food | `Resources/FoodSettings` (`docs/FOOD.md`) |
 | A new item, recipe or production chain | assets only: `docs/PRODUCTION.md` |
 | A new building | Eryville > New Building... (`docs/NEW_BUILDING.md`) |
 | A new menu | follow `TownMenu` / `CheatMenu`; use `MenuPanels` |

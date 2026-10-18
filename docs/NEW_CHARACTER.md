@@ -48,7 +48,7 @@ walk_happy_down_0 ...       walk_sad_down_0 ...
 enter_up_0 enter_up_1 ...   exit_down_0 exit_down_1 ...
 ```
 
-- Animations: `idle`, `walk`, `walk_happy`, `walk_sad`, `enter`, `exit`.
+- Animations: `idle`, `walk`, `walk_happy`, `walk_sad`, `enter`, `exit`, `eat`.
 - Directions: `down`, `up`, `left`, `right` (`front`, `back`, `west`, `east`, `north`, `south` also work).
 - Frames count up from 0 in the order they play. Capitals, and a prefix like `john_walk_down_0`, are fine.
 - You do not need all of them. See the fallbacks below.
@@ -63,7 +63,7 @@ Tip: renaming 40 frames by hand is tedious. Most sprite tools (Aseprite, Piskel,
 2. Drag in the sprite sheet, and optionally the small sprite, portrait and face. Every field can be left empty and filled later.
 3. Leave both "added to" boxes ticked (CharacterManager in the open scene, gacha pools). Have **GameScene open** so it can be added; **save the scene** afterwards.
 4. *Create character*. The new character type is selected; the message says what was made and what to do next.
-5. Tune what makes it different in the inspector: wage, speed, mood profile, schedule, pull weight, awareness levels, `maxOwned` (1 for a named story character).
+5. Tune what makes it different in the inspector: wage, speed, mood profile, schedule, pull weight, awareness levels, `maxOwned` (1 for a named story character), and **food**: `favouriteFood` (an edible item) and `appetite` (1 = ordinary, 2 = gets hungry twice as fast).
 6. Run **Eryville > Check Characters**.
 7. Using the Firebase backend? Add the character to `firebase/functions/src/config.ts` too (see the end of this page). It lists the usual mistakes: duplicate typeId, no prefab or sprite, a walk missing a direction, not on the CharacterManager's list.
 

@@ -24,6 +24,7 @@ public class CharacterManager : MonoBehaviour
             return;
         }
         Instance = this;
+        if (GetComponent<HungerSystem>() == null) gameObject.AddComponent<HungerSystem>(); // keeps everyone fed
     }
 
     void Start()

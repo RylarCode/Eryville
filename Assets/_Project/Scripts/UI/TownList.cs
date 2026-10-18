@@ -5,7 +5,7 @@ using UnityEngine;
 
 public enum TownTab { Characters, Buildings, Stock }
 public enum CharacterSort { Name, Mood, Loyalty, Type }
-public enum CharacterFilter { All, Homeless, Unemployed, Unhappy }
+public enum CharacterFilter { All, Homeless, Unemployed, Unhappy, Hungry }
 public enum BuildingSort { Name, Type, Output }
 public enum BuildingFilter { All, FreeWorkerSlots, FreeHousing, Producing }
 public enum ItemSort { Name, Amount, Net }
@@ -52,6 +52,7 @@ public static class TownList
             case CharacterFilter.Homeless: return c.HomeBuilding == null;
             case CharacterFilter.Unemployed: return c.WorkBuilding == null;
             case CharacterFilter.Unhappy: return c.Mood < UnhappyBelow;
+            case CharacterFilter.Hungry: return c.IsHungry;
             default: return true;
         }
     }
@@ -74,6 +75,7 @@ public static class TownList
         if (c.HomeBuilding == null) label += " - no home";
         if (c.WorkBuilding == null) label += " - no job";
         if (!c.WagePaid) label += " - unpaid";
+        if (c.IsHungry) label += " - hungry";
         return new TownRow { Key = "c:" + c.Id, Label = label, Sprite = c.Type.FaceOrSprite, Character = c };
     }
 
@@ -156,6 +158,7 @@ public static class TownList
         }
 
         List<TownRow> rows = ordered.ThenByName().Select(i => StockRow(stock, i)).ToList();
+        rows.AddRange(FoodNotes(stock));
 
         foreach (Building b in buildings.OrderBy(x => x.DisplayName, StringComparer.OrdinalIgnoreCase).ThenBy(x => x.Id, StringComparer.Ordinal))
         {
@@ -166,6 +169,19 @@ public static class TownList
             rows.Add(new TownRow { Key = "n:" + b.Id, Label = $"{b.DisplayName} ({b.Cell.x},{b.Cell.y}): {reason} ({b.Producer.Efficiency * 100f:0}% speed)", Sprite = b.buildingType != null ? b.buildingType.sprite : null, Building = b });
         }
         return rows;
+    }
+
+    // A line or two about how the town is eating: how many are hungry, and whether there is any food at all
+    private static IEnumerable<TownRow> FoodNotes(ResourceManager stock)
+    {
+        if (CharacterManager.Instance == null || CharacterManager.Instance.Roster.Count == 0) yield break;
+
+        int hungry = 0;
+        foreach (OwnedCharacter c in CharacterManager.Instance.Roster) if (c.IsHungry) hungry++;
+        float food = 0f;
+        foreach (ItemType item in ItemCatalog.All) if (item.edible) food += stock.Get(item.Name) * item.nourishment;
+        if (food < 1f) yield return new TownRow { Key = "h:nofood", Label = "No food in stock: villagers find a little by themselves", Note = true };
+        if (hungry > 0) yield return new TownRow { Key = "h:hungry", Label = $"{hungry} of {CharacterManager.Instance.Roster.Count} characters are hungry", Note = true };
     }
 
     private static IEnumerable<ItemType> ThenByName(this IEnumerable<ItemType> ordered)
@@ -190,6 +206,8 @@ public static class TownList
         float net = (stock.MadePerSecond(item.Name) - stock.UsedPerSecond(item.Name)) * 60f;
         string label = capacity > 0f ? $"{item.Name}: {Mathf.FloorToInt(amount)} / {Mathf.FloorToInt(capacity)}" : $"{item.Name}: {Mathf.FloorToInt(amount)}";
         if (Mathf.Abs(net) >= 0.05f) label += $"  ({net:+0.#;-0.#}/min)";
+        float eaten = HungerSystem.Instance != null ? HungerSystem.Instance.EatenToday(item.Name) : 0f;
+        if (eaten >= 0.5f) label += $"  eaten today: {Mathf.FloorToInt(eaten)}";
         if (capacity > 0f && amount >= capacity - 0.05f) label += "  FULL";
         else if (amount < 0.5f && stock.UsedPerSecond(item.Name) > 0f) label += "  EMPTY";
         return new TownRow { Key = "i:" + item.Name, Label = label, Sprite = item.Icon, Note = true };
@@ -206,6 +224,7 @@ public static class TownList
             case CharacterFilter.Homeless: return "No home";
             case CharacterFilter.Unemployed: return "No job";
             case CharacterFilter.Unhappy: return "Unhappy";
+            case CharacterFilter.Hungry: return "Hungry";
             default: return "All";
         }
     }

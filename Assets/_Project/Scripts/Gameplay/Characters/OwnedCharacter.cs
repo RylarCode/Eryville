@@ -56,7 +56,17 @@ public class OwnedCharacter
     }
 
     // Multiplies a building's output while this character works there (level / loyalty bonuses can go here later)
-    public float Productivity => Type.productivity * BuffMultiplier(BuffStat.Productivity);
+    public float BaseProductivity => Type.productivity * BuffMultiplier(BuffStat.Productivity);
+
+    // ...and being hungry slows it a little (see FoodSettings), never by more than the settings' floor
+    public float Productivity => BaseProductivity * HungerRules.ProductivityFactor(Hunger.Satiety, FoodSettings.Current);
+
+    // --- Hunger (see HungerSystem) ---
+
+    public HungerState Hunger { get; } = new HungerState();
+    public float Satiety { get { return Hunger.Satiety; } set { Hunger.Satiety = Mathf.Clamp(value, 0f, HungerState.Full); } }
+    public bool IsHungry => HungerRules.IsHungry(Hunger.Satiety, FoodSettings.Current);
+    public float Appetite => Type.appetite > 0f ? Type.appetite : 1f;
 
     // --- Self-awareness (gained from duplicate pulls) ---
 

@@ -22,6 +22,7 @@ public enum AnimKey
     WalkSad,        // walking in a bad mood
     EnterBuilding,  // going in (plays once, at the door)
     ExitBuilding,   // coming out (plays once, at the door, before walking off)
+    Eat,            // eating a meal (plays once, when standing still)
 }
 
 // One animation drawn four times, once for each way the character can face. Nothing is mirrored: each direction has its own pictures.
@@ -85,6 +86,7 @@ public class CharacterAnimationSet : ScriptableObject
     public DirectionalAnimation walkSad = new DirectionalAnimation();
     public DirectionalAnimation enterBuilding = new DirectionalAnimation(false);
     public DirectionalAnimation exitBuilding = new DirectionalAnimation(false);
+    public DirectionalAnimation eat = new DirectionalAnimation(false);
 
     [Header("Mood")]
     public float happyMood = 70f;   // at or above this the character walks happily
@@ -100,6 +102,7 @@ public class CharacterAnimationSet : ScriptableObject
             case AnimKey.WalkSad: return walkSad;
             case AnimKey.EnterBuilding: return enterBuilding;
             case AnimKey.ExitBuilding: return exitBuilding;
+            case AnimKey.Eat: return eat;
             default: return idle;
         }
     }

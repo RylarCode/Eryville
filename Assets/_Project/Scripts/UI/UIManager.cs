@@ -521,7 +521,7 @@ public class UIManager : MonoBehaviour
     private void RefreshCharacterText()
     {
         OwnedCharacter c = selectedCharacter;
-        characterText.text = $"Name: {c.DisplayName}\nLevel: {c.Level}\nLoyalty: {c.Loyalty:0}\nMood: {c.Mood:0}\nSpeed: {c.DescribeSpeed()}\nWorking Location: {c.WorkBuilding?.DisplayName}\nHome: {c.HomeBuilding?.DisplayName}\nRarity: {c.Type.rarity}\nSelf-awareness: {c.DescribeAwareness()}\nWage: {c.DailyWage}/day{(c.WagePaid ? "" : " (UNPAID - refuses to work)")}";
+        characterText.text = $"Name: {c.DisplayName}\nLevel: {c.Level}\nLoyalty: {c.Loyalty:0}\nMood: {c.Mood:0}\nFed: {DescribeHunger(c)}\nSpeed: {c.DescribeSpeed()}\nWorking Location: {c.WorkBuilding?.DisplayName}\nHome: {c.HomeBuilding?.DisplayName}\nRarity: {c.Type.rarity}\nSelf-awareness: {c.DescribeAwareness()}\nWage: {c.DailyWage}/day{(c.WagePaid ? "" : " (UNPAID - refuses to work)")}";
     }
 
     public void ShowBuildingDetails(Building building)
@@ -559,6 +559,15 @@ public class UIManager : MonoBehaviour
             occupantListSignature = signature;
             RebuildOccupantList(selectedBuilding);
         }
+    }
+
+    // "72% (ok)", "25% (hungry)"; and what they like to eat
+    private static string DescribeHunger(OwnedCharacter c)
+    {
+        string text = $"{Mathf.RoundToInt(c.Satiety)}%" + (c.IsHungry ? " (hungry)" : "");
+        ItemType favourite = c.Type.favouriteFood;
+        if (favourite != null) text += $", likes {favourite.Name}";
+        return text;
     }
 
     private static string BuildBuildingText(Building building)

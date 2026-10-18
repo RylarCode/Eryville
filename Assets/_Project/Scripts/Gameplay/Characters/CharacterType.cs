@@ -38,6 +38,11 @@ public class CharacterType : ScriptableObject
     public StatEffect loyaltySpeed = new StatEffect(); // walking speed multiplier at loyalty 0 .. 100
     public StatEffect moodSpeed = new StatEffect();    // walking speed multiplier at mood 0 .. 100
 
+    [Header("Food")]
+    public ItemType favouriteFood;           // eaten first when there is some; a meal of it lifts the mood more. Optional.
+    [Tooltip("How fast this character gets hungry compared with an ordinary one (1 = ordinary, 2 = twice as fast).")]
+    public float appetite = 1f;
+
     [Header("Mood")]
     public MoodProfile mood = new MoodProfile();
 

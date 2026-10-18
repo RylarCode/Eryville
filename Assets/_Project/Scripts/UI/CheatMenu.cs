@@ -81,6 +81,9 @@ public class CheatMenu
             CharacterType captured = type;
             Add($"Spawn {type.displayName}", () => Cheats.SpawnCharacter(captured));
         }
+        Add("Everyone: full (satiety 100)", () => Cheats.SetEveryoneSatiety(100f));
+        Add("Everyone: very hungry (satiety 10)", () => Cheats.SetEveryoneSatiety(10f));
+        Add("Everyone eats a meal now", Cheats.MealNow);
         Add("Everyone: mood 100, loyalty 100", () => Cheats.SetEveryone(100f, 100f));
         Add("Everyone: mood 10, loyalty unchanged", () => Cheats.SetEveryone(10f, -1f));
         Add("Dismiss all characters", Cheats.DismissAllCharacters, true);

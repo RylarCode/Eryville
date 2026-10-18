@@ -34,6 +34,7 @@ public class MoodSystem : MonoBehaviour
         rules.Add(new RestingMoodRule());
         rules.Add(new TravelMoodRule());
         rules.Add(new WorldStateMoodRule());
+        rules.Add(new HungerMoodRule());
     }
 
     public void AddRule(IMoodRule rule) { if (rule != null && !rules.Contains(rule)) rules.Add(rule); }
@@ -100,6 +101,16 @@ public class MoodSystem : MonoBehaviour
         public float ChangePerSecond(OwnedCharacter character)
         {
             return GameManager.Instance != null ? character.Type.mood.WorldStateChange(GameManager.Instance.worldState) : 0f;
+        }
+    }
+
+    // Going hungry weighs on people, gently: nothing until they are hungry, then a little more the emptier they get
+    private sealed class HungerMoodRule : IMoodRule
+    {
+        public float ChangePerSecond(OwnedCharacter character)
+        {
+            FoodSettings settings = FoodSettings.Current;
+            return -settings.hungryMoodDrainPerSecond * HungerRules.HungryFactor(character.Hunger.Satiety, settings);
         }
     }
 }

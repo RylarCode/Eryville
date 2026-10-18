@@ -6,7 +6,7 @@ using UnityEngine;
 //
 //     <anything>_<animation>_<direction>_<frame>      walk_down_0   walk_down_1   walk_left_0   idle_up_0   enter_right_3
 //
-// - animation: idle, walk, walkHappy (or walk_happy), walkSad (or walk_sad), enter, exit
+// - animation: idle, walk, walkHappy (or walk_happy), walkSad (or walk_sad), enter, exit, eat
 // - direction: down, up, left, right (also front / back / west / east / south / north)
 // - frame: 0, 1, 2... the order they are shown in
 // Upper or lower case does not matter, and a prefix such as the character's name is ignored (john_walk_down_0).
@@ -56,6 +56,7 @@ public static class AnimationNaming
             case "walksad": case "sadwalk": key = AnimKey.WalkSad; return true;
             case "enter": case "enterbuilding": key = AnimKey.EnterBuilding; return true;
             case "exit": case "exitbuilding": key = AnimKey.ExitBuilding; return true;
+            case "eat": case "eating": key = AnimKey.Eat; return true;
             default: return false;
         }
     }

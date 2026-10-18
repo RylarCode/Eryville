@@ -21,6 +21,9 @@ public static class OfflineProgress
         public float seconds;                              // away time that counted (after the cap)
         public Dictionary<string, float> items;            // what changed in the stock, per item (negative = used up)
         public List<string> notes;                         // what held the town back ("Bakery waited for Flour for 40% of the time")
+        public int meals;                                  // meals the characters ate while away
+        public int hungryAtEnd;                            // how many are hungry when the time away ends
+        public Dictionary<OwnedCharacter, HungerState> hunger; // how full everyone is at the end (given to them by Apply)
 
         public float Change(string item)
         {
@@ -35,6 +38,7 @@ public static class OfflineProgress
             get
             {
                 if (items == null) return false;
+                if (meals > 0) return true;
                 foreach (float amount in items.Values) if (Mathf.Abs(amount) > 0.5f) return true;
                 return false;
             }
@@ -50,6 +54,7 @@ public static class OfflineProgress
                     if (Mathf.Abs(entry.Value) > 0.5f) parts.Add($"{entry.Value:+0;-0} {entry.Key.ToLowerInvariant()}");
                 }
             }
+            if (meals > 0) parts.Add($"{meals} meals eaten");
             string text = $"Away {seconds / 3600f:0.#} h: " + (parts.Count > 0 ? string.Join(", ", parts) : "nothing");
             if (notes != null && notes.Count > 0) text += ". " + string.Join(". ", notes);
             return text;
@@ -111,7 +116,16 @@ public static class OfflineProgress
         // The producing buildings, and the schedules of the workers they have
         List<Building> producers = new List<Building>();
         foreach (Building building in buildings) if (building.buildingType != null && building.Producer != null && building.buildingType.Produces) producers.Add(building);
-        if (producers.Count == 0) return report;
+
+        // Everyone's hunger is played through too (copies: nothing real changes until Apply)
+        FoodSettings food = FoodSettings.Current;
+        List<OwnedCharacter> eaters = new List<OwnedCharacter>();
+        Dictionary<OwnedCharacter, HungerState> hunger = new Dictionary<OwnedCharacter, HungerState>();
+        if (CharacterManager.Instance != null)
+        {
+            foreach (OwnedCharacter character in CharacterManager.Instance.Roster) { eaters.Add(character); hunger[character] = character.Hunger.Clone(); }
+        }
+        if (producers.Count == 0 && eaters.Count == 0) return report;
 
         Dictionary<CharacterType, CharacterSchedule> schedules = new Dictionary<CharacterType, CharacterSchedule>();
         List<ProductionLine> lines = new List<ProductionLine>();
@@ -125,6 +139,7 @@ public static class OfflineProgress
         DateTime end = GameClock.Instance != null ? GameClock.Instance.LocalNow : DateTime.Now;
         RealTimeCalendar calendar = GameClock.Instance != null ? GameClock.Instance.Calendar : new RealTimeCalendar();
         DateTime time = end - TimeSpan.FromSeconds(report.seconds);
+        int stepIndex = 0;
 
         // What is made in one slice can only be used from the next, so each link of a chain (farm, mill, bakery) delays the next by
         // one slice. Short absences therefore use fine slices (about 180 of them), long ones up to StepSeconds: the delay is always
@@ -140,9 +155,11 @@ public static class OfflineProgress
             {
                 Building building = producers[i];
                 lines[i].Recipe = building.Producer.ActiveRecipe;
-                lines[i].Multiplier = WorkersAtWork(building, phase, schedules);
+                lines[i].Multiplier = WorkersAtWork(building, phase, schedules, hunger, food);
             }
             ProductionNetwork.Step(lines, stock, step);
+            if (eaters.Count > 0) report.meals += FeedEveryone(eaters, hunger, stock, food, calendar, time + TimeSpan.FromSeconds(step * 0.5f), step, stepIndex);
+            stepIndex++;
 
             for (int i = 0; i < producers.Count; i++)
             {
@@ -157,6 +174,9 @@ public static class OfflineProgress
         }
 
         report.items = stock.Changes();
+        report.hunger = hunger;
+        foreach (HungerState state in hunger.Values) if (HungerRules.IsHungry(state.Satiety, food)) report.hungryAtEnd++;
+        if (report.hungryAtEnd > 0) report.notes.Add($"{report.hungryAtEnd} of {eaters.Count} characters are hungry");
         for (int i = 0; i < producers.Count; i++)
         {
             if (staffedSteps[i] == 0) continue;
@@ -170,7 +190,7 @@ public static class OfflineProgress
 
     // How fast the building would be going at this time of day: 0 if none of its paid workers would be at work, else their
     // productivity multiplied together. A building with no worker slots runs all the time.
-    private static float WorkersAtWork(Building building, TimeOfDay phase, Dictionary<CharacterType, CharacterSchedule> schedules)
+    private static float WorkersAtWork(Building building, TimeOfDay phase, Dictionary<CharacterType, CharacterSchedule> schedules, Dictionary<OwnedCharacter, HungerState> hunger, FoodSettings food)
     {
         if (building.WorkerSlots <= 0) return 1f;
 
@@ -186,18 +206,52 @@ public static class OfflineProgress
             }
             if (!schedule.TrySlotDuring(phase, out ScheduleSlot slot) || slot != ScheduleSlot.Work) continue;
             atWork++;
-            multiplier *= worker.Productivity;
+            float fed = hunger.TryGetValue(worker, out HungerState state) ? HungerRules.ProductivityFactor(state.Satiety, food) : 1f; // hungry workers are a little slower
+            multiplier *= worker.BaseProductivity * fed;
         }
         return atWork > 0 ? multiplier : 0f;
+    }
+
+    // Everyone gets hungrier for this slice and, if it is a meal window, eats from the scratch stock (food workers first). Returns the meals eaten.
+    private static int FeedEveryone(List<OwnedCharacter> eaters, Dictionary<OwnedCharacter, HungerState> hunger, ScratchStock stock, FoodSettings food, RealTimeCalendar calendar, DateTime middle, float seconds, int stepIndex)
+    {
+        float hour = (float)middle.TimeOfDay.TotalHours;
+        int day = calendar.DayNumber(middle);
+
+        List<OwnedCharacter> first = new List<OwnedCharacter>();
+        List<OwnedCharacter> rest = new List<OwnedCharacter>();
+        foreach (OwnedCharacter character in eaters) { if (HungerSystem.WorksWithFood(character)) first.Add(character); else rest.Add(character); }
+        HungerSystem.Rotate(first, stepIndex);
+        HungerSystem.Rotate(rest, stepIndex);
+        first.AddRange(rest);
+
+        int meals = 0;
+        foreach (OwnedCharacter character in first)
+        {
+            HungerState state = hunger[character];
+            HungerRules.Drain(state, seconds, character.Appetite, food);
+            if (!HungerRules.WantsToEat(state, hour, day, food)) continue;
+            if (HungerRules.TryEat(state, character.Type.favouriteFood, stock, hour, day, food).Any) meals++;
+        }
+        return meals;
     }
 
     // Works out and gives what was earned. Returns the report.
     public static Report Apply(float awaySeconds)
     {
         Report report = Compute(BuildingManager.Instance.Buildings, awaySeconds);
-        if (report.Anything)
+        if (report.Anything || report.hunger != null)
         {
             foreach (KeyValuePair<string, float> change in report.items) ResourceManager.Instance.Add(change.Key, change.Value);
+            if (report.hunger != null)
+            {
+                foreach (KeyValuePair<OwnedCharacter, HungerState> entry in report.hunger)
+                {
+                    entry.Key.Hunger.Satiety = entry.Value.Satiety;
+                    entry.Key.Hunger.LastMealKey = entry.Value.LastMealKey;
+                    entry.Key.Hunger.LastForageKey = entry.Value.LastForageKey;
+                }
+            }
             UIManager.Instance?.UpdateResourceUI(ResourceManager.Instance.resources);
         }
         LastReport = report;

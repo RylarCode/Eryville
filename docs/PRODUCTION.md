@@ -48,8 +48,8 @@ Short absences use finer slices (about 180 of them, at least 5 s), so a chain is
 
 ## Pacing notes
 
-The recipe numbers are placeholders sized so one farm, mill and bakery (two workers each) feed a few dozen characters. Tune them in the assets; nothing else needs to change. Gold and wood are still large numbers per second, as they always were.
+The recipe numbers are placeholders sized so one farm, mill and bakery (two workers each) feed a few dozen characters (see FOOD.md for what a character eats). Tune them in the assets; nothing else needs to change. Gold and wood are still large numbers per second, as they always were.
 
-## Coming next (food system, phase 2+)
+## Food
 
-Characters get a hunger meter (100 to 0 over 24 hours), eat in meal windows from this stock (favourite food first), and hunger only dips mood and productivity a little. Edible items and their *nourishment* are already in place for that.
+Characters get hungry and eat edible items from this stock: see `FOOD.md`. The included recipes are slow (a farm cycle is 5 minutes) so a chain feeds a few dozen characters over a real day.

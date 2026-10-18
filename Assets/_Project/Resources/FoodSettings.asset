@@ -1,0 +1,38 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1ff7a87632a84e0ab90e05b1f91a037e, type: 3}
+  m_Name: FoodSettings
+  m_EditorClassIdentifier: 
+  hungerHoursToEmpty: 24
+  mealWindows:
+  - name: Breakfast
+    startHour: 7
+    endHour: 9
+  - name: Lunch
+    startHour: 12
+    endHour: 14
+  - name: Dinner
+    startHour: 18
+    endHour: 20
+  eatBelow: 65
+  emergencyBelow: 20
+  mealRestore: 35
+  foragingRestore: 8
+  hungryBelow: 30
+  productivityFloor: 0.7
+  hungryMoodDrainPerSecond: 0.05
+  starterStock:
+  - item: {fileID: 11400000, guid: 67de0a88a5524449b4c76d72d7cbaa18, type: 2}
+    amount: 40
+  favouriteMoodBonus: 6
+  otherMoodBonus: 2
+  eatSeconds: 3

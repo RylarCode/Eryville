@@ -18,5 +18,5 @@ MonoBehaviour:
   placeholderColor: {r: 0.4, g: 0.65, b: 0.85, a: 1}
   capacity: 300
   edible: 1
-  nourishment: 0.6
+  nourishment: 6
   tags: []

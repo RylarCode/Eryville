@@ -35,6 +35,8 @@ MonoBehaviour:
       multiplier: 0.9
   moveSpeed: 3
   productivity: 1.2
+  favouriteFood: {fileID: 11400000, guid: 67de0a88a5524449b4c76d72d7cbaa18, type: 2}
+  appetite: 1
   maxOwned: 10
   defaultSchedule:
   - time: 0

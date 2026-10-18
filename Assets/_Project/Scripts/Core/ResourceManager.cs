@@ -46,6 +46,10 @@ public class ResourceManager : MonoBehaviour, IItemStock
         AddResource(Gold, 100, 0);
         AddResource(Wood, 50, 0);
         AddResource(Letters, 2, 0);
+        foreach (ItemAmount starter in FoodSettings.Current.starterStock)
+        {
+            if (starter.item != null && !resources.ContainsKey(starter.Name)) AddResource(starter.Name, starter.amount, 0);
+        }
         UIManager.Instance?.UpdateResourceUI(resources); // Update UI
     }
 

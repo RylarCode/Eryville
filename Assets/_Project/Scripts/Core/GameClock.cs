@@ -80,6 +80,10 @@ public class GameClock : MonoBehaviour
     // Counts game days (one per real day, starting each morning)
     public int DayNumber => Calendar.DayNumber(LocalNow);
 
+    // A day number for things that happen once a day (meals): the real day number, or in the game's own clock a count of mornings
+    public int MealDay => IsRealTime ? DayNumber : inGameDay;
+    private int inGameDay;
+
     // How far testing has moved the clock from the real time
     public TimeSpan DebugOffset => timeSource.Offset;
 
@@ -170,6 +174,7 @@ public class GameClock : MonoBehaviour
 
         int count = Enum.GetValues(typeof(TimeOfDay)).Length;
         Current = (TimeOfDay)(((int)Current + 1) % count);
+        if (Current == TimeOfDay.Morning) inGameDay++;
         elapsed = 0f;
         TimeOfDayChanged?.Invoke(Current);
     }

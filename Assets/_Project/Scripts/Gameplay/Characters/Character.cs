@@ -327,6 +327,27 @@ public class Character : MonoBehaviour, IClickable
         EnterActivity(activity, place);
     }
 
+    // Eating: a picture of the food floats over the character for a few seconds (and, if it stands still and has an eating
+    // animation, that plays). Nothing is shown while it is inside a building.
+    public void ShowEating(ItemType food, float seconds)
+    {
+        if (food == null || spriteRenderer == null || !spriteRenderer.enabled) return;
+
+        EatBubble bubble = GetComponentInChildren<EatBubble>();
+        if (bubble == null)
+        {
+            GameObject child = new GameObject("EatBubble");
+            child.transform.SetParent(transform, false);
+            bubble = child.AddComponent<EatBubble>();
+            float scale = Mathf.Max(0.01f, Mathf.Abs(transform.localScale.x));
+            child.transform.localScale = new Vector3(0.45f / scale, 0.45f / scale, 1f); // about half a cell wide, whatever the body's scale
+        }
+        float bodyHeight = spriteRenderer.sprite != null ? spriteRenderer.sprite.bounds.size.y : 1f;
+        bubble.Show(food.Icon, seconds, bodyHeight * 0.5f + 0.5f / Mathf.Max(0.01f, Mathf.Abs(transform.localScale.y)));
+
+        if (animator != null && animator.Has(AnimKey.Eat) && !movement.IsMoving) animator.PlayOnce(AnimKey.Eat, null);
+    }
+
     // Characters are out of sight while they are inside a building (working or resting). The collider goes
     // too, otherwise an invisible character would swallow clicks meant for the building.
     private void SetVisible(bool visible)
