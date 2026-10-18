@@ -24,9 +24,12 @@ public struct BuildingLayout
     public Vector2 Scale;           // scale for a transform showing the sprite, so it comes out at ArtSize
     public Vector2 ArtSize;         // the picture's size in cells
     public Vector2 ArtOffset;       // the centre of the picture, relative to the centre of the building's cells (world units)
+    public Vector2 ArtPosition;     // where the sprite's own pivot goes, relative to the centre of the cells: ArtOffset corrected for a pivot that is not in the middle of the picture
     public bool Raised => ArtOffset.sqrMagnitude > 0f;
+    public bool UsesChild => ArtPosition.sqrMagnitude > 0.000001f;   // the picture cannot sit on the building's own transform
 
-    public static BuildingLayout Compute(BuildingArtStyle style, Vector2Int footprint, Vector2 spriteSize, float artWidth, Vector2 artOffset)
+    // spriteCenter: the middle of the sprite's bounds relative to its pivot (zero when the pivot is in the middle, (0, h/2) for a bottom pivot)
+    public static BuildingLayout Compute(BuildingArtStyle style, Vector2Int footprint, Vector2 spriteSize, float artWidth, Vector2 artOffset, Vector2 spriteCenter = default)
     {
         BuildingLayout layout = new BuildingLayout();
         if (spriteSize.x <= 0f || spriteSize.y <= 0f)
@@ -49,13 +52,16 @@ public struct BuildingLayout
             layout.ArtSize = new Vector2(footprint.x, footprint.y);
         }
         layout.Scale = new Vector2(layout.ArtSize.x / spriteSize.x, layout.ArtSize.y / spriteSize.y);
+        // A sprite is drawn with its pivot on the transform, so to put the middle of the picture at ArtOffset the pivot is moved the other way
+        layout.ArtPosition = new Vector2(layout.ArtOffset.x - spriteCenter.x * layout.Scale.x, layout.ArtOffset.y - spriteCenter.y * layout.Scale.y);
         return layout;
     }
 
     public static BuildingLayout For(BuildingType type)
     {
         Vector2 spriteSize = type.sprite != null ? (Vector2)type.sprite.bounds.size : Vector2.zero;
-        return Compute(type.artStyle, type.size, spriteSize, type.artWidth, type.artOffset);
+        Vector2 center = type.sprite != null ? (Vector2)type.sprite.bounds.center : Vector2.zero;
+        return Compute(type.artStyle, type.size, spriteSize, type.artWidth, type.artOffset, center);
     }
 }
 

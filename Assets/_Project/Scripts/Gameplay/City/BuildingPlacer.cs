@@ -139,7 +139,7 @@ public class BuildingPlacer : MonoBehaviour, IPlacementMode
         // Size the ghost like the real building will be. A raised (3/4) picture is centred above the building's cells, so the
         // ghost is shifted by the same amount, and a flat marker shows which cells on the ground it will take.
         BuildingLayout layout = BuildingLayout.For(type);
-        ghostOffset = layout.ArtOffset;
+        ghostOffset = layout.ArtPosition;
         currentIndicatorInstance.transform.localScale = new Vector3(layout.Scale.x, layout.Scale.y, 1f);
         currentIndicatorInstance.GetComponent<SpriteRenderer>().sortingOrder = DepthSorting.Ghost;
         ShowFootprintMarker(type, layout);
@@ -374,7 +374,7 @@ public class BuildingPlacer : MonoBehaviour, IPlacementMode
         if (!layout.Raised) return;
 
         // The ghost's transform is scaled, so what is set here is in the picture's own units
-        footprintMarker.transform.localPosition = new Vector3(-layout.ArtOffset.x / layout.Scale.x, -layout.ArtOffset.y / layout.Scale.y, 0f);
+        footprintMarker.transform.localPosition = new Vector3(-layout.ArtPosition.x / layout.Scale.x, -layout.ArtPosition.y / layout.Scale.y, 0f);
         footprintMarker.transform.localScale = new Vector3(type.size.x / layout.Scale.x, type.size.y / layout.Scale.y, 1f);
     }
 }

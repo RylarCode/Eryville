@@ -122,9 +122,9 @@ public class Building : MonoBehaviour, IClickable
         Body = root;
         BoxCollider2D collider = GetComponent<BoxCollider2D>();
 
-        if (layout.Raised)
+        if (layout.UsesChild)
         {
-            // 3/4 art: the picture rises above the cells, so it lives on a child that is shifted up; the building itself stays
+            // 3/4 art (or art whose pivot is not in its middle): the picture lives on a child that is shifted into place; the building itself stays
             // centred on its cells (workers walk to its position, entrances are worked out from its cells)
             Transform art = transform.Find("Art");
             if (art == null)
@@ -144,7 +144,7 @@ public class Building : MonoBehaviour, IClickable
             Body.sprite = buildingType.sprite;
             if (root != null) root.enabled = false;
             transform.localScale = Vector3.one;
-            art.localPosition = new Vector3(layout.ArtOffset.x, layout.ArtOffset.y, 0f);
+            art.localPosition = new Vector3(layout.ArtPosition.x, layout.ArtPosition.y, 0f);
             art.localScale = new Vector3(layout.Scale.x, layout.Scale.y, 1f);
 
             // Clicking anywhere on the picture counts

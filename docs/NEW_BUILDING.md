@@ -40,6 +40,14 @@ Roads and characters can still use the ground behind the building: only the buil
 - While **placing** a building or roads, a click always means the **ground cell** under the pointer. With a tall picture, a cell hidden behind a building is reached by pointing at the picture that covers it. When placing a 3/4 building, the ghost shows a **coloured square on the ground** (green = free, red = blocked) so you can see which cells it takes.
 - On a phone the ghost is dragged and confirmed with the Place button, as before.
 
+### Nuances worth knowing
+
+- **The pivot does not matter.** Whatever pivot the sprite has (centre, bottom...), the picture is placed by its *bounds*, so its bottom edge lands on the front edge of the cells.
+- **All animation frames must be the same size as the still picture** (cut them from one sheet with the same cell size): the size on screen is worked out from the still picture, so a bigger frame would be drawn bigger.
+- **Doors can be at the back.** Characters may use any free cell next to the building as its entrance, including behind it, where the picture hides them (so you may not see them go in or come out).
+- **The click area is a rectangle** around the whole picture, so a click on a transparent corner of a tall picture still selects the building.
+- Tall pictures are cut off by nothing, but near the top edge of the map they simply hang over it.
+
 ## Open and closed animations
 
 Name the frames of a sliced sprite sheet:
