@@ -30,6 +30,8 @@ public class Recipe : ScriptableObject
     public List<ItemAmount> outputs = new List<ItemAmount>();
     [Tooltip("Seconds one cycle takes with one ordinary worker (or none needed).")]
     public float cycleSeconds = 30f;
+    [Tooltip("Labels such as \"bakery\" or \"fishing\": characters with a matching specialty work faster here.")]
+    public List<string> tags = new List<string>();
 
     public string DisplayName => string.IsNullOrEmpty(recipeName) ? name : recipeName;
     public float CycleSeconds => cycleSeconds > 0f ? cycleSeconds : 1f;

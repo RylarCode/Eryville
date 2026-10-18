@@ -23,3 +23,5 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 9fc8ae9b3ca347a7bc9a9187c50efd58, type: 2}
   workerSlots: 2
   housingSlots: 0
+  diningSlots: 2
+  mealQuality: 1.2

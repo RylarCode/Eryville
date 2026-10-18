@@ -20,3 +20,5 @@ MonoBehaviour:
   - item: {fileID: 11400000, guid: 67de0a88a5524449b4c76d72d7cbaa18, type: 2}
     amount: 3
   cycleSeconds: 225
+  tags:
+  - bakery

@@ -41,6 +41,12 @@ public class BuildingType : ScriptableObject
     [Tooltip("Extra room this building adds to the town's stock, e.g. a Granary: 500 wheat.")]
     public List<ItemAmount> storageBonus = new List<ItemAmount>();
 
+    [Header("Dining")]
+    [Tooltip("How many characters can sit down to eat here at once (a Tavern, a Bakery with tables...). 0 = not a dining place.")]
+    public int diningSlots = 0;
+    [Tooltip("How good the meals are: it multiplies the mood a meal gives (1 = ordinary).")]
+    public float mealQuality = 1f;
+
     [Header("Simple production (the original way; use Recipes for anything with inputs)")]
     public int goldGenerationPerSec;
     public int woodGenerationPerSec;

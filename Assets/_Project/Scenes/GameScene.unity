@@ -36693,6 +36693,9 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 1193000a70b949ed94421d0c722acdce, type: 2}
   - {fileID: 11400000, guid: 78497b34147b4e0699b50b731d29105c, type: 2}
   - {fileID: 11400000, guid: 31e5c68261574d51bf1ad30842543513, type: 2}
+  - {fileID: 11400000, guid: 418e01fefad7486a8bd0015cc2bb723f, type: 2}
+  - {fileID: 11400000, guid: c80fb49ec28545a9bf1f7ffaab347578, type: 2}
+  - {fileID: 11400000, guid: fc04fefbbb0247d0979a227c533a17f1, type: 2}
   buildingGrid: {fileID: 1944487659}
   placementTilemap: {fileID: 19178398}
   mainCamera: {fileID: 519420031}
@@ -36738,6 +36741,9 @@ MonoBehaviour:
   AllCharacters:
   - {fileID: 11400000, guid: 021970b8cfe460b4095cda9e77f33239, type: 2}
   - {fileID: 11400000, guid: 230bcc466fc44df4d8dc8f4e78b9106c, type: 2}
+  - {fileID: 11400000, guid: 786345d57bac4bfc86bc29dbc1ac1689, type: 2}
+  - {fileID: 11400000, guid: d07377eaf84142f482bc7e28b032e956, type: 2}
+  - {fileID: 11400000, guid: cff61ac5fca945bab7a9d8a5cf2f8f64, type: 2}
 --- !u!1 &1717364183
 GameObject:
   m_ObjectHideFlags: 0

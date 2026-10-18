@@ -206,8 +206,8 @@ public static class OfflineProgress
             }
             if (!schedule.TrySlotDuring(phase, out ScheduleSlot slot) || slot != ScheduleSlot.Work) continue;
             atWork++;
-            float fed = hunger.TryGetValue(worker, out HungerState state) ? HungerRules.ProductivityFactor(state.Satiety, food) : 1f; // hungry workers are a little slower
-            multiplier *= worker.BaseProductivity * fed;
+            float fed = hunger.TryGetValue(worker, out HungerState state) ? HungerRules.ProductivityFactor(state, food) : 1f; // hungry workers are a little slower, well fed ones a little faster
+            multiplier *= worker.BaseProductivity * fed * worker.SpecialtyMultiplier(building.Producer.ActiveRecipe);
         }
         return atWork > 0 ? multiplier : 0f;
     }
@@ -250,6 +250,7 @@ public static class OfflineProgress
                     entry.Key.Hunger.Satiety = entry.Value.Satiety;
                     entry.Key.Hunger.LastMealKey = entry.Value.LastMealKey;
                     entry.Key.Hunger.LastForageKey = entry.Value.LastForageKey;
+                    entry.Key.Hunger.RecentMeals = new List<string>(entry.Value.RecentMeals);
                 }
             }
             UIManager.Instance?.UpdateResourceUI(ResourceManager.Instance.resources);

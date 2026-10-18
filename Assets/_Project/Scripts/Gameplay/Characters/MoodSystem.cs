@@ -35,6 +35,7 @@ public class MoodSystem : MonoBehaviour
         rules.Add(new TravelMoodRule());
         rules.Add(new WorldStateMoodRule());
         rules.Add(new HungerMoodRule());
+        rules.Add(new WellFedMoodRule());
     }
 
     public void AddRule(IMoodRule rule) { if (rule != null && !rules.Contains(rule)) rules.Add(rule); }
@@ -111,6 +112,16 @@ public class MoodSystem : MonoBehaviour
         {
             FoodSettings settings = FoodSettings.Current;
             return -settings.hungryMoodDrainPerSecond * HungerRules.HungryFactor(character.Hunger.Satiety, settings);
+        }
+    }
+
+    // A varied diet and a full stomach lift people a little
+    private sealed class WellFedMoodRule : IMoodRule
+    {
+        public float ChangePerSecond(OwnedCharacter character)
+        {
+            FoodSettings settings = FoodSettings.Current;
+            return HungerRules.IsWellFed(character.Hunger, settings) ? settings.wellFedMoodPerSecond : 0f;
         }
     }
 }

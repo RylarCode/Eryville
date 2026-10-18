@@ -28,7 +28,7 @@ public class ResourceProducer : MonoBehaviour
             float multiplier = 1f; // Start at 1 because it's multiplication
             foreach (Character worker in building.WorkersOnSite)
             {
-                multiplier *= worker.Productivity;
+                multiplier *= worker.Productivity * (worker.Owned != null ? worker.Owned.SpecialtyMultiplier(ActiveRecipe) : 1f); // and what the worker is especially good at
             }
             return multiplier;
         }

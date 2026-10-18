@@ -27,3 +27,5 @@ MonoBehaviour:
   woodGenerationPerSec: 0
   workerSlots: 0
   housingSlots: 0
+  diningSlots: 6
+  mealQuality: 1.5

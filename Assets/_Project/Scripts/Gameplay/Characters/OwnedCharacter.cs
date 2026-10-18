@@ -59,14 +59,27 @@ public class OwnedCharacter
     public float BaseProductivity => Type.productivity * BuffMultiplier(BuffStat.Productivity);
 
     // ...and being hungry slows it a little (see FoodSettings), never by more than the settings' floor
-    public float Productivity => BaseProductivity * HungerRules.ProductivityFactor(Hunger.Satiety, FoodSettings.Current);
+    public float Productivity => BaseProductivity * HungerRules.ProductivityFactor(Hunger, FoodSettings.Current);
 
     // --- Hunger (see HungerSystem) ---
 
     public HungerState Hunger { get; } = new HungerState();
     public float Satiety { get { return Hunger.Satiety; } set { Hunger.Satiety = Mathf.Clamp(value, 0f, HungerState.Full); } }
+    public bool IsWellFed => HungerRules.IsWellFed(Hunger, FoodSettings.Current);
     public bool IsHungry => HungerRules.IsHungry(Hunger.Satiety, FoodSettings.Current);
     public float Appetite => Type.appetite > 0f ? Type.appetite : 1f;
+
+    // How much better (or worse) this character is at making this recipe: its type's specialties that match the recipe's tags, multiplied
+    public float SpecialtyMultiplier(Recipe recipe)
+    {
+        if (recipe == null || Type.specialties == null || recipe.tags == null) return 1f;
+        float multiplier = 1f;
+        foreach (Specialty specialty in Type.specialties)
+        {
+            if (specialty != null && !string.IsNullOrEmpty(specialty.tag) && recipe.tags.Contains(specialty.tag)) multiplier *= specialty.multiplier;
+        }
+        return multiplier;
+    }
 
     // --- Self-awareness (gained from duplicate pulls) ---
 

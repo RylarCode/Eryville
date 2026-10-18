@@ -65,6 +65,12 @@ Then use the wizard, or open the animation set asset and use **Fill from sprite 
 
 Fallbacks: only `open` drawn -> it is shown closed too (and the other way round); no opening / closing -> it just switches; no frames at all -> the still `sprite`.
 
+## Dining places and storage
+
+- **Dining Slots** (and **Meal Quality**) on the building type make it a place characters walk to for meals (see `FOOD.md`).
+- **Storage Bonus** adds room for items while the building stands (a Granary).
+- **Recipes**: with more than one, the building's details have a *Making: ... - tap to change* row.
+
 ## Checking
 
 **Eryville > Check Buildings** lists the usual mistakes: duplicate typeId, no prefab / sprite / collider, a producer without `ResourceProducer`, 3/4 art whose picture is not taller than its cells, an animation set without frames, a building missing from the BuildingPlacer list.

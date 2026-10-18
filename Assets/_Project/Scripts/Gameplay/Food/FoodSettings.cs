@@ -52,6 +52,30 @@ public class FoodSettings : ScriptableObject
     [Tooltip("Mood lost per second by a character that is completely empty (less the fuller it is, nothing at hungryBelow).")]
     public float hungryMoodDrainPerSecond = 0.05f;
 
+    [Header("Eating out")]
+    [Tooltip("Characters walk to a free seat at a dining place (Tavern, Bakery...) for their meal when there is one. Off: everyone eats where they are.")]
+    public bool dineOut = true;
+    [Tooltip("How long a meal at a dining place takes, in seconds of play.")]
+    public float diningSeconds = 25f;
+    [Tooltip("Dining places further than this from the character (world units) are not used.")]
+    public float maxDiningDistance = 30f;
+    [Tooltip("Extra mood for a meal at a dining place (times the place's meal quality).")]
+    public float diningMoodBonus = 3f;
+    [Tooltip("If a character has not got to its seat after this many seconds it eats where it stands instead.")]
+    public float diningTimeout = 90f;
+
+    [Header("Variety and being well fed")]
+    [Tooltip("Of its last this-many meals...")]
+    public int varietyMeals = 3;
+    [Tooltip("...at least this many different foods gives a varied diet.")]
+    public int varietyDistinct = 2;
+    [Tooltip("A varied diet counts only while satiety is at least this.")]
+    public float wellFedAbove = 60f;
+    [Tooltip("Working speed of a well fed character (1.05 = 5% faster).")]
+    public float wellFedProductivity = 1.05f;
+    [Tooltip("Mood gained per second while well fed.")]
+    public float wellFedMoodPerSecond = 0.02f;
+
     [Header("New game")]
     [Tooltip("What the town starts a new game with besides gold, wood and letters, e.g. 40 bread.")]
     public List<ItemAmount> starterStock = new List<ItemAmount>();

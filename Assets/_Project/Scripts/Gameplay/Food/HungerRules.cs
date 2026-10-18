@@ -10,10 +10,18 @@ public class HungerState
     public long LastMealKey = -1;      // the meal window (day and which one) of the latest meal, so it eats once per window
     public long LastForageKey = -1;    // the window in which it last found something by itself
     public float PendingMood;          // mood earned by meals, waiting to be given to the character
+    public List<string> RecentMeals = new List<string>(); // the main food of its latest meals (oldest first), for variety
+
+    // Only while playing (never saved): on the way to a dining place, and when that gave up
+    public bool Dining;
+    public float DiningFor;            // seconds since it set off
+    public long SkipDiningKey = -1;    // the meal window in which it has already tried to eat out (a second try is eaten where it stands)
+    public float DiningHour;           // the time of day and day it set off, so the meal counts for that window
+    public int DiningDay;
 
     public HungerState Clone()
     {
-        return new HungerState { Satiety = Satiety, LastMealKey = LastMealKey, LastForageKey = LastForageKey, PendingMood = PendingMood };
+        return new HungerState { Satiety = Satiety, LastMealKey = LastMealKey, LastForageKey = LastForageKey, PendingMood = PendingMood, RecentMeals = new List<string>(RecentMeals) };
     }
 }
 
@@ -71,6 +79,23 @@ public static class HungerRules
         return Mathf.Clamp((settings.hungryBelow - satiety) / settings.hungryBelow, 0f, 1f);
     }
 
+    // --- Variety ---
+
+    // At least varietyDistinct different foods among the last varietyMeals meals
+    public static bool HasVariety(HungerState state, FoodSettings settings)
+    {
+        int take = Mathf.Max(1, settings.varietyMeals);
+        HashSet<string> distinct = new HashSet<string>();
+        for (int i = Mathf.Max(0, state.RecentMeals.Count - take); i < state.RecentMeals.Count; i++) distinct.Add(state.RecentMeals[i]);
+        return distinct.Count >= Mathf.Max(1, settings.varietyDistinct);
+    }
+
+    // A varied diet and not hungry: a little faster and happier
+    public static bool IsWellFed(HungerState state, FoodSettings settings)
+    {
+        return state.Satiety >= settings.wellFedAbove && HasVariety(state, settings);
+    }
+
     public static bool IsHungry(float satiety, FoodSettings settings)
     {
         return satiety < settings.hungryBelow;
@@ -80,6 +105,13 @@ public static class HungerRules
     public static float ProductivityFactor(float satiety, FoodSettings settings)
     {
         return Mathf.Lerp(1f, Mathf.Clamp(settings.productivityFloor, 0.3f, 1f), HungryFactor(satiety, settings));
+    }
+
+    // ...and a well fed character works a little faster than normal
+    public static float ProductivityFactor(HungerState state, FoodSettings settings)
+    {
+        float factor = ProductivityFactor(state.Satiety, settings);
+        return IsWellFed(state, settings) ? factor * Mathf.Max(1f, settings.wellFedProductivity) : factor;
     }
 
     // --- Eating ---
@@ -95,7 +127,7 @@ public static class HungerRules
     // One go at a meal: takes food from the stock (the favourite first, then whatever else is edible) until the character has had
     // about a meal's worth or the stock has nothing more. Without any food it may find a little by itself, once per window.
     // Returns what happened (Any is false if nothing was eaten).
-    public static MealResult TryEat(HungerState state, ItemType favourite, IItemStock stock, float hour, int day, FoodSettings settings)
+    public static MealResult TryEat(HungerState state, ItemType favourite, IItemStock stock, float hour, int day, FoodSettings settings, float moodMultiplier = 1f)
     {
         MealResult meal = new MealResult();
         int window = WindowAt(hour, settings);
@@ -134,7 +166,13 @@ public static class HungerRules
 
         state.Satiety = Mathf.Clamp(state.Satiety + meal.Gained, 0f, HungerState.Full);
         meal.Favourite = !meal.Foraged && meal.Gained > 0f && favouriteGained >= meal.Gained * 0.5f;
-        state.PendingMood += meal.Foraged ? 0f : (meal.Favourite ? settings.favouriteMoodBonus : settings.otherMoodBonus);
+        state.PendingMood += meal.Foraged ? 0f : (meal.Favourite ? settings.favouriteMoodBonus : settings.otherMoodBonus) * moodMultiplier;
+        if (!meal.Foraged && meal.Main != null)
+        {
+            state.RecentMeals.Add(meal.Main.Name); // what the meal was mostly of, for variety
+            int keep = Mathf.Max(1, settings.varietyMeals);
+            while (state.RecentMeals.Count > keep) state.RecentMeals.RemoveAt(0);
+        }
         if (window >= 0 || !meal.Foraged) state.LastMealKey = key; // having eaten (or foraged) in this window, it does not try again
         return meal;
     }

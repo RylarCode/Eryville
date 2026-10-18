@@ -11,7 +11,7 @@ using UnityEngine;
 // so everything a loaded building or character needs (sprite, size, registration, assignments) is set up.
 public static class SaveSystem
 {
-    public const int CurrentVersion = 7; // 2 added roads, 3 added mood, 4 added wages (and recruitment), 5 the real-time clock, 6 the chosen recipe of each building (items are saved with the resources), 7 how full each character is; older saves still load with defaults
+    public const int CurrentVersion = 8; // 2 added roads, 3 added mood, 4 added wages (and recruitment), 5 the real-time clock, 6 the chosen recipe of each building (items are saved with the resources), 7 how full each character is, 8 what each character has been eating; older saves still load with defaults
     public const string DefaultFileName = "savegame.json";
 
     private static string SlotFor(string fileName)
@@ -108,6 +108,7 @@ public static class SaveSystem
                 wagePaid = owned.WagePaid,
                 satiety = owned.Satiety,
                 lastMealKey = owned.Hunger.LastMealKey,
+                recentMeals = new List<string>(owned.Hunger.RecentMeals),
                 awareness = owned.AwarenessLevel,
                 workBuildingId = owned.WorkBuilding != null ? owned.WorkBuilding.Id : "",
                 homeBuildingId = owned.HomeBuilding != null ? owned.HomeBuilding.Id : "",
@@ -228,7 +229,8 @@ public static class SaveSystem
             owned.Level = saved.level;
             owned.Loyalty = saved.loyalty;
             if (data.version >= 3) owned.Mood = saved.mood; // older saves have no mood: keep the type's starting mood
-            if (data.version >= 7) { owned.Satiety = saved.satiety; owned.Hunger.LastMealKey = saved.lastMealKey; } // older saves: everyone starts full
+            if (data.version >= 7) { owned.Satiety = saved.satiety; owned.Hunger.LastMealKey = saved.lastMealKey; }
+            if (data.version >= 8 && saved.recentMeals != null) owned.Hunger.RecentMeals = new List<string>(saved.recentMeals); // older saves: everyone starts full
             if (data.version >= 4)
             {
                 owned.WagePaid = saved.wagePaid;

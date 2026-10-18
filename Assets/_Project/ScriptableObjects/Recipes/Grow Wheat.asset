@@ -18,3 +18,5 @@ MonoBehaviour:
   - item: {fileID: 11400000, guid: 22adaafeec53499f84b111c3fbdf99bd, type: 2}
     amount: 6
   cycleSeconds: 300
+  tags:
+  - farming

@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8d83f99e5cde4ec5a8bb5e50d8ad445e, type: 3}
+  m_Name: Bake Pie
+  m_EditorClassIdentifier: 
+  recipeName: Bake Pie
+  inputs:
+  - item: {fileID: 11400000, guid: e85a81fa66cc4442949c5332ff2efc55, type: 2}
+    amount: 2
+  - item: {fileID: 11400000, guid: dd6d89055a184e8baabf1f0b52d287e8, type: 2}
+    amount: 1
+  outputs:
+  - item: {fileID: 11400000, guid: cb808907709c4de1b4a14c97382b99aa, type: 2}
+    amount: 2
+  cycleSeconds: 300
+  tags:
+  - bakery
+  - cooking

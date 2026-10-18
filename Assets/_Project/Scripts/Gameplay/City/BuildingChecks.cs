@@ -62,6 +62,8 @@ public static class BuildingChecks
                     }
                 }
             }
+            if (type.diningSlots < 0) problems.Add($"{who} has fewer than 0 dining slots.");
+            if (type.diningSlots > 0 && type.mealQuality < 0f) problems.Add($"{who} has a negative meal quality.");
             if (type.storageBonus != null)
             {
                 foreach (ItemAmount bonus in type.storageBonus) if (bonus.item == null) problems.Add($"{who} has a storage bonus with no item.");

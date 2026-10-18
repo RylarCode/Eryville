@@ -521,7 +521,7 @@ public class UIManager : MonoBehaviour
     private void RefreshCharacterText()
     {
         OwnedCharacter c = selectedCharacter;
-        characterText.text = $"Name: {c.DisplayName}\nLevel: {c.Level}\nLoyalty: {c.Loyalty:0}\nMood: {c.Mood:0}\nFed: {DescribeHunger(c)}\nSpeed: {c.DescribeSpeed()}\nWorking Location: {c.WorkBuilding?.DisplayName}\nHome: {c.HomeBuilding?.DisplayName}\nRarity: {c.Type.rarity}\nSelf-awareness: {c.DescribeAwareness()}\nWage: {c.DailyWage}/day{(c.WagePaid ? "" : " (UNPAID - refuses to work)")}";
+        characterText.text = $"Name: {c.DisplayName}\nLevel: {c.Level}\nLoyalty: {c.Loyalty:0}\nMood: {c.Mood:0}\nFed: {DescribeHunger(c)}\nSpeed: {c.DescribeSpeed()}\nWorking Location: {c.WorkBuilding?.DisplayName}\nHome: {c.HomeBuilding?.DisplayName}\nRarity: {c.Type.rarity}{DescribeSpecialty(c)}\nSelf-awareness: {c.DescribeAwareness()}\nWage: {c.DailyWage}/day{(c.WagePaid ? "" : " (UNPAID - refuses to work)")}";
     }
 
     public void ShowBuildingDetails(Building building)
@@ -561,10 +561,19 @@ public class UIManager : MonoBehaviour
         }
     }
 
+    // "\nSpecialty: bakery x1.5" (nothing for most characters)
+    private static string DescribeSpecialty(OwnedCharacter c)
+    {
+        if (c.Type.specialties == null || c.Type.specialties.Count == 0) return "";
+        List<string> parts = new List<string>();
+        foreach (Specialty specialty in c.Type.specialties) if (specialty != null && !string.IsNullOrEmpty(specialty.tag)) parts.Add($"{specialty.tag} x{specialty.multiplier:0.##}");
+        return parts.Count > 0 ? "\nSpecialty: " + string.Join(", ", parts) : "";
+    }
+
     // "72% (ok)", "25% (hungry)"; and what they like to eat
     private static string DescribeHunger(OwnedCharacter c)
     {
-        string text = $"{Mathf.RoundToInt(c.Satiety)}%" + (c.IsHungry ? " (hungry)" : "");
+        string text = $"{Mathf.RoundToInt(c.Satiety)}%" + (c.IsHungry ? " (hungry)" : c.IsWellFed ? " (well fed)" : "");
         ItemType favourite = c.Type.favouriteFood;
         if (favourite != null) text += $", likes {favourite.Name}";
         return text;
@@ -590,6 +599,10 @@ public class UIManager : MonoBehaviour
             if (producer.Status != LineStatus.Working) text.AppendLine(producer.StatusText);
             if (building.WorkersOnSite.Count > 0) text.AppendLine($"Worker bonus: x{producer.WorkerMultiplier:0.##}");
         }
+        if (building.IsDiningPlace)
+        {
+            text.AppendLine($"Seats: {building.DiningSlots - building.SeatsFree}/{building.DiningSlots} taken (meal quality x{type.mealQuality:0.##})");
+        }
         if (building.WorkerSlots > 0)
         {
             text.AppendLine($"Workers: {building.Workers.Count}/{building.WorkerSlots} ({building.WorkersOnSite.Count} on site)");
@@ -605,6 +618,7 @@ public class UIManager : MonoBehaviour
     private static string OccupantSignature(Building building)
     {
         StringBuilder signature = new StringBuilder();
+        if (building.Producer != null) signature.Append("recipe").Append(building.Producer.ActiveRecipeIndex).Append(';');
         foreach (OwnedCharacter worker in building.Workers)
         {
             signature.Append(worker.Id).Append("|w|").Append(building.IsWorkerOnSite(worker)).Append(';');
@@ -619,6 +633,20 @@ public class UIManager : MonoBehaviour
     private void RebuildOccupantList(Building building)
     {
         ClearList();
+
+        // A building that can make several things: the first row says what it makes and changes it when tapped
+        if (building.Producer != null && building.buildingType != null && building.buildingType.Recipes.Count > 1)
+        {
+            ResourceProducer producer = building.Producer;
+            Recipe current = producer.ActiveRecipe;
+            GameObject row = MenuPanels.MakeRow(buttonPrefab, assignButtonContainer, "RecipeRow", $"Making: {current.DisplayName} ({current.Describe()}) - tap to change", current.outputs.Count > 0 && current.outputs[0].item != null ? current.outputs[0].item.Icon : null);
+            row.GetComponent<Button>().onClick.AddListener(() =>
+            {
+                producer.ActiveRecipeIndex = (producer.ActiveRecipeIndex + 1) % producer.Recipes.Count;
+                occupantListSignature = null; // the list and the text change
+                RefreshBuildingPanel();
+            });
+        }
 
         foreach (OwnedCharacter worker in building.Workers)
         {

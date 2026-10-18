@@ -1,0 +1,38 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ccebb1b78f542184b855cc34edfa43ca, type: 3}
+  m_Name: Granary
+  m_EditorClassIdentifier: 
+  buildingName: Granary
+  typeId: 12
+  sprite: {fileID: 3345032760514067189, guid: 5668c60d880770a47bc493a8b3fed4ee, type: 3}
+  goldCost: 50
+  woodCost: 60
+  size: {x: 2, y: 2}
+  buildingPrefab: {fileID: 8735228474764763001, guid: 4e17966a91236304b84b7d83934a3934, type: 3}
+  storageBonus:
+  - item: {fileID: 11400000, guid: 22adaafeec53499f84b111c3fbdf99bd, type: 2}
+    amount: 400
+  - item: {fileID: 11400000, guid: dd6d89055a184e8baabf1f0b52d287e8, type: 2}
+    amount: 400
+  - item: {fileID: 11400000, guid: 67de0a88a5524449b4c76d72d7cbaa18, type: 2}
+    amount: 300
+  - item: {fileID: 11400000, guid: be40a4656575453bb7d2ed22abbabdc5, type: 2}
+    amount: 300
+  - item: {fileID: 11400000, guid: e85a81fa66cc4442949c5332ff2efc55, type: 2}
+    amount: 300
+  - item: {fileID: 11400000, guid: cb808907709c4de1b4a14c97382b99aa, type: 2}
+    amount: 300
+  - item: {fileID: 11400000, guid: 10d26a9f9351441f86806a64afe23d0c, type: 2}
+    amount: 300
+  workerSlots: 0
+  housingSlots: 0

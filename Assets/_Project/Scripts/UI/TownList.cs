@@ -64,6 +64,7 @@ public static class TownList
         {
             case Character.Activity.Working: return "Working";
             case Character.Activity.Resting: return "Resting";
+            case Character.Activity.Eating: return "Eating";
             case Character.Activity.Traveling: return "Walking";
             default: return "Idle";
         }

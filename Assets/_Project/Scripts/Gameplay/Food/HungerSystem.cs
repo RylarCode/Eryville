@@ -68,10 +68,20 @@ public class HungerSystem : MonoBehaviour
         {
             HungerRules.Drain(character.Hunger, seconds, character.Appetite, settings);
 
-            if (stock != null && HungerRules.WantsToEat(character.Hunger, hour, day, settings))
+            if (character.Hunger.Dining)
             {
-                MealResult meal = HungerRules.TryEat(character.Hunger, character.Type.favouriteFood, stock, hour, day, settings);
-                if (meal.Any) OnAte(character, meal, settings);
+                // On the way to (or at) a table. If it never gets there it eats where it stands instead, next time round.
+                character.Hunger.DiningFor += seconds;
+                if (character.Hunger.DiningFor > settings.diningTimeout && character.Avatar != null && character.Avatar.CurrentActivity != Character.Activity.Eating) character.Avatar.CancelDining();
+                if (character.Avatar == null) character.Hunger.Dining = false;
+            }
+            else if (stock != null && HungerRules.WantsToEat(character.Hunger, hour, day, settings))
+            {
+                if (!TryDine(character, hour, day, settings))
+                {
+                    MealResult meal = HungerRules.TryEat(character.Hunger, character.Type.favouriteFood, stock, hour, day, settings);
+                    if (meal.Any) OnAte(character, meal, settings);
+                }
             }
 
             // Mood earned from meals is given out here, with the same clamping as any other change
@@ -84,6 +94,59 @@ public class HungerSystem : MonoBehaviour
         }
         HungryCount = hungry;
         if (stock != null) UIManager.Instance?.UpdateResourceUI(stock.resources);
+    }
+
+    // In a meal window, with a free seat at a dining place close by, the character walks there to eat (once per window)
+    private bool TryDine(OwnedCharacter character, float hour, int day, FoodSettings settings)
+    {
+        if (!settings.dineOut || character.Avatar == null) return false;
+        int window = HungerRules.WindowAt(hour, settings);
+        if (window < 0 || character.Hunger.Satiety < settings.emergencyBelow) return false; // a snack is eaten on the spot
+        long key = HungerRules.MealKey(day, window);
+        if (character.Hunger.SkipDiningKey == key) return false;
+
+        Building place = FindDiningPlace(character.Avatar.transform.position, settings);
+        if (place == null || !place.ReserveSeat(character)) return false;
+
+        character.Hunger.SkipDiningKey = key;
+        character.Hunger.Dining = true;
+        character.Hunger.DiningFor = 0f;
+        character.Hunger.DiningHour = hour;
+        character.Hunger.DiningDay = day;
+        character.Avatar.StartDining(place);
+        return true;
+    }
+
+    // The nearest dining place with a free seat, within the settings' distance
+    public static Building FindDiningPlace(Vector3 from, FoodSettings settings)
+    {
+        Building best = null;
+        float bestDistance = settings.maxDiningDistance;
+        foreach (Building building in BuildingManager.Instance.Buildings)
+        {
+            if (!building.IsDiningPlace || building.SeatsFree <= 0) continue;
+            float distance = Vector3.Distance(from, building.transform.position);
+            if (distance <= bestDistance) { best = building; bestDistance = distance; }
+        }
+        return best;
+    }
+
+    // Called by the character when its meal at a table is over: the food comes out of the stock, the place's quality and the
+    // dining bonus lift the mood
+    public void CompleteMeal(OwnedCharacter character, Building place)
+    {
+        FoodSettings settings = FoodSettings.Current;
+        ResourceManager stock = ResourceManager.Instance;
+        if (stock == null) return;
+
+        float quality = place != null && place.buildingType != null ? Mathf.Max(0f, place.buildingType.mealQuality) : 1f;
+        MealResult meal = HungerRules.TryEat(character.Hunger, character.Type.favouriteFood, stock, character.Hunger.DiningHour, character.Hunger.DiningDay, settings, quality);
+        if (meal.Any && !meal.Foraged) character.Hunger.PendingMood += settings.diningMoodBonus * quality;
+        if (meal.Any) OnAte(character, meal, settings);
+
+        character.Mood += character.Hunger.PendingMood;
+        character.Hunger.PendingMood = 0f;
+        UIManager.Instance?.UpdateResourceUI(stock.resources);
     }
 
     private void OnAte(OwnedCharacter character, MealResult meal, FoodSettings settings)

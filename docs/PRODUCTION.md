@@ -13,7 +13,7 @@ Everything the town makes is data. The Gold Mine and Lumberyard you started with
 
 Items must be in a `Resources/Items` folder so the game finds them. Gold, Wood and Letters always exist (built in), so older projects keep working.
 
-Included now: items Wheat, Flour, Bread, Fish; recipes Grow Wheat, Mill Flour, Bake Bread, Catch Fish; buildings Farm, Mill, Bakery, Fishery (they use placeholder pictures; replace them with the New Building wizard or by editing the assets).
+Included now: items Wheat, Flour, Bread, Fish, Fruit, Pie, Grilled Fish; recipes Grow Wheat, Mill Flour, Bake Bread, Catch Fish, Pick Fruit, Grill Fish, Bake Pie; buildings Farm, Mill, Bakery, Fishery, Orchard, Kitchen (two recipes), Granary (storage) (they use placeholder pictures; replace them with the New Building wizard or by editing the assets).
 
 ## How a building makes things
 
@@ -28,7 +28,7 @@ When several buildings want the same input and there is not enough, they all slo
 
 1. **Item**: Create > Scriptable Objects > Item in a Resources/Items folder. Name, category, a *capacity* (how many the town can hold; 0 = no limit), and for food: *edible* and *nourishment*. No picture needed yet: a coloured square is shown.
 2. **Recipe**: Create > Scriptable Objects > Recipe. Add inputs and outputs (item + amount) and the cycle seconds (how long one cycle takes with one ordinary worker).
-3. **Building**: Eryville > New Building... (copy settings from the Farm to make another producer), then put your recipe in its *Recipes* list. Several recipes: the first is made unless another is chosen (the picker is still to come; for now it is the *active recipe index*, saved with the game).
+3. **Building**: Eryville > New Building... (copy settings from the Farm to make another producer), then put your recipe in its *Recipes* list. Several recipes: the first is made unless another is chosen: tap the *Making:* row in the building's details (saved with the game). Give recipes **tags** (e.g. `bakery`) so characters with a matching specialty work faster at them.
 4. **Storage**: a Granary is a building with *Storage Bonus* = Wheat 500, Bread 300... its room is added to the item's own capacity while it stands.
 5. Run **Eryville > Check Buildings**: it flags broken recipes (no item, 0 amount, nothing made) and items that something uses but nothing makes.
 

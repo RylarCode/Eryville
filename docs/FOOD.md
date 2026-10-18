@@ -44,6 +44,32 @@ The same rules are played through with the production: in each slice of the away
 
 Eryville > Check Characters warns about an inedible favourite or a zero appetite.
 
-## Not yet (phase 3)
+## Eating out
 
-Eating places (Tavern / Bakery seats), "well fed" variety bonuses, more food buildings and the baker / fisherman characters to recruit.
+A building with **Dining Slots** (set on its building type) is a dining place: the **Tavern** (6 seats, meal quality x1.5) and the **Bakery** (2 seats, x1.2) are. In a meal window a hungry character with a free seat within about 30 units **walks there**, sits (out of sight, inside), and eats at the end of a 25-second meal; then it goes back to what its schedule says. A meal out:
+- gives **more mood** (the normal meal bonus and a +3 dining bonus, both times the place's *meal quality*);
+- takes the character away from work for a short while (workers who go to lunch are not producing meanwhile), so more seats and nearby dining places are an optimisation.
+
+Seats are limited and kept for whoever is on the way: if there is none, the character eats where it stands, as before. A very hungry character (snack) never walks; one that does not get to its seat in 90 seconds, or whose plans change on the way (the time of day moves on), eats where it stands instead, and a character only tries to eat out once per window. The building's details show *Seats: 2/6 taken (meal quality x1.5)*. Eating out is online only: while the game is closed everyone eats where they stand, which changes the mood but not the food used.
+
+## A varied diet
+
+If a character's last **3 meals** include **at least 2 different foods** and it is well fed (satiety 60 or more), it is **well fed**: **5% faster** and a little happier every second (*Fed: 90% (well fed)* in its details). Fish one day and bread the next beats bread every day, which is a reason to grow more than one thing. Tuned in FoodSettings (*Variety and being well fed*).
+
+## Specialties: bakers and fishermen
+
+A character type can have **specialties**: "good at recipes tagged *bakery*: x1.5". A recipe's **tags** say what kind of work it is; the worker's multiplier applies while it works at a building making that recipe (and counts offline too). Recruitable now (in the Tavern's pool):
+- **Baker** (Rare): bakery x1.5, likes Pie.
+- **Fisherman** (Rare): fishing x1.5, cooking x1.2, likes Grilled Fish.
+- **Farmer** (Common): farming x1.4, milling x1.2, likes Fruit.
+They use the placeholder body of the first characters until you give them art with the New Character wizard's pictures. The details panel shows a character's specialties.
+
+## More food
+
+New items: **Fruit** (3), **Pie** (8), **Grilled Fish** (9) nourishment. New buildings: **Orchard** (Pick Fruit), **Kitchen** (two recipes: Grill Fish, Bake Pie: tap the *Making:* row in its details to switch), **Granary** (extra room for every food). The Fishery's fish can be eaten as they are or grilled.
+
+If you use the Firebase backend, the new characters are in `firebase/functions/src/config.ts`: redeploy the functions for the server to roll them.
+
+## Still to come
+
+Eating animation art, a visible dining room (customers at tables), food prices and a market.

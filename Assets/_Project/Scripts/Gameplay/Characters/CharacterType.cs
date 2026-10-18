@@ -38,6 +38,10 @@ public class CharacterType : ScriptableObject
     public StatEffect loyaltySpeed = new StatEffect(); // walking speed multiplier at loyalty 0 .. 100
     public StatEffect moodSpeed = new StatEffect();    // walking speed multiplier at mood 0 .. 100
 
+    [Header("Specialty")]
+    [Tooltip("What this character is especially good at: a baker at recipes tagged \"bakery\", a fisherman at \"fishing\". The multiplier applies while it works at a building whose recipe has the tag.")]
+    public List<Specialty> specialties = new List<Specialty>();
+
     [Header("Food")]
     public ItemType favouriteFood;           // eaten first when there is some; a meal of it lifts the mood more. Optional.
     [Tooltip("How fast this character gets hungry compared with an ordinary one (1 = ordinary, 2 = twice as fast).")]
@@ -55,6 +59,14 @@ public class CharacterType : ScriptableObject
     // Where this character may go for the Rest1 / Rest2 schedule slots, per world state.
     // If nothing matches (no option, or no such building built yet) the character goes home.
     public List<RestOption> restOptions = new List<RestOption>();
+}
+
+// "Good at recipes with this tag": a multiplier on the working speed
+[System.Serializable]
+public class Specialty
+{
+    public string tag;
+    public float multiplier = 1.5f;
 }
 
 // How strongly a stat (loyalty, mood) changes something: the multiplier is atZero when the stat is 0

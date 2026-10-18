@@ -191,6 +191,41 @@ public class Building : MonoBehaviour, IClickable
         }
     }
 
+    // --- Dining ---
+
+    private readonly List<OwnedCharacter> seatsReserved = new List<OwnedCharacter>();  // on their way to eat here
+    private readonly List<Character> diners = new List<Character>();                    // sitting down to eat here
+
+    public int DiningSlots => buildingType != null ? buildingType.diningSlots : 0;
+    public bool IsDiningPlace => DiningSlots > 0;
+    public int DinersNow { get { diners.RemoveAll(d => d == null); return diners.Count; } }
+    public int SeatsFree
+    {
+        get
+        {
+            seatsReserved.RemoveAll(c => c == null);
+            return DiningSlots - DinersNow - seatsReserved.Count;
+        }
+    }
+
+    // A seat is kept for someone who is walking here
+    public bool ReserveSeat(OwnedCharacter character)
+    {
+        if (character == null || seatsReserved.Contains(character) || SeatsFree <= 0) return false;
+        seatsReserved.Add(character);
+        return true;
+    }
+
+    public void ReleaseSeat(OwnedCharacter character) { seatsReserved.Remove(character); }
+
+    public void DinerArrived(Character avatar)
+    {
+        seatsReserved.Remove(avatar.Owned);
+        if (!diners.Contains(avatar)) diners.Add(avatar);
+    }
+
+    public void DinerLeft(Character avatar) { diners.Remove(avatar); }
+
     // --- Workers ---
 
     // Returns false if the building has no free worker slot or the character already works here.

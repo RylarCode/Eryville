@@ -76,7 +76,7 @@ Created at runtime (nothing to add to the scene):
 
 **Gameplay/Food/** - hunger and eating (`docs/FOOD.md`)
 - `FoodSettings` (asset `Resources/FoodSettings`): every number of the rules. `HungerRules` (pure): drain, meal windows, who eats what, forage. `HungerSystem`: the once-a-second tick while playing (food workers first, rotating order), the food picture (`EatBubble`) over eaters, and the `Hunger` filter / stock notes. `OfflineProgress` plays the same rules for the time away.
-- `OwnedCharacter.Hunger` (satiety, last meal) is saved with each character (save version 7); `Productivity` includes the hunger slowdown.
+- `OwnedCharacter.Hunger` (satiety, last meals) is saved with each character (save version 8); `Productivity` includes the hunger slowdown, the well-fed bonus is in `HungerRules`. Eating out: dining places have seats (`Building.SeatsFree`), the character walks there (`Character.StartDining`, `Activity.Eating`) and `HungerSystem.CompleteMeal` eats at the end. Specialties: `CharacterType.specialties` x `Recipe.tags`.
 
 **Gameplay/City/ (art)** - see `docs/NEW_BUILDING.md`
 - `BuildingArt.cs`: `BuildingLayout` (where a picture goes: flat over the cells, or 3/4 raised above them), `DepthSorting` (draw order by height on the map: characters behind a building are hidden), `BuildingOpenState` (when a building counts as open).

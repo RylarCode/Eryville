@@ -5,7 +5,7 @@ using UnityEngine;
 [RequireComponent(typeof(CharacterMovement))]
 public class Character : MonoBehaviour, IClickable
 {
-    public enum Activity { Idle, Traveling, Working, Resting }
+    public enum Activity { Idle, Traveling, Working, Resting, Eating }
 
     // The character this body belongs to
     public OwnedCharacter Owned { get; private set; }
@@ -31,6 +31,8 @@ public class Character : MonoBehaviour, IClickable
 
     private Building currentPlace;        // the building we are Working / Resting at
     private Building destination;         // the building we are travelling to
+    private Building seatReserved;        // the dining place we have a seat at (while on our way there)
+    private float diningRemaining;        // seconds left of the meal we are having
     private Activity activityOnArrival;   // what we start doing when we get there
 
     private CharacterAnimator animator;           // only when the character's type has animations
@@ -259,7 +261,8 @@ public class Character : MonoBehaviour, IClickable
         {
             Debug.Log($"{DisplayName} cannot find a way to {destination.DisplayName}.");
             destination = null;
-            if (routeOrigin != null && (routeOriginActivity == Activity.Working || routeOriginActivity == Activity.Resting))
+            ReleaseSeat();
+            if (routeOrigin != null && (routeOriginActivity == Activity.Working || routeOriginActivity == Activity.Resting || routeOriginActivity == Activity.Eating))
             {
                 EnterActivity(routeOriginActivity, routeOrigin); // no way out of the building: carry on inside
             }
@@ -297,11 +300,12 @@ public class Character : MonoBehaviour, IClickable
         if (place == null) // the building was removed while we were on the way
         {
             CurrentActivity = Activity.Idle;
+            ReleaseSeat();
             return;
         }
 
         Activity activity = activityOnArrival;
-        bool goingIn = activity == Activity.Working || activity == Activity.Resting;
+        bool goingIn = activity == Activity.Working || activity == Activity.Resting || activity == Activity.Eating;
         if (goingIn && animator != null && animator.Has(AnimKey.EnterBuilding))
         {
             // Go in through the door first (the character stays in view while it plays), then be inside
@@ -325,6 +329,58 @@ public class Character : MonoBehaviour, IClickable
         if (activity == Activity.Working && place != WorkBuilding) activity = Activity.Idle;
 
         EnterActivity(activity, place);
+    }
+
+    // --- Eating out ---
+
+    // Goes to a dining place for a meal (the seat is reserved by the caller). The meal is eaten there, then the schedule carries on.
+    public void StartDining(Building place)
+    {
+        GoTo(place, Activity.Eating); // (leaving what we were doing drops any earlier plan, so the seat is noted after)
+        seatReserved = place;
+        Owned.Hunger.Dining = true;
+    }
+
+    // Gives up a plan to eat out (the seat goes back to the pool) and carries on with the schedule
+    public void CancelDining()
+    {
+        if (seatReserved == null) return;
+        ReleaseSeat();
+        ReapplySchedule();
+    }
+
+    private void ReleaseSeat()
+    {
+        if (seatReserved != null && Owned != null) seatReserved.ReleaseSeat(Owned);
+        seatReserved = null;
+        if (Owned != null) Owned.Hunger.Dining = false;
+    }
+
+    // Counts the meal down while sitting at the table
+    private void Update()
+    {
+        if (CurrentActivity != Activity.Eating) return;
+        if (GameManager.Instance != null && GameManager.Instance.SimulationPaused) return;
+
+        diningRemaining -= Time.deltaTime;
+        if (diningRemaining <= 0f) FinishDining();
+    }
+
+    // The meal is over: eat it (food from the stock, the mood), then go back to what the schedule says
+    private void FinishDining()
+    {
+        Building place = currentPlace;
+        diningRemaining = 0f;
+        if (place != null) place.DinerLeft(this);
+        Owned.Hunger.Dining = false;
+        if (HungerSystem.Instance != null) HungerSystem.Instance.CompleteMeal(Owned, place);
+
+        ReapplySchedule();
+        if (CurrentActivity == Activity.Eating)
+        {
+            // The schedule had nothing to say: just step out and stand there
+            LeaveCurrentActivity();
+        }
     }
 
     // Eating: a picture of the food floats over the character for a few seconds (and, if it stands still and has an eating
@@ -360,11 +416,17 @@ public class Character : MonoBehaviour, IClickable
     {
         CurrentActivity = activity;
         currentPlace = place;
-        bool inside = activity == Activity.Working || activity == Activity.Resting;
+        bool inside = activity == Activity.Working || activity == Activity.Resting || activity == Activity.Eating;
         SetVisible(!inside);
         if (inside) transform.position = place.transform.position; // we reached its entrance and went in
         if (activity == Activity.Working) place.WorkerArrived(this);
         if (activity == Activity.Resting) place.RestingArrived(this);
+        if (activity == Activity.Eating)
+        {
+            place.DinerArrived(this);
+            seatReserved = null;
+            diningRemaining = FoodSettings.Current.diningSeconds;
+        }
         Debug.Log($"{DisplayName} is now {activity} at {place.DisplayName}");
     }
 
@@ -373,6 +435,8 @@ public class Character : MonoBehaviour, IClickable
         animator?.CancelOneShot();
         if (CurrentActivity == Activity.Working && currentPlace != null) currentPlace.WorkerLeft(this);
         if (CurrentActivity == Activity.Resting && currentPlace != null) currentPlace.RestingLeft(this);
+        if (CurrentActivity == Activity.Eating && currentPlace != null) currentPlace.DinerLeft(this);
+        ReleaseSeat(); // a plan to go and eat is off if we are sent somewhere else
         currentPlace = null;
         CurrentActivity = Activity.Idle;
         SetVisible(true);

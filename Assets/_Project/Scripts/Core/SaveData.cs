@@ -43,6 +43,7 @@ public class CharacterData
     public float mood;            // added in version 3
     public float satiety = 100f;  // added in version 7: how full it is
     public long lastMealKey = -1; // added in version 7: the meal window of its latest meal
+    public List<string> recentMeals = new List<string>(); // added in version 8: what its latest meals were, for variety
     public bool wagePaid = true;  // added in version 4: whether the latest payday covered this character
     public int awareness;         // added in version 4: self-awareness level (from duplicate pulls)
     public string workBuildingId; // Building.Id, or empty

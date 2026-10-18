@@ -46,6 +46,14 @@ public static class CharacterChecks
             }
 
             if (type.favouriteFood != null && (!type.favouriteFood.edible || type.favouriteFood.nourishment <= 0f)) problems.Add($"{who}: its favourite food ({type.favouriteFood.Name}) is not edible, so it will never be eaten.");
+            if (type.specialties != null)
+            {
+                foreach (Specialty specialty in type.specialties)
+                {
+                    if (specialty == null || string.IsNullOrEmpty(specialty.tag)) problems.Add($"{who} has a specialty with no tag, so it does nothing.");
+                    else if (specialty.multiplier <= 0f) problems.Add($"{who}: the {specialty.tag} specialty has a multiplier of 0 or less, which would stop it working.");
+                }
+            }
             if (type.appetite <= 0f) problems.Add($"{who} has an appetite of 0 or less (it is treated as 1).");
 
             if (type.defaultSchedule == null || type.defaultSchedule.Count == 0) problems.Add($"{who} has no default schedule, so it will just stand around.");
