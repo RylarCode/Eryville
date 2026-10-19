@@ -115,6 +115,7 @@ public class UIManager : MonoBehaviour
         CreateDetailsPortrait();
         reveal = new RevealPopup(characterPanel.transform.parent, buttonPrefab);
         CreateMoveButton();
+        CreateViewButton();
         town = new TownMenu(this, buttonPrefab, characterPanel, assignPanel);
         CreateMenuButton("OpenTownButton", "Town", 1, ToggleTownMenu);
         recruit = new RecruitMenu(this, buttonPrefab, characterPanel, assignPanel);
@@ -243,6 +244,7 @@ public class UIManager : MonoBehaviour
 
     private void Update()
     {
+        UpdateViewButton();
         if (layout != null && layout.Tick())
         {
             ApplyTouchMode();
@@ -817,6 +819,50 @@ public class UIManager : MonoBehaviour
 
     // Makes the "Move" button as a copy of the Assign button, so it looks the same and sits in the same
     // spot (which is free in building view). The copy's scene-assigned click action is switched off.
+    // The "View" button: a small button at the left edge of the map that flattens the town (every picture squashed onto its cells) and back
+    private GameObject viewButton;
+    private TMP_Text viewLabel;
+    private string shownViewLabel;
+
+    private void CreateViewButton()
+    {
+        if (buttonPrefab == null) return;
+
+        viewButton = Instantiate(buttonPrefab, characterPanel.transform.parent);
+        viewButton.name = "ViewButton";
+        viewButton.SetActive(true);
+        RectTransform rect = viewButton.GetComponent<RectTransform>();
+        if (rect != null)
+        {
+            rect.anchorMin = new Vector2(0f, 0.5f);
+            rect.anchorMax = new Vector2(0f, 0.5f);
+            rect.pivot = new Vector2(0f, 0.5f);
+            rect.anchoredPosition = new Vector2(10f, 0f);
+            rect.sizeDelta = new Vector2(120f, 36f);
+        }
+        Button button = viewButton.GetComponent<Button>();
+        if (button != null)
+        {
+            for (int i = 0; i < button.onClick.GetPersistentEventCount(); i++) button.onClick.SetPersistentListenerState(i, UnityEventCallState.Off);
+            button.onClick.AddListener(() => { if (CityView.Instance != null) CityView.Instance.Toggle(); });
+        }
+        viewLabel = viewButton.GetComponentInChildren<TMP_Text>();
+        UpdateViewButton();
+    }
+
+    // "View: 3/4", "View: Flat", or "Flat (editing)" while placing something (then it cannot be changed)
+    private void UpdateViewButton()
+    {
+        if (viewLabel == null || CityView.Instance == null) return;
+        CityView view = CityView.Instance;
+        string text = view.Editing ? "Flat (editing)" : view.UserFlat ? "View: Flat" : "View: 3/4";
+        if (text == shownViewLabel) return;
+        shownViewLabel = text;
+        viewLabel.text = text;
+        Button button = viewButton.GetComponent<Button>();
+        if (button != null) button.interactable = !view.Editing;
+    }
+
     private void CreateMoveButton()
     {
         if (assignJobButton == null) return;

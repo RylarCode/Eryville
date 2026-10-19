@@ -32,6 +32,8 @@ public class BuildingType : ScriptableObject
     public float artWidth = 0f;
     [Tooltip("ThreeQuarter only: nudge the picture (in cells) if it does not line up with the ground it stands on.")]
     public Vector2 artOffset = Vector2.zero;
+    [Tooltip("ThreeQuarter only, optional: a true top-down picture shown in the flat view (the 3/4 picture, squashed, is used when this is empty).")]
+    public Sprite topDownSprite;
     public BuildingAnimationSet animations;           // closed / open animations. Optional.
     public BuildingOpenRule openRule = BuildingOpenRule.Auto;
 

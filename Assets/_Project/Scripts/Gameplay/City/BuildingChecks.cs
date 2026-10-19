@@ -40,6 +40,8 @@ public static class BuildingChecks
             if (type.artStyle == BuildingArtStyle.ThreeQuarter && type.sprite != null && type.sprite.bounds.size.y <= type.sprite.bounds.size.x * type.size.y / Mathf.Max(1, type.size.x))
                 problems.Add($"{who} is set to 3/4 art but its picture is not taller than its cells, so it will not rise above them. (Fine for a flat picture: use FitFootprint.)");
 
+            if (type.topDownSprite != null && type.artStyle != BuildingArtStyle.ThreeQuarter) problems.Add($"{who} has a top-down picture but its art style is FitFootprint, which is top-down already: the extra picture is not used.");
+
             if (type.animations != null)
             {
                 if (type.animations.Resolve(BuildingAnimKey.Closed) == null) problems.Add($"{who}: the animation set has no closed or open frames, so the building will not animate.");

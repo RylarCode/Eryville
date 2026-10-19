@@ -44,6 +44,7 @@ public class BuildingAnimator : MonoBehaviour
 
         player.Play(set.Resolve(open ? BuildingAnimKey.Open : BuildingAnimKey.Closed));
         Sprite frame = player.Tick(Time.deltaTime);
+        if (building.ShowingTopDownArt) return; // the flat view shows its own picture
         spriteRenderer.sprite = frame != null ? frame : stillSprite;
     }
 }

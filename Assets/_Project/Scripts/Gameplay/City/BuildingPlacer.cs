@@ -134,15 +134,13 @@ public class BuildingPlacer : MonoBehaviour, IPlacementMode
         if (currentIndicatorInstance == null) return;
 
         currentIndicatorInstance.SetActive(true);
-        currentIndicatorInstance.GetComponent<SpriteRenderer>().sprite = type.sprite;
-
-        // Size the ghost like the real building will be. A raised (3/4) picture is centred above the building's cells, so the
-        // ghost is shifted by the same amount, and a flat marker shows which cells on the ground it will take.
-        BuildingLayout layout = BuildingLayout.For(type);
+        // The ghost is the flat picture: while placing or moving the town is flat, so it shows exactly the cells the building will take
+        // (the top-down picture if the building has one)
+        BuildingLayout layout = BuildingLayout.ForFlat(type);
         ghostOffset = layout.ArtPosition;
+        currentIndicatorInstance.GetComponent<SpriteRenderer>().sprite = type.topDownSprite != null && type.artStyle == BuildingArtStyle.ThreeQuarter ? type.topDownSprite : type.sprite;
         currentIndicatorInstance.transform.localScale = new Vector3(layout.Scale.x, layout.Scale.y, 1f);
         currentIndicatorInstance.GetComponent<SpriteRenderer>().sortingOrder = DepthSorting.Ghost;
-        ShowFootprintMarker(type, layout);
         SetIndicatorColor(Color.white);
     }
 
@@ -351,30 +349,8 @@ public class BuildingPlacer : MonoBehaviour, IPlacementMode
         if (currentIndicatorInstance == null) return;
         SpriteRenderer indicator = currentIndicatorInstance.GetComponent<SpriteRenderer>();
         if (indicator != null) indicator.color = new Color(color.r, color.g, color.b, 0.5f);
-        if (footprintMarker != null) footprintMarker.color = new Color(color.r, color.g, color.b, 0.45f);
     }
 
-    // The ghost's offset from the centre of the building's cells (zero for flat, top-down pictures)
+    // The ghost's offset from the centre of the building's cells (zero unless its picture's pivot is not in the middle)
     private Vector2 ghostOffset;
-    private SpriteRenderer footprintMarker;
-
-    // A one-cell white square stretched over the building's cells, child of the ghost, shown only for raised pictures
-    private void ShowFootprintMarker(BuildingType type, BuildingLayout layout)
-    {
-        if (footprintMarker == null)
-        {
-            GameObject marker = new GameObject("Footprint");
-            marker.transform.SetParent(currentIndicatorInstance.transform, false);
-            footprintMarker = marker.AddComponent<SpriteRenderer>();
-            Texture2D white = Texture2D.whiteTexture;
-            footprintMarker.sprite = Sprite.Create(white, new Rect(0, 0, white.width, white.height), new Vector2(0.5f, 0.5f), white.width); // exactly one unit
-            footprintMarker.sortingOrder = DepthSorting.Ghost - 1;
-        }
-        footprintMarker.gameObject.SetActive(layout.Raised);
-        if (!layout.Raised) return;
-
-        // The ghost's transform is scaled, so what is set here is in the picture's own units
-        footprintMarker.transform.localPosition = new Vector3(-layout.ArtPosition.x / layout.Scale.x, -layout.ArtPosition.y / layout.Scale.y, 0f);
-        footprintMarker.transform.localScale = new Vector3(type.size.x / layout.Scale.x, type.size.y / layout.Scale.y, 1f);
-    }
 }

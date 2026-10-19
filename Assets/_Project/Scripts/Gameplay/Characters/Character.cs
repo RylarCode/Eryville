@@ -49,6 +49,7 @@ public class Character : MonoBehaviour, IClickable
         if (movement == null) movement = gameObject.AddComponent<CharacterMovement>();
         movement.Arrived += OnArrived;
         spriteRenderer = GetComponent<SpriteRenderer>();
+        if (spriteRenderer != null && GetComponent<CharacterSilhouette>() == null) gameObject.AddComponent<CharacterSilhouette>(); // shows through buildings that hide it
         bodyCollider = GetComponent<Collider2D>();
         if (spriteRenderer != null) sortBase = Mathf.Max(1, spriteRenderer.sortingOrder); // always above buildings and roads
     }

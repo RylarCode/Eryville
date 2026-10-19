@@ -25,6 +25,7 @@ public class BuildingManager : MonoBehaviour
             return;
         }
         Instance = this;
+        if (GetComponent<CityView>() == null) gameObject.AddComponent<CityView>(); // flat / 3/4 view
     }
 
     // The cells a building covers, given the cell the player clicked (its anchor).

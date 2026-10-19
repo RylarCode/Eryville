@@ -29,21 +29,31 @@ So when drawing the picture: the **bottom of the image is the front of the groun
 Everything that stands on the map is sorted by height on the map:
 - a **character** behind a building (further up the screen than its front edge) is **hidden by the picture**; in front, it is drawn over it;
 - **roads** are always on the ground, so a road behind a tall building disappears behind its picture and comes out on the other side;
-- the placement ghost, the road cursor and so on are always on top, so you can still see them behind a building.
+- the placement ghost, the road cursor and so on are always on top, so you can still see them behind a building;
+- a faint dark **outline** of a character shows through a building that hides it (picture only: it cannot be clicked; characters inside buildings have none). Eryville's cheat menu can switch outlines off.
 
 Roads and characters can still use the ground behind the building: only the building's own cells are taken.
+
+### The flat view (seeing and reaching everything)
+
+A tall picture can hide a character, or another building. The **View** button (left edge of the map, also in the cheat menu) flattens the town: every 3/4 picture is squashed onto exactly the cells it stands on, in a quarter of a second, and its click area shrinks to the cells too. Nothing overlaps then, so everything can be seen and tapped. Press again to stand the town back up (the choice is remembered).
+
+- **By itself:** while you are **placing a building, moving one or building roads**, the town goes flat on its own, and returns to your choice afterwards. The ghost is the flat picture, exactly over the cells it will take. (The button reads *Flat (editing)* then.)
+- **Art:** by default the 3/4 picture is just squashed (animations too). For something that looks right, give the building type a **Top Down Sprite**: it is shown in the flat view instead, sized to the cells (the New Building wizard has a field for it). Only 3/4 buildings use it; flat-art buildings are top-down already and never change.
+- A character hidden behind a building (not inside it) shows an outline through it; characters **inside** a building cannot be seen or clicked on the map, only through the building's details (its worker list).
 
 ### Clicking
 
 - Clicking anywhere on the **picture** (including the tall part) selects the building. Its click area covers the whole picture.
 - If a character is hidden behind the building, clicking there selects the building. A character in front of the building gets the click.
-- While **placing** a building or roads, a click always means the **ground cell** under the pointer. With a tall picture, a cell hidden behind a building is reached by pointing at the picture that covers it. When placing a 3/4 building, the ghost shows a **coloured square on the ground** (green = free, red = blocked) so you can see which cells it takes.
+- While **placing** a building or roads, a click always means the **ground cell** under the pointer, and the town is flat, so the cell is where you see it.
 - On a phone the ghost is dragged and confirmed with the Place button, as before.
 
 ### Nuances worth knowing
 
 - **The pivot does not matter.** Whatever pivot the sprite has (centre, bottom...), the picture is placed by its *bounds*, so its bottom edge lands on the front edge of the cells.
 - **All animation frames must be the same size as the still picture** (cut them from one sheet with the same cell size): the size on screen is worked out from the still picture, so a bigger frame would be drawn bigger.
+- **Hidden or hard to reach?** Use the flat view (above).
 - **Doors can be at the back.** Characters may use any free cell next to the building as its entrance, including behind it, where the picture hides them (so you may not see them go in or come out).
 - **The click area is a rectangle** around the whole picture, so a click on a transparent corner of a tall picture still selects the building.
 - Tall pictures are cut off by nothing, but near the top edge of the map they simply hang over it.

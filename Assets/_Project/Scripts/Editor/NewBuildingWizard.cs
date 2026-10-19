@@ -18,6 +18,7 @@ public class NewBuildingWizard : EditorWindow
     private float artWidth = 0f;
     private Texture2D animationSheet;
     private Sprite stillSprite;
+    private Sprite topDownSprite;
     private bool addToGame = true;
     private string result = "";
 
@@ -44,6 +45,8 @@ public class NewBuildingWizard : EditorWindow
         if (artStyle == BuildingArtStyle.ThreeQuarter) artWidth = EditorGUILayout.FloatField(new GUIContent("Picture width (cells)", "0 = as wide as the cells"), artWidth);
         animationSheet = (Texture2D)EditorGUILayout.ObjectField(new GUIContent("Animation sprite sheet", "Sliced, with frames named like closed_0, open_0, opening_0, closing_0."), animationSheet, typeof(Texture2D), false);
         stillSprite = (Sprite)EditorGUILayout.ObjectField(new GUIContent("Still picture", "Used if the sheet has no closed / open frames. Left empty it is taken from the sheet."), stillSprite, typeof(Sprite), false);
+
+        if (artStyle == BuildingArtStyle.ThreeQuarter) topDownSprite = (Sprite)EditorGUILayout.ObjectField(new GUIContent("Top-down picture (optional)", "Shown in the flat view. Empty: the 3/4 picture is squashed onto the cells."), topDownSprite, typeof(Sprite), false);
 
         EditorGUILayout.Space();
         addToGame = EditorGUILayout.Toggle(new GUIContent("Buildable in this scene", "Adds it to the BuildingPlacer's list in the open scene."), addToGame);
@@ -76,6 +79,7 @@ public class NewBuildingWizard : EditorWindow
         type.artStyle = artStyle;
         type.artWidth = artStyle == BuildingArtStyle.ThreeQuarter ? Mathf.Max(0f, artWidth) : 0f;
         type.artOffset = Vector2.zero;
+        type.topDownSprite = artStyle == BuildingArtStyle.ThreeQuarter ? topDownSprite : null;
         AssetDatabase.CreateAsset(type, typePath);
 
         string notes = "";

@@ -122,7 +122,7 @@ public class Building : MonoBehaviour, IClickable
         Body = root;
         BoxCollider2D collider = GetComponent<BoxCollider2D>();
 
-        if (layout.UsesChild)
+        if (layout.UsesChild || type.artStyle == BuildingArtStyle.ThreeQuarter)
         {
             // 3/4 art (or art whose pivot is not in its middle): the picture lives on a child that is shifted into place; the building itself stays
             // centred on its cells (workers walk to its position, entrances are worked out from its cells)
@@ -170,6 +170,8 @@ public class Building : MonoBehaviour, IClickable
                 collider.offset = Vector2.zero; // Optional: reset offset
             }
         }
+        ArtOffsetNow = layout.ArtOffset;
+        ArtSizeNow = layout.ArtSize;
         UpdateDepth();
 
         if (type.animations != null && Body != null)
@@ -189,6 +191,47 @@ public class Building : MonoBehaviour, IClickable
         {
             component.OnBuildingInitialized(this);
         }
+
+        if (CityView.Instance != null && CityView.Instance.Blend > 0f) ApplyView(CityView.Instance.Blend); // built while the view is flat
+    }
+
+    // --- The flat view ---
+
+    // Where the picture is now (world centre and size in cells): the 3/4 picture rises above the cells, the flat one covers them.
+    // Used to tell whether it hides a character.
+    public Vector2 ArtOffsetNow { get; private set; }
+    public Vector3 ArtCenter => transform.position + (Vector3)ArtOffsetNow;
+    public Vector2 ArtSizeNow { get; private set; }
+    public bool ShowingTopDownArt { get; private set; }
+
+    // Moves the picture between the 3/4 view (blend 0) and the flat view (blend 1): the picture shrinks onto the cells, and so does the
+    // area you can click. Only buildings with 3/4 art change; flat art already is the flat view.
+    public void ApplyView(float blend)
+    {
+        if (buildingType == null || buildingType.artStyle != BuildingArtStyle.ThreeQuarter || Body == null) return;
+        Transform art = Body.transform;
+        if (art == transform) return;
+
+        BuildingLayout threeQuarter = BuildingLayout.For(buildingType);
+        BuildingLayout flat = BuildingLayout.ForFlat(buildingType);
+        bool topDown = blend >= 0.5f && buildingType.topDownSprite != null; // (only 3/4 buildings get here)
+        Sprite shown = topDown ? buildingType.topDownSprite : buildingType.sprite;
+        Vector2 size = shown != null ? (Vector2)shown.bounds.size : Vector2.zero;
+        Vector2 center = shown != null ? (Vector2)shown.bounds.center : Vector2.zero;
+        BuildingLayout now = BuildingLayout.Blend(threeQuarter, flat, blend, size, center);
+
+        ShowingTopDownArt = topDown;
+        if (Body.sprite != shown && (topDown || GetComponent<BuildingAnimator>() == null)) Body.sprite = shown; // (an animator puts its own frames back once the top-down picture is gone)
+        art.localPosition = new Vector3(now.ArtPosition.x, now.ArtPosition.y, 0f);
+        art.localScale = new Vector3(now.Scale.x, now.Scale.y, 1f);
+        BoxCollider2D collider = GetComponent<BoxCollider2D>();
+        if (collider != null)
+        {
+            collider.size = now.ArtSize;
+            collider.offset = now.ArtOffset;
+        }
+        ArtOffsetNow = now.ArtOffset;
+        ArtSizeNow = now.ArtSize;
     }
 
     // --- Dining ---

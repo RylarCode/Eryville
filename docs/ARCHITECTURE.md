@@ -82,6 +82,7 @@ Created at runtime (nothing to add to the scene):
 - `BuildingArt.cs`: `BuildingLayout` (where a picture goes: flat over the cells, or 3/4 raised above them), `DepthSorting` (draw order by height on the map: characters behind a building are hidden), `BuildingOpenState` (when a building counts as open).
 - `BuildingAnimationSet` / `BuildingAnimator`: closed / open loops and opening / closing transitions. `BuildingChecks`: finds the usual mistakes. `Building.Body` is the renderer that shows the picture (a child for 3/4 art).
 - Clicks go to whatever is drawn in front (`InputManager`).
+- `CityView`: the flat / 3/4 view (player's choice plus automatic flat while placing / moving / building roads), `Building.ApplyView` squashes the picture and its click area; `CharacterSilhouette`: the outline of a character behind a building.
 
 **Gameplay/City/** - buildings and the map
 - `BuildingType` (SO), `Building` (id, cell, workers, residents, which avatars are on site), `BuildingManager` (build / move / remove, registry), `MapGrid` (cells: bounds, buildings, roads, speed), `BuildingPlacer` (placing and moving; ghost; place-and-confirm on phones).

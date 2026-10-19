@@ -57,6 +57,28 @@ public struct BuildingLayout
         return layout;
     }
 
+    // The layout of the flat (top-down) view: the picture (the top-down one if there is one) stretched over exactly the cells
+    public static BuildingLayout ForFlat(BuildingType type)
+    {
+        Sprite sprite = type.topDownSprite != null && type.artStyle == BuildingArtStyle.ThreeQuarter ? type.topDownSprite : type.sprite;
+        Vector2 size = sprite != null ? (Vector2)sprite.bounds.size : Vector2.zero;
+        Vector2 center = sprite != null ? (Vector2)sprite.bounds.center : Vector2.zero;
+        return Compute(BuildingArtStyle.FitFootprint, type.size, size, 0f, Vector2.zero, center);
+    }
+
+    // Somewhere between two layouts (t = 0 is a, t = 1 is b), for the picture of the given sprite: its size and the middle of it are
+    // blended, then the sprite's scale and pivot position follow from that
+    public static BuildingLayout Blend(BuildingLayout a, BuildingLayout b, float t, Vector2 spriteSize, Vector2 spriteCenter)
+    {
+        t = Mathf.Clamp(t, 0f, 1f);
+        BuildingLayout layout = new BuildingLayout();
+        layout.ArtSize = new Vector2(Mathf.Lerp(a.ArtSize.x, b.ArtSize.x, t), Mathf.Lerp(a.ArtSize.y, b.ArtSize.y, t));
+        layout.ArtOffset = new Vector2(Mathf.Lerp(a.ArtOffset.x, b.ArtOffset.x, t), Mathf.Lerp(a.ArtOffset.y, b.ArtOffset.y, t));
+        layout.Scale = spriteSize.x > 0f && spriteSize.y > 0f ? new Vector2(layout.ArtSize.x / spriteSize.x, layout.ArtSize.y / spriteSize.y) : Vector2.one;
+        layout.ArtPosition = new Vector2(layout.ArtOffset.x - spriteCenter.x * layout.Scale.x, layout.ArtOffset.y - spriteCenter.y * layout.Scale.y);
+        return layout;
+    }
+
     public static BuildingLayout For(BuildingType type)
     {
         Vector2 spriteSize = type.sprite != null ? (Vector2)type.sprite.bounds.size : Vector2.zero;

@@ -145,6 +145,12 @@ public class UILayout
             Place(menuButton, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-24f, -(24f + top)), new Vector2(240f, 100f));
             Fit(menuButton, 20f, 52f);
         }
+        RectTransform viewButton = Find("ViewButton");
+        if (viewButton != null)
+        {
+            Place(viewButton, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(24f, 0f), new Vector2(240f, 90f));
+            Fit(viewButton, 18f, 44f);
+        }
         RectTransform test = Find("TestButtonforFunctions");
         if (test != null)
         {

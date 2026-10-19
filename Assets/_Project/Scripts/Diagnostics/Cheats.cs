@@ -11,6 +11,10 @@ public static class Cheats
 
     // --- Time ---
 
+    // The flat view and the outlines of characters behind buildings
+    public static void ToggleFlatView() { if (CityView.Instance != null) CityView.Instance.Toggle(); }
+    public static void ToggleSilhouettes() { if (CityView.Instance != null) CityView.Instance.Silhouettes = !CityView.Instance.Silhouettes; }
+
     // Lighting: switch the day / night tint off, or look at one hour of the day (every tap moves it 3 hours on; after the last it follows the clock again)
     public static void ToggleLighting()
     {
