@@ -148,8 +148,8 @@ public class UILayout
         RectTransform viewButton = Find("ViewButton");
         if (viewButton != null)
         {
-            Place(viewButton, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(24f, 0f), new Vector2(240f, 90f));
-            Fit(viewButton, 18f, 44f);
+            Place(viewButton, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-(24f + 240f + 16f), -(24f + top)), new Vector2(240f, 100f));
+            Fit(viewButton, 20f, 52f);
         }
         RectTransform test = Find("TestButtonforFunctions");
         if (test != null)
@@ -177,7 +177,7 @@ public class UILayout
         foreach (string gridName in new[] { "BuildingMenuPanel", "HireMenuPanel" })
         {
             RectTransform panel = Find(gridName);
-            GridLayoutGroup grid = panel != null ? panel.GetComponent<GridLayoutGroup>() : null;
+            GridLayoutGroup grid = panel != null ? MenuPanels.GridOf(panel) : null;
             if (grid == null) continue;
             if (!grids.ContainsKey(grid)) grids[grid] = new GridState { cell = grid.cellSize, spacing = grid.spacing, constraint = grid.constraint, count = grid.constraintCount };
             grid.cellSize = new Vector2(236f, 270f);

@@ -128,6 +128,8 @@ public class UIManager : MonoBehaviour
         characterText.fontSizeMin = 14f;
         characterText.fontSizeMax = 36f;
 
+        buildingButtonContainer = MenuPanels.MakeScrollableGrid(buildingButtonContainer); // more cards than fit: scroll
+        hireButtonContainer = MenuPanels.MakeScrollableGrid(hireButtonContainer);
         GenerateBuildingPanelButtons();
         GenerateHirePanelButtons();
         CharacterManager.Instance.RosterChanged += RefreshHireButtons;
@@ -826,20 +828,18 @@ public class UIManager : MonoBehaviour
 
     private void CreateViewButton()
     {
-        if (buttonPrefab == null) return;
+        // A copy of the Menu button (same look), just to its left
+        Transform canvas = characterPanel.transform.parent;
+        Transform source = canvas.Find("OpenMenuButton");
+        if (source == null) return;
 
-        viewButton = Instantiate(buttonPrefab, characterPanel.transform.parent);
+        viewButton = Instantiate(source.gameObject, canvas);
         viewButton.name = "ViewButton";
-        viewButton.SetActive(true);
+        viewButton.transform.SetAsFirstSibling(); // behind every panel and menu, so it never covers them
+        RectTransform sourceRect = source.GetComponent<RectTransform>();
         RectTransform rect = viewButton.GetComponent<RectTransform>();
-        if (rect != null)
-        {
-            rect.anchorMin = new Vector2(0f, 0.5f);
-            rect.anchorMax = new Vector2(0f, 0.5f);
-            rect.pivot = new Vector2(0f, 0.5f);
-            rect.anchoredPosition = new Vector2(10f, 0f);
-            rect.sizeDelta = new Vector2(120f, 36f);
-        }
+        if (sourceRect != null && rect != null) rect.anchoredPosition = sourceRect.anchoredPosition + new Vector2(-(sourceRect.sizeDelta.x + 10f), 0f);
+
         Button button = viewButton.GetComponent<Button>();
         if (button != null)
         {
@@ -912,6 +912,15 @@ public class UIManager : MonoBehaviour
     {
         if (selectedCharacter == null) return;
 
+        FillAssignList();
+        TogglePanel(assignPanel);
+    }
+
+    // The jobs list: every building with room for workers and how full it is. Made again after each assignment so the numbers stay true.
+    private void FillAssignList()
+    {
+        if (selectedCharacter == null) return;
+
         ClearList(); // pressing the button again must not stack a second copy of the list
         foreach (Building building in BuildingManager.Instance.Buildings)
         {
@@ -931,10 +940,9 @@ public class UIManager : MonoBehaviour
                 {
                     Debug.Log($"Could not assign {selectedCharacter.DisplayName} to {building.DisplayName} (full or already working there).");
                 }
+                FillAssignList(); // the slot counts changed (or someone else filled the place)
             });
         }
-
-        TogglePanel(assignPanel);
     }
 
 }

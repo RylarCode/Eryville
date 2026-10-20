@@ -36,7 +36,7 @@ Roads and characters can still use the ground behind the building: only the buil
 
 ### The flat view (seeing and reaching everything)
 
-A tall picture can hide a character, or another building. The **View** button (left edge of the map, also in the cheat menu) flattens the town: every 3/4 picture is squashed onto exactly the cells it stands on, in a quarter of a second, and its click area shrinks to the cells too. Nothing overlaps then, so everything can be seen and tapped. Press again to stand the town back up (the choice is remembered).
+A tall picture can hide a character, or another building. The **View** button (top right, just left of the Menu button; also in the cheat menu) flattens the town: every 3/4 picture is squashed onto exactly the cells it stands on, in a quarter of a second, and its click area shrinks to the cells too. Nothing overlaps then, so everything can be seen and tapped. Press again to stand the town back up (the choice is remembered).
 
 - **By itself:** while you are **placing a building, moving one or building roads**, the town goes flat on its own, and returns to your choice afterwards. The ghost is the flat picture, exactly over the cells it will take. (The button reads *Flat (editing)* then.)
 - **Art:** by default the 3/4 picture is just squashed (animations too). For something that looks right, give the building type a **Top Down Sprite**: it is shown in the flat view instead, sized to the cells (the New Building wizard has a field for it). Only 3/4 buildings use it; flat-art buildings are top-down already and never change.

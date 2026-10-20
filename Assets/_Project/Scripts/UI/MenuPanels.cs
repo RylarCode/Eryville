@@ -166,6 +166,60 @@ public static class MenuPanels
         fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
     }
 
+    // Makes a panel that holds a grid of cards scrollable (the build and hire menus outgrew their panels). The cards go in a "Content" child
+    // with the grid's settings, inside a masked "Viewport"; the panel scrolls it (wheel, drag, touch). Returns the content: put the cards
+    // there. A thing that is not a panel with a grid is returned as it is.
+    public static Transform MakeScrollableGrid(Transform panel)
+    {
+        RectTransform panelRect = panel as RectTransform;
+        GridLayoutGroup grid = panel != null ? panel.GetComponent<GridLayoutGroup>() : null;
+        if (panelRect == null || grid == null) return panel;
+
+        GameObject viewport = new GameObject("Viewport", typeof(RectTransform), typeof(RectMask2D), typeof(Image));
+        viewport.transform.SetParent(panel, false);
+        RectTransform viewportRect = viewport.GetComponent<RectTransform>();
+        viewportRect.anchorMin = Vector2.zero;
+        viewportRect.anchorMax = Vector2.one;
+        viewportRect.offsetMin = Vector2.zero;
+        viewportRect.offsetMax = Vector2.zero;
+        viewport.GetComponent<Image>().color = new Color(0f, 0f, 0f, 0f); // invisible, but it catches the drag
+
+        GameObject content = new GameObject("Content", typeof(RectTransform), typeof(GridLayoutGroup), typeof(ContentSizeFitter));
+        content.transform.SetParent(viewport.transform, false);
+        RectTransform contentRect = content.GetComponent<RectTransform>();
+        contentRect.anchorMin = new Vector2(0f, 1f);
+        contentRect.anchorMax = new Vector2(1f, 1f);
+        contentRect.pivot = new Vector2(0.5f, 1f);
+        contentRect.offsetMin = Vector2.zero;
+        contentRect.offsetMax = Vector2.zero;
+        GridLayoutGroup contentGrid = content.GetComponent<GridLayoutGroup>();
+        contentGrid.padding = grid.padding;
+        contentGrid.cellSize = grid.cellSize;
+        contentGrid.spacing = grid.spacing;
+        contentGrid.startCorner = grid.startCorner;
+        contentGrid.startAxis = grid.startAxis;
+        contentGrid.childAlignment = grid.childAlignment;
+        contentGrid.constraint = grid.constraint;
+        contentGrid.constraintCount = grid.constraintCount;
+        content.GetComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+        grid.enabled = false; // the content lays the cards out now
+
+        ScrollRect scroll = panel.gameObject.AddComponent<ScrollRect>();
+        scroll.viewport = viewportRect;
+        scroll.content = contentRect;
+        scroll.horizontal = false;
+        scroll.vertical = true;
+        scroll.scrollSensitivity = 40f;
+        return content.transform;
+    }
+
+    // The grid that lays out a menu's cards (in the scrolling content when there is one)
+    public static GridLayoutGroup GridOf(Transform panel)
+    {
+        Transform content = panel != null ? panel.Find("Viewport/Content") : null;
+        return content != null ? content.GetComponent<GridLayoutGroup>() : (panel != null ? panel.GetComponent<GridLayoutGroup>() : null);
+    }
+
     public static void ClearChildren(Transform parent)
     {
         foreach (Transform child in parent)
