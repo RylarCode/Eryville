@@ -71,10 +71,12 @@ public class PerfOverlay : MonoBehaviour
         gcAtLastRefresh = GC.CollectionCount(0);
         BuildUi();
         SetExpanded(false);
+        UnityEngine.SceneManagement.SceneManager.sceneLoaded += OnSceneLoaded;
     }
 
     private void OnDestroy()
     {
+        UnityEngine.SceneManagement.SceneManager.sceneLoaded -= OnSceneLoaded;
         if (Instance == this) Instance = null;
     }
 
@@ -89,6 +91,7 @@ public class PerfOverlay : MonoBehaviour
         refreshTimer += Time.unscaledDeltaTime;
         if (refreshTimer >= RefreshSeconds)
         {
+            KeepOneEventSystem();
             int collections = GC.CollectionCount(0);
             gcPerSecond = (collections - gcAtLastRefresh) / refreshTimer;
             gcAtLastRefresh = collections;
@@ -245,6 +248,35 @@ public class PerfOverlay : MonoBehaviour
         panel.anchoredPosition = new Vector2(24f, -(inset + 230f));
     }
 
+    private GameObject ownEvents;
+
+    private void MakeOwnEventSystem()
+    {
+        ownEvents = new GameObject("EventSystem", typeof(EventSystem), typeof(InputSystemUIInputModule));
+        ownEvents.transform.SetParent(transform, false);
+    }
+
+    // What to do about the overlay's own event system given how many exist: -1 remove ours (another scene has one), 1 make ours
+    // (none at all), 0 nothing
+    public static int EventSystemAction(int existing, bool ownExists)
+    {
+        if (ownExists && existing > 1) return -1;
+        if (existing == 0 && !ownExists) return 1;
+        return 0;
+    }
+
+    private void KeepOneEventSystem()
+    {
+        int action = EventSystemAction(FindObjectsByType<EventSystem>(FindObjectsSortMode.None).Length, ownEvents != null);
+        if (action < 0) { Destroy(ownEvents); ownEvents = null; }
+        else if (action > 0) MakeOwnEventSystem();
+    }
+
+    private void OnSceneLoaded(UnityEngine.SceneManagement.Scene scene, UnityEngine.SceneManagement.LoadSceneMode mode)
+    {
+        KeepOneEventSystem();
+    }
+
     private void BuildUi()
     {
         GameObject canvasGO = new GameObject("Canvas", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
@@ -257,11 +289,9 @@ public class PerfOverlay : MonoBehaviour
         scaler.referenceResolution = new Vector2(1080f, 1080f);
         scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
 
-        if (EventSystem.current == null)
-        {
-            GameObject events = new GameObject("EventSystem", typeof(EventSystem), typeof(InputSystemUIInputModule));
-            events.transform.SetParent(transform, false);
-        }
+        // The panel needs an event system, but only while the scene has none (the title screen): this one is dropped as soon as a
+        // scene brings its own, because a second one is an error every frame
+        if (EventSystem.current == null) MakeOwnEventSystem();
 
         GameObject panelGO = new GameObject("Panel", typeof(RectTransform), typeof(Image), typeof(Button));
         panelGO.transform.SetParent(canvasGO.transform, false);
