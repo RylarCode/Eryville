@@ -109,6 +109,11 @@ public class CheatMenu
         Section("Recruitment");
         Add("Reset pity and pull count", Cheats.ResetRecruitment);
 
+        Section("Story");
+        Info(Cheats.DescribeStory);
+        Add("Play the next chapter that is not done (whatever it needs)", () => Cheats.PlayNextChapter());
+        Add("Forget all story progress (the intro plays again)", Cheats.ResetStory, true);
+
         Section("Data");
         Add("RESET GAME: everything and the save file", Cheats.ResetGame, true);
         Add("Delete the save file only", () => Cheats.DeleteSaveFile(), true);

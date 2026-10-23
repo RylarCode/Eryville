@@ -11,6 +11,12 @@ public class BuildingType : ScriptableObject
     public int goldCost;
     public int woodCost;
 
+    [Header("Story")]
+    [Tooltip("Locked until this story chapter is finished. Empty: available from the start.")]
+    public StoryChapter unlockedBy;
+    [Tooltip("While locked, leave it out of the Build menu (otherwise it shows greyed out, saying what unlocks it).")]
+    public bool hideWhileLocked = false;
+
     [Header("Moving")]
     public bool movable = true;   // can the player pick this building up and put it somewhere else?
     public int moveGoldCost;      // free for now; raise to charge for moving

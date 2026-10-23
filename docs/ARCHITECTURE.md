@@ -74,6 +74,8 @@ Created at runtime (nothing to add to the scene):
 - `ItemType` (+ `ItemCatalog`, from `Resources/Items`), `Recipe` / `ItemAmount`: pure data. `ProductionNetwork`: the solver that shares stock and room between all producing buildings (same code online and offline). `ResourceProducer` (on the building) holds the chosen recipe and the building's last status.
 - `OfflineProgress` plays the time away through the same solver, with workers where their schedules put them.
 
+**Story/** - chapters of dialogue, story values, unlocking buildings (`docs/STORY.md`); its screens are `UI/DialogueBox.cs` and `UI/StoryMenu.cs`
+
 **Gameplay/Food/** - hunger and eating (`docs/FOOD.md`)
 - `FoodSettings` (asset `Resources/FoodSettings`): every number of the rules. `HungerRules` (pure): drain, meal windows, who eats what, forage. `HungerSystem`: the once-a-second tick while playing (food workers first, rotating order), the food picture (`EatBubble`) over eaters, and the `Hunger` filter / stock notes. `OfflineProgress` plays the same rules for the time away.
 - `OwnedCharacter.Hunger` (satiety, last meals) is saved with each character (save version 8); `Productivity` includes the hunger slowdown, the well-fed bonus is in `HungerRules`. Eating out: dining places have seats (`Building.SeatsFree`), the character walks there (`Character.StartDining`, `Activity.Eating`) and `HungerSystem.CompleteMeal` eats at the end. Specialties: `CharacterType.specialties` x `Recipe.tags`.
@@ -148,6 +150,7 @@ Data assets (`Assets/_Project/ScriptableObjects`): Buildings (Gold Mine, Lumbery
 | Offline reward | `OfflineProgress` (efficiency, cap) |
 | Hunger and meal numbers, starter food | `Resources/FoodSettings` (`docs/FOOD.md`) |
 | A new item, recipe or production chain | assets only: `docs/PRODUCTION.md` |
+| Story chapters, tutorial steps, locked buildings | assets only (`Resources/Story`): `docs/STORY.md` |
 | A new building | Eryville > New Building... (`docs/NEW_BUILDING.md`) |
 | A new menu | follow `TownMenu` / `CheatMenu`; use `MenuPanels` |
 | Something the server decides | `IGameBackend` + `LocalBackend` (and later the Firebase one) |

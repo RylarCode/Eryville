@@ -264,6 +264,37 @@ public static class Cheats
         if (online != null) online.Auth.ForgetAccount();
     }
 
+    // --- Story ---
+
+    // Forgets every finished chapter and story value (the intro plays again)
+    public static void ResetStory()
+    {
+        if (StoryManager.Instance != null) StoryManager.Instance.ResetState();
+    }
+
+    // Plays the first chapter that is not finished, whatever it needs (to try a scene out). Returns its id, or "" if there is none.
+    public static string PlayNextChapter()
+    {
+        StoryManager story = StoryManager.Instance;
+        if (story == null) return "";
+        foreach (StoryChapter chapter in story.Chapters)
+        {
+            if (story.IsDone(chapter)) continue;
+            if (UIManager.Instance != null) UIManager.Instance.CloseEverything();
+            return story.Play(chapter) ? chapter.Id : "";
+        }
+        return "";
+    }
+
+    public static string DescribeStory()
+    {
+        StoryManager story = StoryManager.Instance;
+        if (story == null) return "Story: not running";
+        System.Text.StringBuilder text = new System.Text.StringBuilder($"Story: {story.State.Done.Count} of {story.Chapters.Count} chapters done");
+        foreach (System.Collections.Generic.KeyValuePair<string, int> value in story.State.Values) text.Append($", {value.Key}={value.Value}");
+        return text.ToString();
+    }
+
     // --- Data ---
 
     // Back to a brand-new game: nobody, nothing built, starting resources, morning of the first day. Also deletes the save file,
@@ -289,6 +320,7 @@ public static class Cheats
         GameClock.Instance.SetTime(TimeOfDay.Morning, 0f); // (does nothing in real time)
         GameClock.Instance.ResetDebugOffset();
         if (WageSystem.Instance != null) WageSystem.Instance.LastPayrollDay = -1;
+        ResetStory();
         ResetRecruitment();
         Time.timeScale = 1f;
         SaveSystem.Delete();

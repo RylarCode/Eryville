@@ -12,6 +12,9 @@ public class GameSession : MonoBehaviour
 
     public const string AutoPreference = "AutoSession";
 
+    // The first load is over (the game may be saved over the file, and the story may start)
+    public bool Ready => ready;
+
     public float autosaveSeconds = 60f;
     public const float OnlineAutosaveSeconds = 180f;
 

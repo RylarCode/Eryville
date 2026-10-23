@@ -73,4 +73,7 @@ public class GameData
 
     public int gachaTotalPulls;                               // added in version 4
     public List<int> gachaPity = new List<int>();             // pulls since the last result of each pity rule's rarity
+
+    public List<StoryValueData> storyValues = new List<StoryValueData>(); // added in version 9: the story values that choices change
+    public List<string> storyDone = new List<string>();                   // added in version 9: the ids of the finished story chapters
 }

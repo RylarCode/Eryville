@@ -122,13 +122,13 @@ public class UILayout
         float sheetBottom = bottom + BarHeight + 2f * Gap;
         float sheetHeight = Mathf.Clamp(canvasHeight * 0.45f, 700f, 1000f);
 
-        // The bottom bar: the four menu buttons, side by side
-        string[] bar = { "OpenBuildButton", "OpenHireButton", "OpenTownButton", "OpenRecruitButton" };
+        // The bottom bar: the five menu buttons, side by side
+        string[] bar = { "OpenBuildButton", "OpenHireButton", "OpenTownButton", "OpenRecruitButton", "OpenStoryButton" };
         for (int i = 0; i < bar.Length; i++)
         {
             RectTransform button = Find(bar[i]);
             if (button == null) continue;
-            Place(button, new Vector2(i / 4f, 0f), new Vector2((i + 1) / 4f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, bottom + Gap), new Vector2(-2f * Gap, BarHeight));
+            Place(button, new Vector2(i / (float)bar.Length, 0f), new Vector2((i + 1) / (float)bar.Length, 0f), new Vector2(0.5f, 0f), new Vector2(0f, bottom + Gap), new Vector2(-2f * Gap, BarHeight));
             Fit(button, 20f, 60f);
         }
 
@@ -166,7 +166,7 @@ public class UILayout
         }
 
         // Every panel becomes a sheet above the bottom bar
-        string[] sheets = { "BuildingMenuPanel", "HireMenuPanel", "CharacterPanel", "TownPanel", "RecruitPanel", "CheatPanel" };
+        string[] sheets = { "BuildingMenuPanel", "HireMenuPanel", "CharacterPanel", "TownPanel", "RecruitPanel", "StoryPanel", "CheatPanel" };
         foreach (string sheetName in sheets)
         {
             RectTransform sheet = Find(sheetName);
@@ -217,12 +217,13 @@ public class UILayout
             picture.offsetMin = new Vector2(16f, 0f);
             picture.offsetMax = new Vector2(-8f, -24f);
         }
-        string[] buttons = { "AssignButton", "MoveButton" };
+        string[] buttons = { "AssignButton", "MoveButton", "TalkButton" };
+        int[] places = { 0, 1, 1 }; // Move (buildings) and Talk (characters) are never shown together
         for (int i = 0; i < buttons.Length; i++)
         {
             RectTransform button = Child(details, buttons[i]);
             if (button == null) continue;
-            Place(button, new Vector2(i * 0.5f, 0f), new Vector2((i + 1) * 0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, Gap), new Vector2(-2f * Gap, 120f));
+            Place(button, new Vector2(places[i] * 0.5f, 0f), new Vector2((places[i] + 1) * 0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, Gap), new Vector2(-2f * Gap, 120f));
             Fit(button, 20f, 56f);
         }
         RectTransform list = Child(details, "AssignPanel");

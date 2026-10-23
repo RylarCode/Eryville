@@ -114,6 +114,8 @@ public class BuildingPlacer : MonoBehaviour, IPlacementMode
             return;
         }
 
+        if (StoryManager.Instance != null && !StoryManager.Instance.IsUnlocked(buildingSO)) return; // locked behind a story chapter
+
         if (moveActive) EndMove(); // picking something to build cancels a move in progress
         if (RoadPlacer.Instance != null) RoadPlacer.Instance.Cancel(); // ...and road building
 

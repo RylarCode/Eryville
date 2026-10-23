@@ -1,0 +1,36 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7516f926274e41719873893e095da5f6, type: 3}
+  m_Name: 03_TalkToDarkie
+  m_EditorClassIdentifier: 
+  id: chat
+  title: A word with Darkie
+  summary: "(placeholder) Darkie had a word."
+  order: 30
+  trigger: 1
+  talkTo: {fileID: 11400000, guid: 230bcc466fc44df4d8dc8f4e78b9106c, type: 2}
+  requires:
+  - kind: 1
+    name: 
+    compare: 0
+    amount: 1
+    chapter: {fileID: 11400000, guid: fb619fe05cfa48df8b804ec10574d78f, type: 2}
+    building: {fileID: 0}
+    character: {fileID: 0}
+    item: {fileID: 0}
+  goal: ""
+  rewards: []
+  cast:
+  - name: Mayor
+    portrait: {fileID: 0}
+  script: "# PLACEHOLDER. A Talk chapter: select Darkie, then tap Talk. (Darkie's picture is found by name.)\n\nDarkie: Hey, boss. (placeholder)\n[if warmth >= 1] Darkie: You seem like a kind leader. (placeholder)\n[if warmth < 1] Darkie: You run a tight ship. (placeholder)\nDarkie: Anything you need, just say. (placeholder)\n"
+  scriptFile: {fileID: 0}

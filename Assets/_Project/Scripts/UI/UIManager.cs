@@ -46,8 +46,17 @@ public class UIManager : MonoBehaviour
     private RecruitMenu recruit;
     private float nextRecruitRefresh;
 
+    // The Story menu (what next, chapters seen), the dialogue screen the story plays on, and the Talk button on a character's details
+    private StoryMenu storyMenu;
+    private float nextStoryRefresh;
+    private DialogueBox dialogue;
+    private GameObject talkButton;
+    private StoryManager hookedStory;
+    public DialogueBox Dialogue => dialogue;
+
     // The screen that shows who was recruited, and the character's full picture on the details panel
     private RevealPopup reveal;
+    public bool IsRevealOpen => reveal != null && reveal.IsOpen;
     private Image detailsPortrait;
 
     // The testing tools (editor and Development Builds only)
@@ -114,12 +123,16 @@ public class UIManager : MonoBehaviour
         MenuPanels.ConfigureListContent(assignButtonContainer);
         CreateDetailsPortrait();
         reveal = new RevealPopup(characterPanel.transform.parent, buttonPrefab);
+        dialogue = DialogueBox.Create(characterPanel.transform.parent, buttonPrefab);
         CreateMoveButton();
+        CreateTalkButton();
         CreateViewButton();
         town = new TownMenu(this, buttonPrefab, characterPanel, assignPanel);
         CreateMenuButton("OpenTownButton", "Town", 1, ToggleTownMenu);
         recruit = new RecruitMenu(this, buttonPrefab, characterPanel, assignPanel);
         CreateMenuButton("OpenRecruitButton", "Recruit", 2, ToggleRecruitMenu);
+        storyMenu = new StoryMenu(this, buttonPrefab, characterPanel, assignPanel);
+        CreateMenuButton("OpenStoryButton", "Story", 3, ToggleStoryMenu);
         SetUpCheats();
         if (BuildingPlacer.Instance != null) BuildingPlacer.Instance.MovingEnded += OnMovingEnded;
 
@@ -150,12 +163,17 @@ public class UIManager : MonoBehaviour
     // The screen changed between portrait and landscape: menus and cards were sized for the old shape, so make them again
     private void RebuildForNewLayout()
     {
-        if (openPanel != null && (openPanel == town.Panel || openPanel == recruit.Panel)) TogglePanel(openPanel);
+        if (openPanel != null && (openPanel == town.Panel || openPanel == recruit.Panel || openPanel == storyMenu.Panel)) TogglePanel(openPanel);
         if (cheats != null && openPanel == cheats.Panel) TogglePanel(openPanel);
         recruit.Dispose();
         reveal.Destroy();
         reveal = new RevealPopup(characterPanel.transform.parent, buttonPrefab);
-        List<GameObject> oldPanels = new List<GameObject> { town.Panel, recruit.Panel };
+        if (dialogue != null && !dialogue.IsOpen)
+        {
+            Destroy(dialogue.gameObject);
+            dialogue = DialogueBox.Create(characterPanel.transform.parent, buttonPrefab);
+        }
+        List<GameObject> oldPanels = new List<GameObject> { town.Panel, recruit.Panel, storyMenu.Panel };
         if (cheats != null) oldPanels.Add(cheats.Panel);
         foreach (GameObject old in oldPanels)
         {
@@ -165,6 +183,7 @@ public class UIManager : MonoBehaviour
         }
         town = new TownMenu(this, buttonPrefab, characterPanel, assignPanel);
         recruit = new RecruitMenu(this, buttonPrefab, characterPanel, assignPanel);
+        storyMenu = new StoryMenu(this, buttonPrefab, characterPanel, assignPanel);
         if (cheats != null) cheats = new CheatMenu(this, buttonPrefab, characterPanel, assignPanel);
 
         foreach (Transform container in new[] { buildingButtonContainer, hireButtonContainer })
@@ -176,6 +195,7 @@ public class UIManager : MonoBehaviour
             }
         }
         hireButtons.Clear();
+        buildingCards.Clear();
         GenerateBuildingPanelButtons();
         GenerateHirePanelButtons();
 
@@ -240,6 +260,7 @@ public class UIManager : MonoBehaviour
         if (BuildingPlacer.Instance != null) BuildingPlacer.Instance.MovingEnded -= OnMovingEnded;
         if (CharacterManager.Instance != null) CharacterManager.Instance.RosterChanged -= RefreshHireButtons;
         recruit?.Dispose();
+        if (hookedStory != null) hookedStory.Changed -= RefreshBuildingCards;
         if (BuildingPlacer.Instance != null) BuildingPlacer.Instance.PlacingEnded -= OnPlacementEnded;
         if (RoadPlacer.Instance != null) RoadPlacer.Instance.ModeEnded -= OnPlacementEnded;
     }
@@ -247,6 +268,7 @@ public class UIManager : MonoBehaviour
     private void Update()
     {
         UpdateViewButton();
+        HookStory();
         if (layout != null && layout.Tick())
         {
             ApplyTouchMode();
@@ -264,7 +286,8 @@ public class UIManager : MonoBehaviour
         // (Android's Back button counts as Escape)
         if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
         {
-            if (reveal != null && reveal.IsOpen) reveal.Close();
+            if (dialogue != null && dialogue.IsOpen) { if (dialogue.SkipShown) dialogue.Close(false); } // a story in the middle can only be skipped when it is a replay
+            else if (reveal != null && reveal.IsOpen) reveal.Close();
             else if (RoadPlacer.Instance != null && RoadPlacer.Instance.IsPlacing) RoadPlacer.Instance.Cancel();
             else if (panelCollapsed && BuildingPlacer.Instance != null && BuildingPlacer.Instance.IsPlacing) BuildingPlacer.Instance.CancelPlacing();
             else if (BuildingPlacer.Instance != null && BuildingPlacer.Instance.IsMoving) BuildingPlacer.Instance.CancelMoving();
@@ -277,6 +300,11 @@ public class UIManager : MonoBehaviour
         {
             nextTownRefresh = Time.unscaledTime + BuildingRefreshInterval;
             town.Refresh();
+        }
+        if (storyMenu != null && storyMenu.Panel.activeInHierarchy && Time.unscaledTime >= nextStoryRefresh)
+        {
+            nextStoryRefresh = Time.unscaledTime + BuildingRefreshInterval;
+            storyMenu.Refresh();
         }
         if (recruit != null && recruit.Panel.activeInHierarchy && Time.unscaledTime >= nextRecruitRefresh)
         {
@@ -407,17 +435,53 @@ public class UIManager : MonoBehaviour
         {
             GameObject buttonGO = MenuPanels.MakeCard(buttonPrefab, buildingButtonContainer, $"{building.buildingName}Button", building.sprite, building.buildingName);
             Button button = buttonGO.GetComponent<Button>();
+            buildingCards.Add(new BuildingCard { type = building, card = buttonGO, button = button, label = buttonGO.GetComponentInChildren<TMP_Text>() });
 
             // Capture the variable for the listener
             BuildingType captured = building;
             button.onClick.AddListener(() =>
             {
+                if (StoryManager.Instance != null && !StoryManager.Instance.IsUnlocked(captured)) return; // locked behind a story chapter
                 BuildingPlacer.Instance.SelectBuildingToPlace(captured);
                 CollapsePanelForPlacement();
             });
         }
 
         GenerateRoadButtons();
+        RefreshBuildingCards();
+    }
+
+    // The build menu's cards, so those locked behind a story chapter can be greyed out (or hidden) and unlocked again
+    private class BuildingCard
+    {
+        public BuildingType type;
+        public GameObject card;
+        public Button button;
+        public TMP_Text label;
+    }
+    private readonly List<BuildingCard> buildingCards = new List<BuildingCard>();
+
+    private void RefreshBuildingCards()
+    {
+        StoryManager story = StoryManager.Instance;
+        foreach (BuildingCard entry in buildingCards)
+        {
+            if (entry.card == null) continue;
+            bool unlocked = story == null || story.IsUnlocked(entry.type);
+            entry.card.SetActive(unlocked || !entry.type.hideWhileLocked);
+            if (entry.button != null) entry.button.interactable = unlocked;
+            if (entry.label != null) entry.label.text = unlocked ? entry.type.buildingName : $"{entry.type.buildingName}\n({story.UnlockHint(entry.type)})";
+        }
+    }
+
+    // Follows the story: what it unlocks changes the build menu
+    private void HookStory()
+    {
+        if (hookedStory == StoryManager.Instance) return;
+        if (hookedStory != null) hookedStory.Changed -= RefreshBuildingCards;
+        hookedStory = StoryManager.Instance;
+        if (hookedStory != null) hookedStory.Changed += RefreshBuildingCards;
+        RefreshBuildingCards();
     }
 
     // Roads are in the same menu as buildings: one button per kind of road, and one to take roads away
@@ -520,10 +584,12 @@ public class UIManager : MonoBehaviour
         if (assignJobButton != null) assignJobButton.SetActive(true);
         if (moveButton != null) moveButton.SetActive(false);
         RefreshCharacterText();
+        UpdateTalkButton();
     }
 
     private void RefreshCharacterText()
     {
+        UpdateTalkButton(); // (a chapter can become due while the panel is open)
         OwnedCharacter c = selectedCharacter;
         characterText.text = $"Name: {c.DisplayName}\nLevel: {c.Level}\nLoyalty: {c.Loyalty:0}\nMood: {c.Mood:0}\nFed: {DescribeHunger(c)}\nSpeed: {c.DescribeSpeed()}\nWorking Location: {c.WorkBuilding?.DisplayName}\nHome: {c.HomeBuilding?.DisplayName}\nRarity: {c.Type.rarity}{DescribeSpecialty(c)}\nSelf-awareness: {c.DescribeAwareness()}\nWage: {c.DailyWage}/day{(c.WagePaid ? "" : " (UNPAID - refuses to work)")}";
     }
@@ -545,6 +611,7 @@ public class UIManager : MonoBehaviour
         SetDetailsPortrait(null);
         if (assignJobButton != null) assignJobButton.SetActive(false); // assigning a job makes no sense here
         if (moveButton != null) moveButton.SetActive(building.buildingType != null && building.buildingType.movable);
+        if (talkButton != null) talkButton.SetActive(false);
         ClearList();
         occupantListSignature = null;
         nextBuildingRefresh = Time.unscaledTime + BuildingRefreshInterval;
@@ -861,6 +928,61 @@ public class UIManager : MonoBehaviour
         viewLabel.text = text;
         Button button = viewButton.GetComponent<Button>();
         if (button != null) button.interactable = !view.Editing;
+    }
+
+    // The "Talk" button: a copy of the Assign button, beside it, shown while the selected character has a story chapter to tell
+    private void CreateTalkButton()
+    {
+        if (assignJobButton == null) return;
+
+        talkButton = Instantiate(assignJobButton, assignJobButton.transform.parent);
+        talkButton.name = "TalkButton";
+        RectTransform sourceRect = assignJobButton.GetComponent<RectTransform>();
+        RectTransform rect = talkButton.GetComponent<RectTransform>();
+        if (sourceRect != null && rect != null) rect.anchoredPosition = sourceRect.anchoredPosition + new Vector2(sourceRect.sizeDelta.x + 10f, 0f);
+
+        Button button = talkButton.GetComponent<Button>();
+        if (button != null)
+        {
+            for (int i = 0; i < button.onClick.GetPersistentEventCount(); i++) button.onClick.SetPersistentListenerState(i, UnityEventCallState.Off);
+            button.onClick.AddListener(TalkToSelected);
+        }
+        TMP_Text label = talkButton.GetComponentInChildren<TMP_Text>();
+        if (label != null) label.text = "Talk";
+        talkButton.SetActive(false);
+    }
+
+    private void UpdateTalkButton()
+    {
+        if (talkButton == null) return;
+        bool show = panelMode == PanelMode.Character && selectedCharacter != null && StoryManager.Instance != null && StoryManager.Instance.TalkChapterFor(selectedCharacter.Type) != null;
+        if (talkButton.activeSelf != show) talkButton.SetActive(show);
+    }
+
+    // Called by the "Talk" button: the character's story chapter plays
+    public void TalkToSelected()
+    {
+        if (selectedCharacter == null || StoryManager.Instance == null) return;
+        StoryChapter chapter = StoryManager.Instance.TalkChapterFor(selectedCharacter.Type);
+        if (chapter == null) return;
+        CloseCharacterPanels();
+        StoryManager.Instance.Play(chapter);
+    }
+
+    // A chapter from the Story menu is played again
+    public void ReplayChapter(StoryChapter chapter)
+    {
+        if (chapter == null || StoryManager.Instance == null) return;
+        CloseEverything();
+        StoryManager.Instance.Play(chapter, true);
+    }
+
+    public void ToggleStoryMenu()
+    {
+        if (storyMenu == null) return;
+        bool opening = !storyMenu.Panel.activeInHierarchy;
+        TogglePanel(storyMenu.Panel);
+        if (opening) storyMenu.Show();
     }
 
     private void CreateMoveButton()
