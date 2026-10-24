@@ -28,6 +28,8 @@ public static class CharacterChecks
             if (type.characterPrefab == null) problems.Add($"{who} has no character prefab, so it cannot appear in the world.");
             else if (type.characterPrefab.GetComponent<Character>() == null) problems.Add($"{who}: its prefab has no Character component.");
 
+            if (type.bodyScale <= 0f) problems.Add($"{who} has a body scale of {type.bodyScale}: it must be above 0 (1 = the prefab's own size), or the body would be invisible.");
+
             if (type.sprite == null) problems.Add($"{who} has no sprite (the small picture used in the world and as the fallback for everything else).");
             if (type.portrait == null) problems.Add($"{who} has no portrait; the small sprite is shown on the recruit screen instead.");
             if (type.face == null) problems.Add($"{who} has no face icon; the portrait or sprite is used in lists instead.");

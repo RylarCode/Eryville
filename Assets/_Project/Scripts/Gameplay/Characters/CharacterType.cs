@@ -17,6 +17,8 @@ public class CharacterType : ScriptableObject
 
     public int dailyWage = 10;       // gold this character costs every day (paid at the start of each morning)
     public GameObject characterPrefab;
+    [Tooltip("How big the body is in the world, as a multiple of the prefab's own size. Lets characters drawn at different sizes share one prefab: make the picture look as tall as you want it with this.")]
+    public float bodyScale = 1f;
     public enum Role { Resource, Defense, Offense, Others }
     public Role role = Role.Resource;
 

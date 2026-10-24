@@ -9,11 +9,12 @@ The rest of this page says what that does, what to prepare, and how to do it by 
 |---|---|---|
 | **Character type** | the "template": name, rarity, wage, speed, mood, schedule, pictures | `ScriptableObjects/Characters/<Name>/<Name>.asset` |
 | **Animation set** | the walking / idle / enter / exit frames, in four directions | `.../<Name>/<Name> Animations.asset` |
-| **Prefab** | the body that walks around (sprite, collider, Character, CharacterMovement scripts) | `Prefabs/Characters/<Name>.prefab` |
+| **Prefab** | the body that walks around (sprite, collider, Character, CharacterMovement scripts). **Shared**: most characters use the same one; the sprite comes from the type | `Prefabs/Characters/RandomVillager.prefab` |
+| **Body scale** | how big the body is, as a multiple of the prefab (so characters drawn at different sizes can share it) | `bodyScale` on the type |
 | **typeId** | a unique number; saved games and the server refer to the character by it | field on the type |
 | **Lists** | the CharacterManager in GameScene (who can be hired) and the gacha pool (who can be pulled) | scene / `ScriptableObjects/Gacha` |
 
-The wizard makes all of these, picks a free typeId, copies the schedule, mood, speed and awareness levels from a template character, and puts the new one on both lists.
+The wizard makes the type and the animation set, picks a free typeId, copies the schedule, mood, speed and awareness levels (and the shared prefab) from a template character, sets a **body scale** so the new picture stands as tall as the template does, and puts the new one on both lists. It does not make a prefab: add one by hand only if a character needs a different collider or extra components (make it a Prefab Variant of the shared one).
 
 ## 1. Prepare the pictures (all optional, all can come later)
 
@@ -92,12 +93,12 @@ Walking is played faster or slower with the character's real speed (roads, mood,
 
 1. Duplicate an existing character type asset, give it a **new typeId** (higher than all others).
 2. Create > Scriptable Objects > Character Animations, fill it as above, assign it to `animations`.
-3. Duplicate `Prefabs/Characters/RandomVillager.prefab`, put the sprite on its SpriteRenderer, adjust scale and collider; assign it to `characterPrefab`.
+3. Assign a prefab to `characterPrefab` (normally the shared `Prefabs/Characters/RandomVillager.prefab`) and set `bodyScale` until the character looks the right size in the world (1 = the prefab's own size). Only if it needs a different collider or extra components: make a Prefab Variant of it.
 4. Add the type to the CharacterManager's `All Characters` in GameScene and to the gacha pool's `characters`.
 5. Run **Eryville > Check Characters**.
 
 ## Good to know
 
 - Everything is optional, so you can create a character with no art at all and add pictures later; it uses the template's small sprite meanwhile.
-- The wizard cannot be undone with Ctrl+Z; delete the character's folder and prefab, and remove it from the two lists.
+- The wizard cannot be undone with Ctrl+Z; delete the character's folder, and remove it from the two lists.
 - **Firebase backend:** the server has its own copy of who can be pulled, in `firebase/functions/src/config.ts` (`typeId`, `rarity`, `weight`). Add a line for the new character there (same numbers as the character type) and redeploy (`firebase deploy --only functions`); until then the server will never roll it. The local backend needs nothing.

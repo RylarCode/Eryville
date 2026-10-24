@@ -3,14 +3,13 @@ using UnityEditor;
 using UnityEngine;
 
 // Eryville > New Character...: makes everything a new character needs in one go (see docs/NEW_CHARACTER.md):
-// the character type, its animation set (filled from a named sprite sheet), its prefab (a copy of the template's,
-// resized to fit the new picture), a free typeId, and its entries in the CharacterManager and the gacha pools.
+// the character type, its animation set (filled from a named sprite sheet), a body scale that makes it as tall as the template
+// (the template's prefab is shared), a free typeId, and its entries in the CharacterManager and the gacha pools.
 // Everything else (schedule, mood, speed, awareness levels) is copied from a template character, so the new one
 // behaves like it until you tune it in the inspector.
 public class NewCharacterWizard : EditorWindow
 {
     private const string CharacterFolder = "Assets/_Project/ScriptableObjects/Characters";
-    private const string PrefabFolder = "Assets/_Project/Prefabs/Characters";
 
     private string characterName = "";
     private Texture2D animationSheet;
@@ -38,7 +37,7 @@ public class NewCharacterWizard : EditorWindow
         EditorGUILayout.LabelField("1. Who", EditorStyles.boldLabel);
         characterName = EditorGUILayout.TextField("Name", characterName);
         rarity = (Rarity)EditorGUILayout.EnumPopup("Rarity", rarity);
-        template = (CharacterType)EditorGUILayout.ObjectField(new GUIContent("Copy settings from", "Schedule, mood, speed, wage, awareness levels and the prefab shape are copied from this character."), template, typeof(CharacterType), false);
+        template = (CharacterType)EditorGUILayout.ObjectField(new GUIContent("Copy settings from", "Schedule, mood, speed, wage, awareness levels and the prefab are copied from this character."), template, typeof(CharacterType), false);
 
         EditorGUILayout.Space();
         EditorGUILayout.LabelField("2. Pictures (all optional, can be added later)", EditorStyles.boldLabel);
@@ -70,7 +69,6 @@ public class NewCharacterWizard : EditorWindow
         if (AssetDatabase.LoadAssetAtPath<Object>(typePath) != null) return $"{typePath} already exists. Pick another name or open that character.";
 
         CharacterAssetTools.EnsureFolder($"{CharacterFolder}/{name}");
-        CharacterAssetTools.EnsureFolder(PrefabFolder);
 
         // The type: a copy of the template's settings (or a blank one)
         CharacterType type = template != null ? Instantiate(template) : CreateInstance<CharacterType>();
@@ -93,25 +91,12 @@ public class NewCharacterWizard : EditorWindow
         if (small == null) small = portrait != null ? portrait : (template != null ? template.sprite : null);
         type.sprite = small;
 
-        // The prefab: a copy of the template's, with the new picture, sized so the character looks as big as the template does
+        // The body: the template's prefab is shared, and the character's own body scale makes the new picture stand as tall as the template's does
         GameObject templatePrefab = template != null ? template.characterPrefab : null;
         if (templatePrefab != null)
         {
-            string prefabPath = $"{PrefabFolder}/{name}.prefab";
-            if (AssetDatabase.CopyAsset(AssetDatabase.GetAssetPath(templatePrefab), prefabPath))
-            {
-                GameObject root = PrefabUtility.LoadPrefabContents(prefabPath);
-                root.name = name;
-                FitPrefab(root, small, template.sprite);
-                PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
-                PrefabUtility.UnloadPrefabContents(root);
-                type.characterPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
-            }
-            else
-            {
-                type.characterPrefab = templatePrefab;
-                notes += " The prefab could not be copied, so the template's is shared.";
-            }
+            type.characterPrefab = templatePrefab;
+            type.bodyScale = FittedScale(template, small);
         }
         else
         {
@@ -130,26 +115,12 @@ public class NewCharacterWizard : EditorWindow
         return $"Created {type.displayName} (typeId {type.typeId}).{notes}{where}\nNext: tune rarity, wage, schedule and mood in the inspector, then run Eryville > Check Characters. With the Firebase backend, also add it to firebase/functions/src/config.ts.";
     }
 
-    // Puts the new picture on the prefab and scales it (and its collider) so the character stands as tall as the template did
-    private static void FitPrefab(GameObject root, Sprite newSprite, Sprite oldSprite)
+    // The body scale that makes the new picture as tall as the template's picture is in the world
+    private static float FittedScale(CharacterType template, Sprite newSprite)
     {
-        SpriteRenderer renderer = root.GetComponent<SpriteRenderer>();
-        if (renderer == null || newSprite == null) return;
-
-        Sprite before = renderer.sprite != null ? renderer.sprite : oldSprite;
-        renderer.sprite = newSprite;
-        if (before == null || before.bounds.size.y <= 0f || newSprite.bounds.size.y <= 0f) return;
-
-        float ratio = before.bounds.size.y / newSprite.bounds.size.y;
-        root.transform.localScale = root.transform.localScale * ratio;
-
-        CapsuleCollider2D capsule = root.GetComponent<CapsuleCollider2D>();
-        if (capsule != null)
-        {
-            // The collider is measured in the picture's own units: stretch it the way the picture changed shape
-            Vector2 oldSize = before.bounds.size;
-            Vector2 newSize = newSprite.bounds.size;
-            capsule.size = new Vector2(capsule.size.x * newSize.x / oldSize.x, capsule.size.y * newSize.y / oldSize.y);
-        }
+        float baseScale = template.bodyScale > 0f ? template.bodyScale : 1f;
+        Sprite before = template.sprite;
+        if (before == null || newSprite == null || before.bounds.size.y <= 0f || newSprite.bounds.size.y <= 0f) return baseScale;
+        return baseScale * before.bounds.size.y / newSprite.bounds.size.y;
     }
 }

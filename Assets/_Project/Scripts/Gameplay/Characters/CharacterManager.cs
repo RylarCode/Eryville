@@ -142,6 +142,7 @@ public class CharacterManager : MonoBehaviour
 
         GameObject go = Instantiate(owned.Type.characterPrefab, position, Quaternion.identity);
         go.name = owned.DisplayName;
+        if (owned.Type.bodyScale > 0f && owned.Type.bodyScale != 1f) go.transform.localScale *= owned.Type.bodyScale; // (drawn bigger or smaller than the shared prefab)
 
         Character avatar = go.GetComponent<Character>();
         if (avatar == null)
