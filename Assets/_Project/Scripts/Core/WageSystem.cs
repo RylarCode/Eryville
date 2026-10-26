@@ -99,6 +99,11 @@ public class WageSystem : MonoBehaviour
         }
 
         Debug.Log($"Payday: {LastPaid}/{LastDue} gold paid, {LastUnpaidCount} unpaid.");
+        if (LastDue > 0)
+        {
+            if (LastUnpaidCount == 0) Notify.Show($"Wages paid: {LastPaid} gold", NotifyKind.Success, null, null, "wages");
+            else Notify.Show($"Could not pay {LastUnpaidCount} {(LastUnpaidCount == 1 ? "wage" : "wages")} ({LastPaid}/{LastDue} gold paid): they stop working until paid", NotifyKind.Alert, null, null, "wages");
+        }
         PayrollRun?.Invoke();
     }
 }

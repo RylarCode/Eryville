@@ -51,6 +51,11 @@ public class UIManager : MonoBehaviour
     private float nextStoryRefresh;
     private DialogueBox dialogue;
     private GameObject talkButton;
+    // The toasts (banners at the top) and the notification history menu
+    private ToastView toasts;
+    private NotificationMenu notificationMenu;
+    private float nextNotificationRefresh;
+    public ToastView Toasts => toasts;
     private StoryManager hookedStory;
     public DialogueBox Dialogue => dialogue;
 
@@ -124,6 +129,7 @@ public class UIManager : MonoBehaviour
         CreateDetailsPortrait();
         reveal = new RevealPopup(characterPanel.transform.parent, buttonPrefab);
         dialogue = DialogueBox.Create(characterPanel.transform.parent, buttonPrefab);
+        toasts = ToastView.Create(characterPanel.transform.parent, buttonPrefab);
         CreateMoveButton();
         CreateTalkButton();
         CreateViewButton();
@@ -133,6 +139,7 @@ public class UIManager : MonoBehaviour
         CreateMenuButton("OpenRecruitButton", "Recruit", 2, ToggleRecruitMenu);
         storyMenu = new StoryMenu(this, buttonPrefab, characterPanel, assignPanel);
         CreateMenuButton("OpenStoryButton", "Story", 3, ToggleStoryMenu);
+        notificationMenu = new NotificationMenu(this, buttonPrefab, characterPanel, assignPanel);
         SetUpCheats();
         if (BuildingPlacer.Instance != null) BuildingPlacer.Instance.MovingEnded += OnMovingEnded;
 
@@ -163,7 +170,7 @@ public class UIManager : MonoBehaviour
     // The screen changed between portrait and landscape: menus and cards were sized for the old shape, so make them again
     private void RebuildForNewLayout()
     {
-        if (openPanel != null && (openPanel == town.Panel || openPanel == recruit.Panel || openPanel == storyMenu.Panel)) TogglePanel(openPanel);
+        if (openPanel != null && (openPanel == town.Panel || openPanel == recruit.Panel || openPanel == storyMenu.Panel || openPanel == notificationMenu.Panel)) TogglePanel(openPanel);
         if (cheats != null && openPanel == cheats.Panel) TogglePanel(openPanel);
         recruit.Dispose();
         reveal.Destroy();
@@ -173,7 +180,7 @@ public class UIManager : MonoBehaviour
             Destroy(dialogue.gameObject);
             dialogue = DialogueBox.Create(characterPanel.transform.parent, buttonPrefab);
         }
-        List<GameObject> oldPanels = new List<GameObject> { town.Panel, recruit.Panel, storyMenu.Panel };
+        List<GameObject> oldPanels = new List<GameObject> { town.Panel, recruit.Panel, storyMenu.Panel, notificationMenu.Panel };
         if (cheats != null) oldPanels.Add(cheats.Panel);
         foreach (GameObject old in oldPanels)
         {
@@ -184,6 +191,7 @@ public class UIManager : MonoBehaviour
         town = new TownMenu(this, buttonPrefab, characterPanel, assignPanel);
         recruit = new RecruitMenu(this, buttonPrefab, characterPanel, assignPanel);
         storyMenu = new StoryMenu(this, buttonPrefab, characterPanel, assignPanel);
+        notificationMenu = new NotificationMenu(this, buttonPrefab, characterPanel, assignPanel);
         if (cheats != null) cheats = new CheatMenu(this, buttonPrefab, characterPanel, assignPanel);
 
         foreach (Transform container in new[] { buildingButtonContainer, hireButtonContainer })
@@ -300,6 +308,11 @@ public class UIManager : MonoBehaviour
         {
             nextTownRefresh = Time.unscaledTime + BuildingRefreshInterval;
             town.Refresh();
+        }
+        if (notificationMenu != null && notificationMenu.Panel.activeInHierarchy && Time.unscaledTime >= nextNotificationRefresh)
+        {
+            nextNotificationRefresh = Time.unscaledTime + BuildingRefreshInterval;
+            notificationMenu.Refresh();
         }
         if (storyMenu != null && storyMenu.Panel.activeInHierarchy && Time.unscaledTime >= nextStoryRefresh)
         {
@@ -786,35 +799,46 @@ public class UIManager : MonoBehaviour
         Transform oldTestButton = canvas.Find("TestButtonforFunctions");
         if (oldTestButton != null) oldTestButton.gameObject.SetActive(false);
 
-        if (!Cheats.Available) return;
+        if (Cheats.Available) cheats = new CheatMenu(this, buttonPrefab, characterPanel, assignPanel);
 
-        cheats = new CheatMenu(this, buttonPrefab, characterPanel, assignPanel);
+        AddGameMenuButton("NotificationsButton", "Notifications", ToggleNotificationMenu, 1);
+        if (cheats != null) AddGameMenuButton("CheatsButton", "Cheats", ToggleCheatMenu, 2);
+    }
 
-        Transform menuPanel = canvas.Find("MenuPanel");
+    // Adds a button to the game menu as a copy of its Quit button, below it (slot 1 is the first place below Quit, slot 2 the next...)
+    private void AddGameMenuButton(string buttonName, string text, UnityAction onClick, int slot)
+    {
+        Transform menuPanel = characterPanel.transform.parent.Find("MenuPanel");
         Transform quit = menuPanel != null ? menuPanel.Find("QuitButton") : null;
         if (quit == null)
         {
-            Debug.LogWarning("Could not find the game menu's Quit button to copy, so there is no Cheats button.");
+            Debug.LogWarning($"Could not find the game menu's Quit button to copy, so there is no {text} button.");
             return;
         }
 
-        GameObject cheatsButton = Instantiate(quit.gameObject, menuPanel);
-        cheatsButton.name = "CheatsButton";
+        GameObject copy = Instantiate(quit.gameObject, menuPanel);
+        copy.name = buttonName;
         RectTransform quitRect = quit.GetComponent<RectTransform>();
-        RectTransform rect = cheatsButton.GetComponent<RectTransform>();
+        RectTransform rect = copy.GetComponent<RectTransform>();
         float step = quitRect.sizeDelta.y + 10f;
-        rect.anchoredPosition = quitRect.anchoredPosition + new Vector2(0f, -step);
+        rect.anchoredPosition = quitRect.anchoredPosition + new Vector2(0f, -step * slot);
         RectTransform menuRect = menuPanel.GetComponent<RectTransform>();
         if (menuRect != null) menuRect.sizeDelta += new Vector2(0f, step); // the panel grows upward (its pivot is at the bottom)
 
-        Button button = cheatsButton.GetComponent<Button>();
+        Button button = copy.GetComponent<Button>();
         for (int i = 0; i < button.onClick.GetPersistentEventCount(); i++)
         {
             button.onClick.SetPersistentListenerState(i, UnityEventCallState.Off);
         }
-        button.onClick.AddListener(ToggleCheatMenu);
-        TMP_Text label = cheatsButton.GetComponentInChildren<TMP_Text>();
-        if (label != null) label.text = "Cheats";
+        button.onClick.AddListener(onClick);
+        TMP_Text label = copy.GetComponentInChildren<TMP_Text>();
+        if (label != null)
+        {
+            label.text = text;
+            label.enableAutoSizing = true; // a longer word than "Quit" still fits the button
+            label.fontSizeMax = Mathf.Max(label.fontSize, 8f);
+            label.fontSizeMin = 8f;
+        }
     }
 
     public void ToggleCheatMenu()
@@ -975,6 +999,14 @@ public class UIManager : MonoBehaviour
         if (chapter == null || StoryManager.Instance == null) return;
         CloseEverything();
         StoryManager.Instance.Play(chapter, true);
+    }
+
+    public void ToggleNotificationMenu()
+    {
+        if (notificationMenu == null) return;
+        bool opening = !notificationMenu.Panel.activeInHierarchy;
+        TogglePanel(notificationMenu.Panel);
+        if (opening) notificationMenu.Show();
     }
 
     public void ToggleStoryMenu()

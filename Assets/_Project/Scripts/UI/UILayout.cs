@@ -151,6 +151,8 @@ public class UILayout
             Place(viewButton, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-(24f + 240f + 16f), -(24f + top)), new Vector2(240f, 100f));
             Fit(viewButton, 20f, 52f);
         }
+        RectTransform toast = Find("ToastArea"); // below the top row, which has the resources and the menu buttons
+        if (toast != null) Place(toast, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -(24f + top + 210f)), new Vector2(1000f, 10f));
         RectTransform test = Find("TestButtonforFunctions");
         if (test != null)
         {
@@ -166,7 +168,7 @@ public class UILayout
         }
 
         // Every panel becomes a sheet above the bottom bar
-        string[] sheets = { "BuildingMenuPanel", "HireMenuPanel", "CharacterPanel", "TownPanel", "RecruitPanel", "StoryPanel", "CheatPanel" };
+        string[] sheets = { "BuildingMenuPanel", "HireMenuPanel", "CharacterPanel", "TownPanel", "RecruitPanel", "StoryPanel", "NotificationPanel", "CheatPanel" };
         foreach (string sheetName in sheets)
         {
             RectTransform sheet = Find(sheetName);

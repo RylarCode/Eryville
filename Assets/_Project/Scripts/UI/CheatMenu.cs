@@ -176,6 +176,8 @@ public class CheatMenu
 
         pending = null;
         entry.run();
+        string said = entry.label != null ? entry.label().Replace(" (tap to change)", "") : "";
+        if (said.Length > 0) Notify.Show("Cheat: " + said, NotifyKind.Info, null, null, "cheat:" + said);
         Refresh(true);
     }
 }

@@ -132,7 +132,25 @@ public class GameClock : MonoBehaviour
 
         if (phase == Current) return;
         Current = phase;
-        if (raise) TimeOfDayChanged?.Invoke(phase);
+        if (raise)
+        {
+            TimeOfDayChanged?.Invoke(phase);
+            Announce(phase);
+        }
+    }
+
+    // A message to the player when the time of day changes
+    private static void Announce(TimeOfDay phase)
+    {
+        string text;
+        switch (phase)
+        {
+            case TimeOfDay.Morning: text = "A new day begins"; break;
+            case TimeOfDay.Afternoon: text = "It is afternoon"; break;
+            case TimeOfDay.Evening: text = "Evening falls"; break;
+            default: text = "Night falls"; break;
+        }
+        Notify.Show(text, NotifyKind.Info, null, null, "phase:" + phase);
     }
 
     // --- Changing it ---
@@ -177,6 +195,7 @@ public class GameClock : MonoBehaviour
         if (Current == TimeOfDay.Morning) inGameDay++;
         elapsed = 0f;
         TimeOfDayChanged?.Invoke(Current);
+        Announce(Current);
     }
 
     // Puts the real-time clock back to the real time (testing)

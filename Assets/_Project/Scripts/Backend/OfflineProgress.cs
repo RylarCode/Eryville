@@ -44,6 +44,21 @@ public static class OfflineProgress
             }
         }
 
+        // One line for a message to the player: the time away and what it earned
+        public string Summary()
+        {
+            List<string> parts = new List<string>();
+            if (items != null)
+            {
+                foreach (KeyValuePair<string, float> entry in items)
+                {
+                    if (Mathf.Abs(entry.Value) > 0.5f) parts.Add($"{entry.Value:+0;-0} {entry.Key.ToLowerInvariant()}");
+                }
+            }
+            if (meals > 0) parts.Add($"{meals} meals eaten");
+            return $"While you were away ({seconds / 3600f:0.#} h): " + (parts.Count > 0 ? string.Join(", ", parts) : "nothing");
+        }
+
         public override string ToString()
         {
             List<string> parts = new List<string>();
@@ -257,6 +272,8 @@ public static class OfflineProgress
         }
         LastReport = report;
         Debug.Log("Offline progress: " + report);
+        if (report.Anything) Notify.Show(report.Summary(), NotifyKind.Success, null, null, "offline");
+        if (report.notes != null) foreach (string note in report.notes) Notify.Show(note, NotifyKind.Warning, null, null, "offline-note:" + note);
         return report;
     }
 }

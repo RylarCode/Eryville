@@ -66,6 +66,7 @@ public class HungerSystem : MonoBehaviour
         int hungry = 0;
         foreach (OwnedCharacter character in order)
         {
+            bool wasHungry = character.IsHungry;
             HungerRules.Drain(character.Hunger, seconds, character.Appetite, settings);
 
             if (character.Hunger.Dining)
@@ -90,7 +91,11 @@ public class HungerSystem : MonoBehaviour
                 character.Mood += character.Hunger.PendingMood;
                 character.Hunger.PendingMood = 0f;
             }
-            if (character.IsHungry) hungry++;
+            if (character.IsHungry)
+            {
+                hungry++;
+                if (!wasHungry && !StressTest.IsActive) Notify.Show($"{character.DisplayName} is hungry", NotifyKind.Warning, character.Type.FaceOrSprite, NotifyActions.ForCharacter(character), "hungry:" + character.Id, 300f);
+            }
         }
         HungryCount = hungry;
         if (stock != null) UIManager.Instance?.UpdateResourceUI(stock.resources);

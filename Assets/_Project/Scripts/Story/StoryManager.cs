@@ -233,6 +233,14 @@ public class StoryManager : MonoBehaviour
     private void FinishedCommitted(StoryChapter chapter)
     {
         quietFor = 0f; // let the player breathe before the next chapter
+        Notify.Show($"Chapter finished: {chapter.Title}", NotifyKind.Success, null, () => { if (UIManager.Instance != null) UIManager.Instance.ToggleStoryMenu(); }, "chapter:" + chapter.Id);
+        if (BuildingPlacer.Instance != null)
+        {
+            foreach (BuildingType type in BuildingPlacer.Instance.AllBuildings)
+            {
+                if (type != null && type.unlockedBy == chapter) Notify.Show($"New building unlocked: {type.buildingName}", NotifyKind.Success, type.sprite, null, "unlock:" + type.typeId);
+            }
+        }
         ChapterFinished?.Invoke(chapter);
         Changed?.Invoke();
         if (GameSession.Instance != null) GameSession.Instance.SaveNow();
