@@ -114,6 +114,12 @@ public class LocalBackend : IGameBackend
         done?.Invoke(gacha != null ? gacha.LocalPull(request) : PullResponse.Failed("Recruitment is not available."));
     }
 
+    // There is no server to pay letters here: the game adds them itself (this is not called with the local backend)
+    public void ClaimQuest(ClaimQuestRequest request, Action<ClaimQuestResponse> done)
+    {
+        done?.Invoke(ClaimQuestResponse.Failed("There is no server: the game gives the letters itself."));
+    }
+
     public void BuyLetter(BuyLetterRequest request, Action<BuyLetterResponse> done)
     {
         GachaSystem gacha = GachaSystem.Instance;

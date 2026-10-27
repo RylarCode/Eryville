@@ -57,6 +57,7 @@ Mayor: You have {kindness} points.      <- {name} shows a story value
 
 - **What an option does** goes after `|`: `name +1`, `name -2`, `name =3` (set), `give Item amount`. Several can follow.
 - **Conditions** (in `[if ...]`, joined with `and`): `name >= 2` (also `<=`, `<`, `>`, `==`, `!=`), `name` (more than 0), `not name`, `done chapter-id`, `not done chapter-id`. Values nobody set are 0.
+- **Quests** (see `docs/QUESTS.md`): `@quest id` (or `| quest id` in an option) starts a quest; `[if quest done id]`, `[if quest active id]` and `[if not quest done id]` ask about one.
 - **A line it cannot understand** is skipped and reported, with its line number, by Check Story (and in the console when the chapter plays).
 - **Nothing is kept until the chapter ends.** The values a choice changes, and the rewards, are committed at the end; quitting half way means it plays again from the start. Within a chapter, later lines already see earlier choices.
 - A replay (from the Story menu) shows the chapter again with the current values, but changes nothing and has a Skip button.

@@ -169,12 +169,18 @@ public class StoryManager : MonoBehaviour
 
     public bool IsUnlocked(BuildingType type)
     {
-        return type == null || type.unlockedBy == null || State.IsDone(type.unlockedBy.Id);
+        if (type == null) return true;
+        if (type.unlockedBy != null && !State.IsDone(type.unlockedBy.Id)) return false;
+        if (type.unlockedByQuest != null && (QuestManager.Instance == null || QuestManager.Instance.StatusOf(type.unlockedByQuest) != QuestStatus.Complete)) return false;
+        return true;
     }
 
     public string UnlockHint(BuildingType type)
     {
-        return type != null && type.unlockedBy != null ? $"Locked: finish \"{type.unlockedBy.Title}\"" : "";
+        if (type == null) return "";
+        if (type.unlockedBy != null && !State.IsDone(type.unlockedBy.Id)) return $"Locked: finish \"{type.unlockedBy.Title}\"";
+        if (type.unlockedByQuest != null && !IsUnlocked(type)) return $"Locked: complete the quest \"{type.unlockedByQuest.Title}\"";
+        return "";
     }
 
     // --- Playing ---

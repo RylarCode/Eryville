@@ -37,6 +37,9 @@ public interface IGameBackend
     void Pull(PullRequest request, Action<PullResponse> done);
     void BuyLetter(BuyLetterRequest request, Action<BuyLetterResponse> done);
 
+    // Pays the letters a finished quest gives (only used when ServerOwnsBalances: otherwise the game adds them itself)
+    void ClaimQuest(ClaimQuestRequest request, Action<ClaimQuestResponse> done);
+
     // Testing tools (only development servers accept them)
     void DevAction(DevRequest request, Action<DevResponse> done);
 }

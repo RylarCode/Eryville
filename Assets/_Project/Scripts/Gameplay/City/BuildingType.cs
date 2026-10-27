@@ -14,6 +14,8 @@ public class BuildingType : ScriptableObject
     [Header("Story")]
     [Tooltip("Locked until this story chapter is finished. Empty: available from the start.")]
     public StoryChapter unlockedBy;
+    [Tooltip("Locked until this quest is complete (its reward claimed). Can be combined with Unlocked By: both must be done.")]
+    public Quest unlockedByQuest;
     [Tooltip("While locked, leave it out of the Build menu (otherwise it shows greyed out, saying what unlocks it).")]
     public bool hideWhileLocked = false;
 

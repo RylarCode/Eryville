@@ -1,0 +1,48 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2b4f1f335b4c43b2aec5e06ce1322800, type: 3}
+  m_Name: S01_GoldMiner
+  m_EditorClassIdentifier: 
+  id: gold-miner
+  title: "Strike gold"
+  description: "(placeholder) A side quest: build a Gold Mine."
+  category: 1
+  order: 100
+  start: 1
+  requires:
+  - kind: 6
+    name: hire-someone
+    compare: 0
+    amount: 1
+    chapter: {fileID: 0}
+    building: {fileID: 0}
+    character: {fileID: 0}
+    item: {fileID: 0}
+    quest: {fileID: 11400000, guid: 457437fc59bb40bb917b7d45504e2bd2, type: 2}
+  objectives:
+  - kind: 0
+    label: Build a Gold Mine
+    condition:
+      kind: 3
+      name: 
+      compare: 0
+      amount: 1
+      chapter: {fileID: 0}
+      building: {fileID: 11400000, guid: 2c142b7ccc77d834fa086d7d1f9ecb73, type: 2}
+      character: {fileID: 0}
+      item: {fileID: 0}
+      quest: {fileID: 0}
+  rewards:
+  - kind: 2
+    name: Wood
+    amount: 50
+    quest: {fileID: 0}

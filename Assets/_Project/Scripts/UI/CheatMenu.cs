@@ -114,6 +114,12 @@ public class CheatMenu
         Add("Play the next chapter that is not done (whatever it needs)", () => Cheats.PlayNextChapter());
         Add("Forget all story progress (the intro plays again)", Cheats.ResetStory, true);
 
+        Section("Quests");
+        Info(Cheats.DescribeQuests);
+        Add("Make every active quest ready to claim", () => Cheats.ReadyQuests());
+        Add("Start every quest that has not started", () => Cheats.StartAllQuests());
+        Add("Forget all quest progress", Cheats.ResetQuests, true);
+
         Section("Data");
         Add("RESET GAME: everything and the save file", Cheats.ResetGame, true);
         Add("Delete the save file only", () => Cheats.DeleteSaveFile(), true);

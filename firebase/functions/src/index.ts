@@ -55,4 +55,5 @@ export const saveGame = callable(handlers.saveGame);
 export const deleteSave = callable(handlers.deleteSave);
 export const pull = callable(handlers.pullHandler);
 export const buyLetter = callable(handlers.buyLetterHandler);
+export const claimQuest = callable(handlers.claimQuestHandler);
 export const devAction = callable(handlers.devAction);

@@ -11,7 +11,7 @@ using UnityEngine;
 // so everything a loaded building or character needs (sprite, size, registration, assignments) is set up.
 public static class SaveSystem
 {
-    public const int CurrentVersion = 9; // 2 added roads, 3 added mood, 4 added wages (and recruitment), 5 the real-time clock, 6 the chosen recipe of each building (items are saved with the resources), 7 how full each character is, 8 what each character has been eating, 9 the story (finished chapters and values); older saves still load with defaults
+    public const int CurrentVersion = 10; // 2 added roads, 3 added mood, 4 added wages (and recruitment), 5 the real-time clock, 6 the chosen recipe of each building (items are saved with the resources), 7 how full each character is, 8 what each character has been eating, 9 the story (finished chapters and values), 10 the quests; older saves still load with defaults
     public const string DefaultFileName = "savegame.json";
 
     private static string SlotFor(string fileName)
@@ -127,6 +127,7 @@ public static class SaveSystem
         }
 
         if (StoryManager.Instance != null) StoryManager.Instance.Export(data);
+        if (QuestManager.Instance != null) QuestManager.Instance.Export(data);
 
         return data;
     }
@@ -263,6 +264,7 @@ public static class SaveSystem
 
         // The story (an older save has none: it starts from the beginning)
         if (StoryManager.Instance != null) StoryManager.Instance.Restore(data);
+        if (QuestManager.Instance != null) QuestManager.Instance.Restore(data);
 
         // Time away: in real time the world carried on while the game was closed
         if (data.version >= 5 && data.lastSeenUtcTicks > 0 && GameClock.Instance != null && GameClock.Instance.IsRealTime)

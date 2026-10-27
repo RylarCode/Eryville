@@ -1,5 +1,5 @@
 import { GameConfig } from "./config";
-import { buyLetter, newPlayer, PlayerDoc, pull, reportGold } from "./player";
+import { buyLetter, claimQuest, newPlayer, PlayerDoc, pull, reportGold } from "./player";
 import { Store } from "./store";
 
 // What each server function does, separated from Firebase itself so it can be tested. Every handler gets the
@@ -98,6 +98,13 @@ export async function pullHandler(ctx: Context, data: { poolId?: string; count?:
 export async function buyLetterHandler(ctx: Context, data: { clientGold?: number }) {
   return touch(ctx, (p) => {
     const { player, response } = buyLetter(p, Number(data?.clientGold), ctx.config, ctx.nowMs);
+    return { player, result: response };
+  });
+}
+
+export async function claimQuestHandler(ctx: Context, data: { questId?: string }) {
+  return touch(ctx, (p) => {
+    const { player, response } = claimQuest(p, String(data?.questId ?? ""), ctx.config);
     return { player, result: response };
   });
 }

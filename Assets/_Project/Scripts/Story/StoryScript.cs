@@ -14,9 +14,11 @@ using System.Text.RegularExpressions;
 //   > Ignore them     | kindness -1 | give Gold 20
 //   => Farmer: Thank you!                a reply, shown only if the option above it was picked (several allowed)
 //   @add kindness 1                      change a value on the spot (@set name n, @give Gold 50 too)
+//   @quest build-mine                    start a quest (in an option: "> Sure | quest build-mine")
 //   [if kindness >= 2] Mayor: Well done. only plays when it is true (also in front of ">" and "@"); join with "and"
 //
-// Conditions: "name >= 2" (also <= < > == !=), "name" (is more than 0), "not name", "done chapter-id", "not done chapter-id".
+// Conditions: "name >= 2" (also <= < > == !=), "name" (is more than 0), "not name", "done chapter-id", "not done chapter-id",
+// "quest done quest-id" (finished and claimed), "quest active quest-id" (started, not claimed yet), "not quest done quest-id".
 // What an option does: "name +1", "name -2", "name =3" (set), "give Item amount".
 public enum StoryBeatKind { Line, Choice, Effect }
 
@@ -49,7 +51,9 @@ public static class StoryScript
     private static readonly Regex NotPlain = new Regex(@"^not\s+([A-Za-z_][A-Za-z0-9_]*)$", RegexOptions.IgnoreCase);
     private static readonly Regex Change = new Regex(@"^([A-Za-z_][A-Za-z0-9_]*)\s*([+\-=])\s*(\d+)$");
     private static readonly Regex Give = new Regex(@"^give\s+(.+?)\s+(-?\d+)$", RegexOptions.IgnoreCase);
-    private static readonly Regex Directive = new Regex(@"^@(set|add|give)\s+(.+)$", RegexOptions.IgnoreCase);
+    private static readonly Regex Directive = new Regex(@"^@(set|add|give|quest)\s+(.+)$", RegexOptions.IgnoreCase);
+    private static readonly Regex QuestChange = new Regex(@"^quest\s+([A-Za-z0-9_.\-]+)$", RegexOptions.IgnoreCase);
+    private static readonly Regex QuestCondition = new Regex(@"^(not\s+)?quest\s+(done|active)\s+([A-Za-z0-9_.\-]+)$", RegexOptions.IgnoreCase);
     private static readonly Regex ValueRef = new Regex(@"\{([A-Za-z_][A-Za-z0-9_]*)\}");
 
     // Reads a script. Lines it cannot understand are left out and described in problems (with their line number).
@@ -160,6 +164,8 @@ public static class StoryScript
     public static StoryEffect ParseChange(string text)
     {
         text = text.Trim();
+        Match quest = QuestChange.Match(text);
+        if (quest.Success) return new StoryEffect(StoryEffect.Kind.StartQuest, quest.Groups[1].Value, 1);
         Match give = Give.Match(text);
         if (give.Success) return new StoryEffect(StoryEffect.Kind.Give, give.Groups[1].Value.Trim(), int.Parse(give.Groups[2].Value));
         Match change = Change.Match(text);
@@ -177,6 +183,7 @@ public static class StoryScript
     private static StoryEffect ParseDirective(string verb, string rest)
     {
         string[] pieces = rest.Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
+        if (verb == "quest") return pieces.Length == 1 ? new StoryEffect(StoryEffect.Kind.StartQuest, pieces[0], 1) : null;
         if (pieces.Length < 2 || !int.TryParse(pieces[pieces.Length - 1], out int amount)) return null;
         string name = string.Join(" ", pieces, 0, pieces.Length - 1);
         if (verb == "give") return new StoryEffect(StoryEffect.Kind.Give, name, amount);
@@ -189,6 +196,18 @@ public static class StoryScript
     {
         condition = null;
         text = text.Trim();
+
+        Match questCondition = QuestCondition.Match(text);
+        if (questCondition.Success)
+        {
+            condition = new StoryCondition
+            {
+                kind = questCondition.Groups[2].Value.ToLowerInvariant() == "done" ? StoryCondition.Kind.QuestDone : StoryCondition.Kind.QuestActive,
+                name = questCondition.Groups[3].Value,
+                compare = questCondition.Groups[1].Success ? StoryCondition.Compare.NotEqual : StoryCondition.Compare.AtLeast
+            };
+            return true;
+        }
 
         Match done = DoneOf.Match(text);
         if (done.Success)

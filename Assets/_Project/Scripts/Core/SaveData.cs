@@ -76,4 +76,6 @@ public class GameData
 
     public List<StoryValueData> storyValues = new List<StoryValueData>(); // added in version 9: the story values that choices change
     public List<string> storyDone = new List<string>();                   // added in version 9: the ids of the finished story chapters
+
+    public List<QuestSaveData> quests = new List<QuestSaveData>();        // added in version 10: where each quest is (by id)
 }

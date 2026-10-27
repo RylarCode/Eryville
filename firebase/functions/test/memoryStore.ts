@@ -12,7 +12,7 @@ export class MemoryStore implements Store {
   async transact<T>(uid: string, fn: (player: PlayerDoc | null) => { player: PlayerDoc; result: T }): Promise<T> {
     const run = this.chain.then(() => {
       const existing = this.players.get(uid);
-      const { player, result } = fn(existing ? { ...existing, pity: [...existing.pity] } : null);
+      const { player, result } = fn(existing ? { ...existing, pity: [...existing.pity], claimedQuests: [...(existing.claimedQuests ?? [])] } : null);
       this.players.set(uid, player);
       return result;
     });

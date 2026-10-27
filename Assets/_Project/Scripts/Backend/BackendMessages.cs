@@ -58,6 +58,24 @@ public class BuyLetterResponse : BackendResult
     public static BuyLetterResponse Failed(string message) { return new BuyLetterResponse { ok = false, error = message }; }
 }
 
+// A finished quest's letters. The server pays them (once, and only the amount it has listed for that quest id in
+// firebase/functions/src/config.ts); everything else a quest gives is the game's own business.
+[Serializable]
+public class ClaimQuestRequest
+{
+    public string questId;
+}
+
+[Serializable]
+public class ClaimQuestResponse : BackendResult
+{
+    public int lettersAfter;
+    public int lettersGranted;      // 0 when it had been paid before
+    public bool alreadyClaimed;
+
+    public static ClaimQuestResponse Failed(string message) { return new ClaimQuestResponse { ok = false, error = message }; }
+}
+
 // --- The player's record on the server ---
 
 [Serializable]

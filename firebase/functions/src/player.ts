@@ -13,6 +13,7 @@ export interface PlayerDoc {
   createdAtMs: number;
   lastSeenMs: number;
   suspicious: number;     // how many times the game claimed more gold than was possible
+  claimedQuests?: string[]; // quests whose letters were paid out (each pays once); missing in documents from before quests
 }
 
 export interface PullRollData { typeId: number; rarity: number; pityApplied: boolean; }
@@ -20,6 +21,7 @@ export interface PullRollData { typeId: number; rarity: number; pityApplied: boo
 export interface BackendResult { ok: boolean; error: string; }
 export interface PullResponse extends BackendResult { rolls: PullRollData[]; lettersAfter: number; totalPulls: number; pity: number[]; }
 export interface BuyLetterResponse extends BackendResult { lettersAfter: number; goldAfter: number; }
+export interface ClaimQuestResponse extends BackendResult { lettersAfter: number; lettersGranted: number; alreadyClaimed: boolean; }
 
 export function newPlayer(cfg: GameConfig, nowMs: number): PlayerDoc {
   return {
@@ -31,6 +33,7 @@ export function newPlayer(cfg: GameConfig, nowMs: number): PlayerDoc {
     createdAtMs: nowMs,
     lastSeenMs: nowMs,
     suspicious: 0,
+    claimedQuests: [],
   };
 }
 
@@ -91,4 +94,17 @@ export function buyLetter(p: PlayerDoc, clientGold: number, cfg: GameConfig, now
   const goldAfter = gold - cfg.letterGoldCost;
   const player = { ...p, letters: p.letters + 1, goldReported: goldAfter, goldReportedAtMs: nowMs, suspicious: p.suspicious + (suspicious ? 1 : 0) };
   return { player, response: { ok: true, error: "", lettersAfter: player.letters, goldAfter } };
+}
+
+// Pays a quest's letters, once. The game decides whether the quest was really finished (it simulates the town), but only quests the
+// server lists can pay letters, only the amount the server lists, and only once per player. Claiming again is harmless: it pays nothing.
+export function claimQuest(p: PlayerDoc, questId: string, cfg: GameConfig): { player: PlayerDoc; response: ClaimQuestResponse } {
+  const quest = typeof questId === "string" ? cfg.quests[questId] : undefined;
+  if (!quest) return { player: p, response: { ok: false, error: "That quest does not pay letters here.", lettersAfter: p.letters, lettersGranted: 0, alreadyClaimed: false } };
+
+  const claimed = p.claimedQuests ?? [];
+  if (claimed.includes(questId)) return { player: p, response: { ok: true, error: "", lettersAfter: p.letters, lettersGranted: 0, alreadyClaimed: true } };
+
+  const player = { ...p, letters: p.letters + quest.letters, claimedQuests: [...claimed, questId] };
+  return { player, response: { ok: true, error: "", lettersAfter: player.letters, lettersGranted: quest.letters, alreadyClaimed: false } };
 }

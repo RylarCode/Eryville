@@ -151,3 +151,44 @@ test("the rules can be changed from Firestore without a new release", () => {
   assert.equal(merged.tenPullCost, 9);
   assert.ok(merged.pools.Tavern && merged.pools.Event);
 });
+
+test("claimQuest: pays the quest's letters once, and only for quests the server lists", async () => {
+  const store = new MemoryStore();
+  const first = await h.claimQuestHandler(ctxFor(store), { questId: "hire-someone" });
+  assert.equal(first.ok, true);
+  assert.equal(first.lettersGranted, 1);
+  assert.equal(first.lettersAfter, 3);          // 2 starting + 1
+  assert.equal(first.alreadyClaimed, false);
+
+  const again = await h.claimQuestHandler(ctxFor(store), { questId: "hire-someone" });
+  assert.equal(again.ok, true);
+  assert.equal(again.lettersGranted, 0);
+  assert.equal(again.alreadyClaimed, true);
+  assert.equal(again.lettersAfter, 3);
+  assert.equal(store.players.get("player1")?.letters, 3);
+
+  for (const bad of [{ questId: "not-a-quest" }, { questId: "" }, {}, { questId: 5 as unknown as string }]) {
+    const r = await h.claimQuestHandler(ctxFor(store), bad);
+    assert.equal(r.ok, false);
+  }
+  assert.equal(store.players.get("player1")?.letters, 3);
+});
+
+test("claimQuest: five claims at once pay once", async () => {
+  const store = new MemoryStore();
+  const results = await Promise.all([1, 2, 3, 4, 5].map(() => h.claimQuestHandler(ctxFor(store), { questId: "hire-someone" })));
+  assert.equal(results.filter((r) => r.lettersGranted > 0).length, 1);
+  assert.equal(store.players.get("player1")?.letters, 3);
+});
+
+test("claimQuest: works for a player document from before quests, and config can add quests", async () => {
+  const store = new MemoryStore();
+  await h.getPlayerState(ctxFor(store));
+  const old = store.players.get("player1")!;
+  delete old.claimedQuests;
+  const config = mergeConfig(defaultConfig, { quests: { "extra": { letters: 5 } } });
+  const r = await h.claimQuestHandler(ctxFor(store, "player1", { config }), { questId: "extra" });
+  assert.equal(r.lettersGranted, 5);
+  assert.deepEqual(store.players.get("player1")?.claimedQuests, ["extra"]);
+  assert.equal((await h.claimQuestHandler(ctxFor(store, "player1", { config }), { questId: "hire-someone" })).lettersGranted, 1); // the defaults are still there
+});

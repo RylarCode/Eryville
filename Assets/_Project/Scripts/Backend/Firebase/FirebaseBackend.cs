@@ -162,6 +162,11 @@ public class FirebaseBackend : IGameBackend
         Call<BuyLetterResponse>("buyLetter", JsonUtility.ToJson(request), done);
     }
 
+    public void ClaimQuest(ClaimQuestRequest request, Action<ClaimQuestResponse> done)
+    {
+        Call<ClaimQuestResponse>("claimQuest", JsonUtility.ToJson(request), done);
+    }
+
     public void DevAction(DevRequest request, Action<DevResponse> done)
     {
         Call<DevResponse>("devAction", JsonUtility.ToJson(request), done);

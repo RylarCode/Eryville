@@ -76,6 +76,8 @@ Created at runtime (nothing to add to the scene):
 
 **Notifications/** - messages to the player: `Notify.Show(...)` from anywhere (`docs/NOTIFICATIONS.md`); its screens are `UI/ToastView.cs`, `UI/ToastItem.cs` and `UI/NotificationMenu.cs`
 
+**Quests/** - main and side quests with objectives, claimed rewards, letters paid by the server (`docs/QUESTS.md`); its screen is `UI/QuestMenu.cs`
+
 **Story/** - chapters of dialogue, story values, unlocking buildings (`docs/STORY.md`); its screens are `UI/DialogueBox.cs` and `UI/StoryMenu.cs`
 
 **Gameplay/Food/** - hunger and eating (`docs/FOOD.md`)
@@ -152,6 +154,7 @@ Data assets (`Assets/_Project/ScriptableObjects`): Buildings (Gold Mine, Lumbery
 | Offline reward | `OfflineProgress` (efficiency, cap) |
 | Hunger and meal numbers, starter food | `Resources/FoodSettings` (`docs/FOOD.md`) |
 | A new item, recipe or production chain | assets only: `docs/PRODUCTION.md` |
+| Quests (main, side, rewards) | assets only (`Resources/Quests`): `docs/QUESTS.md` |
 | A message to the player | `Notify.Show(...)` (`docs/NOTIFICATIONS.md`) |
 | Story chapters, tutorial steps, locked buildings | assets only (`Resources/Story`): `docs/STORY.md` |
 | A new building | Eryville > New Building... (`docs/NEW_BUILDING.md`) |

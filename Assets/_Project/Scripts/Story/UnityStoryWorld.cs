@@ -25,6 +25,16 @@ public class UnityStoryWorld : IStoryWorld
         return ResourceManager.Instance != null ? ResourceManager.Instance.Get(item) : 0f;
     }
 
+    public QuestStatus QuestStatus(string questId)
+    {
+        return QuestManager.Instance != null ? QuestManager.Instance.StatusOf(questId) : global::QuestStatus.Locked;
+    }
+
+    public void StartQuest(string questId)
+    {
+        if (QuestManager.Instance != null) QuestManager.Instance.StartById(questId);
+    }
+
     public void Give(string item, float amount)
     {
         if (ResourceManager.Instance == null) return;

@@ -51,6 +51,13 @@ public class UIManager : MonoBehaviour
     private float nextStoryRefresh;
     private DialogueBox dialogue;
     private GameObject talkButton;
+    // The Quests menu and its button (which says when something is waiting)
+    private QuestMenu questMenu;
+    private float nextQuestRefresh;
+    private TMP_Text questButtonLabel;
+    private string shownQuestLabel;
+    private QuestManager hookedQuests;
+
     // The toasts (banners at the top) and the notification history menu
     private ToastView toasts;
     private NotificationMenu notificationMenu;
@@ -139,6 +146,9 @@ public class UIManager : MonoBehaviour
         CreateMenuButton("OpenRecruitButton", "Recruit", 2, ToggleRecruitMenu);
         storyMenu = new StoryMenu(this, buttonPrefab, characterPanel, assignPanel);
         CreateMenuButton("OpenStoryButton", "Story", 3, ToggleStoryMenu);
+        questMenu = new QuestMenu(this, buttonPrefab, characterPanel, assignPanel);
+        CreateMenuButton("OpenQuestButton", "Quests", 4, ToggleQuestMenu);
+        questButtonLabel = characterPanel.transform.parent.Find("OpenQuestButton")?.GetComponentInChildren<TMP_Text>();
         notificationMenu = new NotificationMenu(this, buttonPrefab, characterPanel, assignPanel);
         SetUpCheats();
         if (BuildingPlacer.Instance != null) BuildingPlacer.Instance.MovingEnded += OnMovingEnded;
@@ -170,7 +180,7 @@ public class UIManager : MonoBehaviour
     // The screen changed between portrait and landscape: menus and cards were sized for the old shape, so make them again
     private void RebuildForNewLayout()
     {
-        if (openPanel != null && (openPanel == town.Panel || openPanel == recruit.Panel || openPanel == storyMenu.Panel || openPanel == notificationMenu.Panel)) TogglePanel(openPanel);
+        if (openPanel != null && (openPanel == town.Panel || openPanel == recruit.Panel || openPanel == storyMenu.Panel || openPanel == questMenu.Panel || openPanel == notificationMenu.Panel)) TogglePanel(openPanel);
         if (cheats != null && openPanel == cheats.Panel) TogglePanel(openPanel);
         recruit.Dispose();
         reveal.Destroy();
@@ -180,7 +190,7 @@ public class UIManager : MonoBehaviour
             Destroy(dialogue.gameObject);
             dialogue = DialogueBox.Create(characterPanel.transform.parent, buttonPrefab);
         }
-        List<GameObject> oldPanels = new List<GameObject> { town.Panel, recruit.Panel, storyMenu.Panel, notificationMenu.Panel };
+        List<GameObject> oldPanels = new List<GameObject> { town.Panel, recruit.Panel, storyMenu.Panel, questMenu.Panel, notificationMenu.Panel };
         if (cheats != null) oldPanels.Add(cheats.Panel);
         foreach (GameObject old in oldPanels)
         {
@@ -191,6 +201,7 @@ public class UIManager : MonoBehaviour
         town = new TownMenu(this, buttonPrefab, characterPanel, assignPanel);
         recruit = new RecruitMenu(this, buttonPrefab, characterPanel, assignPanel);
         storyMenu = new StoryMenu(this, buttonPrefab, characterPanel, assignPanel);
+        questMenu = new QuestMenu(this, buttonPrefab, characterPanel, assignPanel);
         notificationMenu = new NotificationMenu(this, buttonPrefab, characterPanel, assignPanel);
         if (cheats != null) cheats = new CheatMenu(this, buttonPrefab, characterPanel, assignPanel);
 
@@ -269,6 +280,7 @@ public class UIManager : MonoBehaviour
         if (CharacterManager.Instance != null) CharacterManager.Instance.RosterChanged -= RefreshHireButtons;
         recruit?.Dispose();
         if (hookedStory != null) hookedStory.Changed -= RefreshBuildingCards;
+        if (hookedQuests != null) hookedQuests.Changed -= RefreshBuildingCards;
         if (BuildingPlacer.Instance != null) BuildingPlacer.Instance.PlacingEnded -= OnPlacementEnded;
         if (RoadPlacer.Instance != null) RoadPlacer.Instance.ModeEnded -= OnPlacementEnded;
     }
@@ -309,6 +321,12 @@ public class UIManager : MonoBehaviour
             nextTownRefresh = Time.unscaledTime + BuildingRefreshInterval;
             town.Refresh();
         }
+        if (questMenu != null && questMenu.Panel.activeInHierarchy && Time.unscaledTime >= nextQuestRefresh)
+        {
+            nextQuestRefresh = Time.unscaledTime + BuildingRefreshInterval;
+            questMenu.Refresh();
+        }
+        UpdateQuestButton();
         if (notificationMenu != null && notificationMenu.Panel.activeInHierarchy && Time.unscaledTime >= nextNotificationRefresh)
         {
             nextNotificationRefresh = Time.unscaledTime + BuildingRefreshInterval;
@@ -490,10 +508,13 @@ public class UIManager : MonoBehaviour
     // Follows the story: what it unlocks changes the build menu
     private void HookStory()
     {
-        if (hookedStory == StoryManager.Instance) return;
+        if (hookedStory == StoryManager.Instance && hookedQuests == QuestManager.Instance) return;
         if (hookedStory != null) hookedStory.Changed -= RefreshBuildingCards;
+        if (hookedQuests != null) hookedQuests.Changed -= RefreshBuildingCards;
         hookedStory = StoryManager.Instance;
+        hookedQuests = QuestManager.Instance;
         if (hookedStory != null) hookedStory.Changed += RefreshBuildingCards;
+        if (hookedQuests != null) hookedQuests.Changed += RefreshBuildingCards;
         RefreshBuildingCards();
     }
 
@@ -999,6 +1020,32 @@ public class UIManager : MonoBehaviour
         if (chapter == null || StoryManager.Instance == null) return;
         CloseEverything();
         StoryManager.Instance.Play(chapter, true);
+    }
+
+    public void ToggleQuestMenu()
+    {
+        if (questMenu == null) return;
+        bool opening = !questMenu.Panel.activeInHierarchy;
+        TogglePanel(questMenu.Panel);
+        if (opening) questMenu.Show();
+    }
+
+    // Opens the Quests menu (a notification about a quest was tapped): unlike the button it never closes it
+    public void OpenQuestMenu()
+    {
+        if (questMenu == null || questMenu.Panel.activeInHierarchy) return;
+        ToggleQuestMenu();
+    }
+
+    // "Quests" on the menu button, "Quests (2)" when something is ready to claim or waiting to be accepted
+    private void UpdateQuestButton()
+    {
+        if (questButtonLabel == null) return;
+        int waiting = QuestManager.Instance != null ? QuestManager.Instance.AttentionCount : 0;
+        string text = waiting > 0 ? $"Quests ({waiting})" : "Quests";
+        if (text == shownQuestLabel) return;
+        shownQuestLabel = text;
+        questButtonLabel.text = text;
     }
 
     public void ToggleNotificationMenu()

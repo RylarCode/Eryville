@@ -113,9 +113,11 @@ public class StoryPlayer
         real.ReplaceValues(scratch);
         List<StoryEffect> toGive = new List<StoryEffect>(gives);
         foreach (StoryEffect reward in chapter.rewards) if (reward != null) reward.Apply(real, toGive);
-        foreach (StoryEffect give in toGive)
+        foreach (StoryEffect effect in toGive)
         {
-            if (world != null && !string.IsNullOrWhiteSpace(give.name)) world.Give(give.name.Trim(), give.amount);
+            if (world == null) break;
+            if (effect.kind == StoryEffect.Kind.StartQuest) { if (!string.IsNullOrWhiteSpace(effect.QuestId)) world.StartQuest(effect.QuestId.Trim()); }
+            else if (!string.IsNullOrWhiteSpace(effect.name)) world.Give(effect.name.Trim(), effect.amount);
         }
         real.MarkDone(chapter.Id);
         return true;

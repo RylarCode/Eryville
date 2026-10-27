@@ -2,6 +2,8 @@ import { PityRule, RarityOdds } from "./gachaRoller";
 
 export interface PoolCharacter { typeId: number; rarity: number; weight: number; }
 export interface PoolConfig { characters: PoolCharacter[]; odds: RarityOdds[]; pity: PityRule[]; }
+// What a quest pays in recruitment letters (the server owns the letters, so it must know). Only quests listed here can pay letters.
+export interface QuestConfig { letters: number; }
 
 // The rules of the game that the server enforces. These are the defaults; anything can be changed without
 // a new release by putting the same fields in the Firestore document config/game (it is merged over these).
@@ -15,6 +17,7 @@ export interface GameConfig {
   goldSlack: number;           // extra gold allowed on top, for rounding and bursts
   maxSaveBytes: number;        // Firestore documents are limited to 1 MiB
   pools: Record<string, PoolConfig>;
+  quests: Record<string, QuestConfig>;   // by Quest id in the game
 }
 
 // Must match the characters in the game (CharacterType.typeId, rarity, pullWeight) and the TavernPool asset.
@@ -27,6 +30,9 @@ export const defaultConfig: GameConfig = {
   maxGoldPerSecond: 500,
   goldSlack: 2000,
   maxSaveBytes: 900_000,
+  quests: {
+    "hire-someone": { letters: 1 }, // must match the quest asset's Letters reward in Resources/Quests
+  },
   pools: {
     Tavern: {
       characters: [
@@ -52,5 +58,5 @@ export const defaultConfig: GameConfig = {
 
 export function mergeConfig(base: GameConfig, override: Partial<GameConfig> | null | undefined): GameConfig {
   if (!override) return base;
-  return { ...base, ...override, pools: { ...base.pools, ...(override.pools ?? {}) } };
+  return { ...base, ...override, pools: { ...base.pools, ...(override.pools ?? {}) }, quests: { ...base.quests, ...(override.quests ?? {}) } };
 }

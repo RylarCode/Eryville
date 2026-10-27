@@ -295,6 +295,41 @@ public static class Cheats
         return text.ToString();
     }
 
+    // --- Quests ---
+
+    // Forgets where every quest was (the first main quest starts again)
+    public static void ResetQuests()
+    {
+        if (QuestManager.Instance != null) QuestManager.Instance.ResetState();
+    }
+
+    // Makes every quest that is being worked on ready to claim, without doing its objectives. Returns how many.
+    public static int ReadyQuests()
+    {
+        QuestManager quests = QuestManager.Instance;
+        if (quests == null) return 0;
+        int count = 0;
+        foreach (Quest quest in quests.Quests) if (quests.ForceReady(quest)) count++;
+        return count;
+    }
+
+    // Starts every quest that is not started, whatever it needs (to try them out). Returns how many.
+    public static int StartAllQuests()
+    {
+        QuestManager quests = QuestManager.Instance;
+        if (quests == null) return 0;
+        int count = 0;
+        foreach (Quest quest in quests.Quests) if (quests.BeginQuest(quest)) count++;
+        return count;
+    }
+
+    public static string DescribeQuests()
+    {
+        QuestManager quests = QuestManager.Instance;
+        if (quests == null) return "Quests: not running";
+        return $"Quests: {quests.Log.Count(QuestStatus.Active)} active, {quests.Log.Count(QuestStatus.Ready)} ready, {quests.Log.Count(QuestStatus.Available)} offered, {quests.Log.Count(QuestStatus.Complete)} complete (of {quests.Quests.Count})";
+    }
+
     // --- Data ---
 
     // Back to a brand-new game: nobody, nothing built, starting resources, morning of the first day. Also deletes the save file,
@@ -321,6 +356,7 @@ public static class Cheats
         GameClock.Instance.ResetDebugOffset();
         if (WageSystem.Instance != null) WageSystem.Instance.LastPayrollDay = -1;
         ResetStory();
+        ResetQuests();
         ResetRecruitment();
         Time.timeScale = 1f;
         SaveSystem.Delete();

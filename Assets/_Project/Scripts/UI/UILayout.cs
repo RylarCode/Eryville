@@ -122,8 +122,8 @@ public class UILayout
         float sheetBottom = bottom + BarHeight + 2f * Gap;
         float sheetHeight = Mathf.Clamp(canvasHeight * 0.45f, 700f, 1000f);
 
-        // The bottom bar: the five menu buttons, side by side
-        string[] bar = { "OpenBuildButton", "OpenHireButton", "OpenTownButton", "OpenRecruitButton", "OpenStoryButton" };
+        // The bottom bar: the six menu buttons, side by side
+        string[] bar = { "OpenBuildButton", "OpenHireButton", "OpenTownButton", "OpenRecruitButton", "OpenStoryButton", "OpenQuestButton" };
         for (int i = 0; i < bar.Length; i++)
         {
             RectTransform button = Find(bar[i]);
@@ -168,7 +168,7 @@ public class UILayout
         }
 
         // Every panel becomes a sheet above the bottom bar
-        string[] sheets = { "BuildingMenuPanel", "HireMenuPanel", "CharacterPanel", "TownPanel", "RecruitPanel", "StoryPanel", "NotificationPanel", "CheatPanel" };
+        string[] sheets = { "BuildingMenuPanel", "HireMenuPanel", "CharacterPanel", "TownPanel", "RecruitPanel", "StoryPanel", "QuestPanel", "NotificationPanel", "CheatPanel" };
         foreach (string sheetName in sheets)
         {
             RectTransform sheet = Find(sheetName);
