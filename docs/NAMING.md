@@ -30,7 +30,7 @@ Code names (class and field names) do not have to match, but player-facing text 
 | Pie | Food (Kitchen / Bakery) | Current | `Resources/Items/Pie` |
 | Grilled Fish | Food (Kitchen) | Current | `Resources/Items/Grilled Fish` |
 
-Item categories (code `ItemCategory`, shown in the Stock tab filter): Currency, Material, Ingredient, Food. Status: Current.
+Item categories (code `ItemCategory`, shown in the Stock tab filter): Currency, Material, Ingredient, Meal. Status: Current.
 
 ## Buildings
 
