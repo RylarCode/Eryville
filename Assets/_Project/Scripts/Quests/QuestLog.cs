@@ -8,6 +8,15 @@ public class QuestLog
 
     public event Action Changed;
 
+    // Goes up with every change
+    public int Version { get; private set; }
+
+    private void RaiseChanged()
+    {
+        Version++;
+        Changed?.Invoke();
+    }
+
     public QuestStatus Get(string id)
     {
         return !string.IsNullOrEmpty(id) && status.TryGetValue(id.Trim(), out QuestStatus s) ? s : QuestStatus.Locked;
@@ -18,7 +27,7 @@ public class QuestLog
     {
         if (string.IsNullOrWhiteSpace(id) || Get(id) == value) return false;
         status[id.Trim()] = value;
-        Changed?.Invoke();
+        RaiseChanged();
         return true;
     }
 
@@ -26,7 +35,7 @@ public class QuestLog
     {
         if (status.Count == 0) return;
         status.Clear();
-        Changed?.Invoke();
+        RaiseChanged();
     }
 
     public int Count(QuestStatus value)
@@ -53,6 +62,6 @@ public class QuestLog
                 status[saved.id.Trim()] = (QuestStatus)saved.status;
             }
         }
-        Changed?.Invoke();
+        RaiseChanged();
     }
 }

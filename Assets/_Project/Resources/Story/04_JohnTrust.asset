@@ -1,0 +1,51 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7516f926274e41719873893e095da5f6, type: 3}
+  m_Name: 04_JohnTrust
+  m_EditorClassIdentifier: 
+  id: john-trust
+  title: John opens up
+  summary: "(placeholder) John trusts you a little more. (Productivity bonus)"
+  order: 40
+  trigger: 1
+  talkTo: {fileID: 11400000, guid: 021970b8cfe460b4095cda9e77f33239, type: 2}
+  requires:
+  - kind: 1
+    name: 
+    compare: 0
+    amount: 1
+    chapter: {fileID: 11400000, guid: ea4dcb9ffeb74daf8a61f86ce2ee7fa9, type: 2}
+    building: {fileID: 0}
+    character: {fileID: 0}
+    item: {fileID: 0}
+    quest: {fileID: 0}
+  - kind: 8
+    name: 
+    compare: 0
+    amount: 10
+    chapter: {fileID: 0}
+    building: {fileID: 0}
+    character: {fileID: 0}
+    item: {fileID: 0}
+    quest: {fileID: 0}
+  goal: ""
+  rewards:
+  - kind: 5
+    name: 
+    amount: 1
+    quest: {fileID: 0}
+    character: {fileID: 0}
+    stat: 0
+    multiplier: 1.1
+  cast: []
+  script: "# PLACEHOLDER. Unlocks when \"john-first-word\" is done AND John's loyalty is 10 or more.\n# Finishing it gives John a lasting Productivity x1.1 bonus (the chapter's Rewards: a Buff).\n\nJohn: Can I tell you something? (placeholder)\n[if loyalty >= 20] John: I've never felt this at home anywhere. (placeholder: only above loyalty 20)\n[if loyalty < 20] John: This place is starting to grow on me. (placeholder)\nJohn: I'll work harder for this town. (placeholder)\n"
+  scriptFile: {fileID: 0}

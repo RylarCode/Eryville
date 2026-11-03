@@ -35,6 +35,26 @@ public class UnityStoryWorld : IStoryWorld
         if (QuestManager.Instance != null) QuestManager.Instance.StartById(questId);
     }
 
+    // Story characters are unique (Max Owned 1), so "the" owned character of a type is the first one
+    public static OwnedCharacter OwnedOf(CharacterType type)
+    {
+        if (type == null || CharacterManager.Instance == null) return null;
+        foreach (OwnedCharacter owned in CharacterManager.Instance.Roster) if (owned.Type == type) return owned;
+        return null;
+    }
+
+    public int Loyalty(CharacterType type)
+    {
+        OwnedCharacter owned = OwnedOf(type);
+        return owned != null ? Mathf.FloorToInt(owned.Loyalty) : -1;
+    }
+
+    public void AddLoyalty(CharacterType type, int amount)
+    {
+        OwnedCharacter owned = OwnedOf(type);
+        if (owned != null) owned.Loyalty += amount;
+    }
+
     public void Give(string item, float amount)
     {
         if (ResourceManager.Instance == null) return;

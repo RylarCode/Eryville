@@ -40,5 +40,5 @@ MonoBehaviour:
   cast:
   - name: Mayor
     portrait: {fileID: 0}
-  script: "# PLACEHOLDER. Plays by itself once \"welcome\" is done AND the town has at least one building.\n# The goal line above (the chapter's Goal field) shows in the Story menu until then.\n\nMayor: Look at that, your first building! (placeholder)\n[if warmth >= 1] Mayor: The people already love your gentle ways. (placeholder: only if you chose warmth)\n[if warmth < 1] Mayor: The people respect your firm hand. (placeholder: only if you did not)\nMayor: Hire or recruit someone, then select them and tap Talk. (placeholder)\n"
+  script: "# PLACEHOLDER. Plays by itself once \"welcome\" is done AND the town has at least one building.\n# The goal line above (the chapter's Goal field) shows in the Story menu until then.\n\nMayor: Look at that, your first building! (placeholder)\n[if warmth >= 1] Mayor: The people already love your gentle ways. (placeholder: only if you chose warmth)\n[if warmth < 1] Mayor: The people respect your firm hand. (placeholder: only if you did not)\nMayor: Hire or recruit someone, then select them and open their Connection. (placeholder)\n"
   scriptFile: {fileID: 0}

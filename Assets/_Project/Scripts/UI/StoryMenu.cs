@@ -43,7 +43,7 @@ public class StoryMenu
         {
             foreach (StoryChapter step in story.NextSteps())
             {
-                if (step.trigger == StoryTrigger.Talk && step.talkTo != null && story.IsAvailable(step)) notes.Add($"> {step.talkTo.displayName} has something to say: select them and tap Talk.");
+                if (step.trigger == StoryTrigger.Talk && step.talkTo != null && story.IsAvailable(step)) notes.Add($"> {step.talkTo.displayName} has something to share: select them and open their Connection.");
                 else if (!string.IsNullOrWhiteSpace(step.goal)) notes.Add("> " + step.goal.Trim());
             }
             seen = story.FinishedChapters();

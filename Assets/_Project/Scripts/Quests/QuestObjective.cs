@@ -15,15 +15,16 @@ public class QuestObjective
     public StoryCondition condition = new StoryCondition();
 
     // The text shown for it, with progress when it counts ("Have 3 Gold Mine buildings (2/3)")
-    public string Text(StoryState state, IStoryWorld world)
+    // subject: the quest's character (for Loyalty objectives with no character picked)
+    public string Text(StoryState state, IStoryWorld world, CharacterType subject = null)
     {
         string text = !string.IsNullOrWhiteSpace(label) ? label.Trim() : condition.Friendly();
-        condition.Measure(state, world, out int current, out int target);
+        condition.Measure(state, world, out int current, out int target, subject);
         return target > 1 ? $"{text} ({current}/{target})" : text;
     }
 
-    public bool IsMet(StoryState state, IStoryWorld world)
+    public bool IsMet(StoryState state, IStoryWorld world, CharacterType subject = null)
     {
-        return condition.Test(state, world);
+        return condition.Test(state, world, subject);
     }
 }

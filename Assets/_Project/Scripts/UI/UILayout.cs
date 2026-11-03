@@ -168,7 +168,7 @@ public class UILayout
         }
 
         // Every panel becomes a sheet above the bottom bar
-        string[] sheets = { "BuildingMenuPanel", "HireMenuPanel", "CharacterPanel", "TownPanel", "RecruitPanel", "StoryPanel", "QuestPanel", "NotificationPanel", "CheatPanel" };
+        string[] sheets = { "BuildingMenuPanel", "HireMenuPanel", "CharacterPanel", "TownPanel", "RecruitPanel", "StoryPanel", "QuestPanel", "NotificationPanel", "ConnectionPanel", "CheatPanel" };
         foreach (string sheetName in sheets)
         {
             RectTransform sheet = Find(sheetName);
@@ -219,8 +219,8 @@ public class UILayout
             picture.offsetMin = new Vector2(16f, 0f);
             picture.offsetMax = new Vector2(-8f, -24f);
         }
-        string[] buttons = { "AssignButton", "MoveButton", "TalkButton" };
-        int[] places = { 0, 1, 1 }; // Move (buildings) and Talk (characters) are never shown together
+        string[] buttons = { "AssignButton", "MoveButton", "ConnectionButton" };
+        int[] places = { 0, 1, 1 }; // Move (buildings) and Connection (characters) are never shown together
         for (int i = 0; i < buttons.Length; i++)
         {
             RectTransform button = Child(details, buttons[i]);

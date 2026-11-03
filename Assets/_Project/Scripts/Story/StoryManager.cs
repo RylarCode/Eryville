@@ -54,6 +54,7 @@ public class StoryManager : MonoBehaviour
         Instance = this;
         SetChapters(Resources.LoadAll<StoryChapter>("Story"));
         State.Changed += RaiseChanged;
+        if (GetComponent<ConnectionWatcher>() == null) gameObject.AddComponent<ConnectionWatcher>(); // characters' Connections
         SceneManager.sceneLoaded += OnSceneLoaded;
     }
 
@@ -110,6 +111,8 @@ public class StoryManager : MonoBehaviour
         AbandonDialogue();
         State.Import(data.storyValues, data.storyDone);
         quietFor = 0f;
+        ConnectionWatcher watcher = GetComponent<ConnectionWatcher>();
+        if (watcher != null) watcher.ResetAnnouncements(); // what is playable in the loaded game is not news
     }
 
     // --- What is due ---
@@ -122,7 +125,9 @@ public class StoryManager : MonoBehaviour
     // Not finished, and its requirements are met
     public bool IsAvailable(StoryChapter chapter)
     {
-        return chapter != null && !State.IsDone(chapter.Id) && StoryCondition.All(chapter.requires, State, World);
+        if (chapter == null || State.IsDone(chapter.Id)) return false;
+        if (chapter.trigger == StoryTrigger.Talk && chapter.talkTo != null && World.CharacterCount(chapter.talkTo) <= 0) return false; // nobody to talk to yet
+        return StoryCondition.All(chapter.requires, State, World, chapter.talkTo);
     }
 
     // The chapter that starts next by itself, if any

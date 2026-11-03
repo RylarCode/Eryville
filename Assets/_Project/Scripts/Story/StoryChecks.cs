@@ -55,6 +55,9 @@ public static class StoryChecks
 
     private static void CheckEffect(StoryEffect effect, string where, List<string> problems)
     {
-        if (effect != null && string.IsNullOrWhiteSpace(effect.name)) problems.Add($"{where}: a change without a name.");
+        if (effect == null) return;
+        bool named = effect.kind == StoryEffect.Kind.Add || effect.kind == StoryEffect.Kind.Set || effect.kind == StoryEffect.Kind.Give;
+        if (named && string.IsNullOrWhiteSpace(effect.name)) problems.Add($"{where}: a change without a name.");
+        if (effect.kind == StoryEffect.Kind.StartQuest && string.IsNullOrWhiteSpace(effect.QuestId)) problems.Add($"{where}: a quest to start without an id.");
     }
 }

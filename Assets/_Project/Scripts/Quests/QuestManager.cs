@@ -154,6 +154,18 @@ public class QuestManager : MonoBehaviour
         return found;
     }
 
+    // Whether a locked quest's requirements are met (so it would start now, or wait only for the main line)
+    public bool RequirementsMet(Quest quest)
+    {
+        return quest != null && OwnerPresent(quest, World) && StoryCondition.All(quest.requires, State, World, quest.character);
+    }
+
+    // A character's quest starts only once the player has that character
+    private static bool OwnerPresent(Quest quest, IStoryWorld world)
+    {
+        return quest.character == null || (world != null && world.CharacterCount(quest.character) > 0);
+    }
+
     // How many quests are waiting for the player: ready to claim, or offered
     public int AttentionCount => Log.Count(QuestStatus.Ready) + Log.Count(QuestStatus.Available);
 
@@ -165,7 +177,7 @@ public class QuestManager : MonoBehaviour
         foreach (QuestObjective objective in quest.objectives)
         {
             if (objective == null) continue;
-            lines.Add(new KeyValuePair<string, bool>(objective.Text(State, World), finished || objective.IsMet(State, World)));
+            lines.Add(new KeyValuePair<string, bool>(objective.Text(State, World, quest.character), finished || objective.IsMet(State, World, quest.character)));
         }
         return lines;
     }
@@ -208,18 +220,18 @@ public class QuestManager : MonoBehaviour
             QuestStatus status = StatusOf(quest);
             if (status == QuestStatus.Locked)
             {
-                if (!StoryCondition.All(quest.requires, state, world)) continue;
+                if (!OwnerPresent(quest, world) || !StoryCondition.All(quest.requires, state, world, quest.character)) continue;
                 if (quest.category == QuestCategory.Main && AnotherMainIsBusy(quest)) continue;
 
                 if (quest.start == QuestStart.Offered)
                 {
                     Log.Set(quest.Id, QuestStatus.Available);
-                    Notify.Show($"New quest available: {quest.Title}", NotifyKind.Info, null, OpenMenu, "quest:" + quest.Id + ":available");
+                    Notify.Show($"New quest available: {quest.Title}", NotifyKind.Info, FaceOf(quest), () => OpenFor(quest), "quest:" + quest.Id + ":available");
                 }
                 else
                 {
                     Log.Set(quest.Id, QuestStatus.Active);
-                    Notify.Show($"New quest: {quest.Title}", NotifyKind.Info, null, OpenMenu, "quest:" + quest.Id + ":new");
+                    Notify.Show($"New quest: {quest.Title}", NotifyKind.Info, FaceOf(quest), () => OpenFor(quest), "quest:" + quest.Id + ":new");
                 }
                 changed = true;
                 status = StatusOf(quest);
@@ -228,7 +240,7 @@ public class QuestManager : MonoBehaviour
             if (status == QuestStatus.Active && AllObjectivesMet(quest, state, world))
             {
                 Log.Set(quest.Id, QuestStatus.Ready);
-                Notify.Show($"Quest ready: {quest.Title} (tap to claim)", NotifyKind.Success, null, OpenMenu, "quest:" + quest.Id + ":ready");
+                Notify.Show($"Quest ready: {quest.Title} (tap to claim)", NotifyKind.Success, FaceOf(quest), () => OpenFor(quest), "quest:" + quest.Id + ":ready");
                 changed = true;
             }
         }
@@ -237,13 +249,22 @@ public class QuestManager : MonoBehaviour
 
     private static bool AllObjectivesMet(Quest quest, StoryState state, IStoryWorld world)
     {
-        foreach (QuestObjective objective in quest.objectives) if (objective != null && !objective.IsMet(state, world)) return false;
+        foreach (QuestObjective objective in quest.objectives) if (objective != null && !objective.IsMet(state, world, quest.character)) return false;
         return true;
     }
 
-    private static void OpenMenu()
+    // Tapping a quest's message: a character's quest opens that character's Connection, any other the Quests menu
+    private static void OpenFor(Quest quest)
     {
-        if (UIManager.Instance != null) UIManager.Instance.OpenQuestMenu();
+        if (UIManager.Instance == null) return;
+        OwnedCharacter owner = quest.character != null ? UnityStoryWorld.OwnedOf(quest.character) : null;
+        if (owner != null) UIManager.Instance.OpenConnection(owner);
+        else UIManager.Instance.OpenQuestMenu();
+    }
+
+    private static Sprite FaceOf(Quest quest)
+    {
+        return quest.character != null ? quest.character.FaceOrSprite : null;
     }
 
     // The player accepts an offered quest
@@ -262,7 +283,7 @@ public class QuestManager : MonoBehaviour
         QuestStatus status = StatusOf(quest);
         if (status != QuestStatus.Locked && status != QuestStatus.Available) return false;
         Log.Set(quest.Id, QuestStatus.Active);
-        Notify.Show($"New quest: {quest.Title}", NotifyKind.Info, null, OpenMenu, "quest:" + quest.Id + ":new");
+        Notify.Show($"New quest: {quest.Title}", NotifyKind.Info, FaceOf(quest), () => OpenFor(quest), "quest:" + quest.Id + ":new");
         Evaluate();
         return true;
     }
@@ -339,6 +360,13 @@ public class QuestManager : MonoBehaviour
                 case StoryEffect.Kind.Add: State.Add(reward.name, reward.amount); break;
                 case StoryEffect.Kind.Set: State.Set(reward.name, reward.amount); break;
                 case StoryEffect.Kind.StartQuest: StartById(reward.QuestId); break;
+                case StoryEffect.Kind.Loyalty:
+                {
+                    CharacterType who = reward.character != null ? reward.character : quest.character;
+                    if (who != null) world.AddLoyalty(who, reward.amount);
+                    break;
+                }
+                // a Buff is not paid out: it holds while the quest is complete (ConnectionBuffs)
             }
         }
 

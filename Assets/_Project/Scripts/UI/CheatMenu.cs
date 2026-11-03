@@ -88,6 +88,7 @@ public class CheatMenu
         Add("Everyone eats a meal now", Cheats.MealNow);
         Add("Everyone: mood 100, loyalty 100", () => Cheats.SetEveryone(100f, 100f));
         Add("Everyone: mood 10, loyalty unchanged", () => Cheats.SetEveryone(10f, -1f));
+        Add("Everyone: loyalty +10 (to try Connections)", () => Cheats.AddLoyaltyToEveryone(10f));
         Add("Dismiss all characters", Cheats.DismissAllCharacters, true);
 
         Section("World");

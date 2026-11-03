@@ -50,7 +50,10 @@ public class UIManager : MonoBehaviour
     private StoryMenu storyMenu;
     private float nextStoryRefresh;
     private DialogueBox dialogue;
-    private GameObject talkButton;
+    private GameObject connectionButton;
+    private TMP_Text connectionLabel;
+    private ConnectionMenu connectionMenu;
+    private float nextConnectionRefresh;
     // The Quests menu and its button (which says when something is waiting)
     private QuestMenu questMenu;
     private float nextQuestRefresh;
@@ -138,7 +141,7 @@ public class UIManager : MonoBehaviour
         dialogue = DialogueBox.Create(characterPanel.transform.parent, buttonPrefab);
         toasts = ToastView.Create(characterPanel.transform.parent, buttonPrefab);
         CreateMoveButton();
-        CreateTalkButton();
+        CreateConnectionButton();
         CreateViewButton();
         town = new TownMenu(this, buttonPrefab, characterPanel, assignPanel);
         CreateMenuButton("OpenTownButton", "Town", 1, ToggleTownMenu);
@@ -148,6 +151,7 @@ public class UIManager : MonoBehaviour
         CreateMenuButton("OpenStoryButton", "Story", 3, ToggleStoryMenu);
         questMenu = new QuestMenu(this, buttonPrefab, characterPanel, assignPanel);
         CreateMenuButton("OpenQuestButton", "Quests", 4, ToggleQuestMenu);
+        connectionMenu = new ConnectionMenu(this, buttonPrefab, characterPanel, assignPanel);
         questButtonLabel = characterPanel.transform.parent.Find("OpenQuestButton")?.GetComponentInChildren<TMP_Text>();
         notificationMenu = new NotificationMenu(this, buttonPrefab, characterPanel, assignPanel);
         SetUpCheats();
@@ -180,7 +184,7 @@ public class UIManager : MonoBehaviour
     // The screen changed between portrait and landscape: menus and cards were sized for the old shape, so make them again
     private void RebuildForNewLayout()
     {
-        if (openPanel != null && (openPanel == town.Panel || openPanel == recruit.Panel || openPanel == storyMenu.Panel || openPanel == questMenu.Panel || openPanel == notificationMenu.Panel)) TogglePanel(openPanel);
+        if (openPanel != null && (openPanel == town.Panel || openPanel == recruit.Panel || openPanel == storyMenu.Panel || openPanel == questMenu.Panel || openPanel == notificationMenu.Panel || openPanel == connectionMenu.Panel)) TogglePanel(openPanel);
         if (cheats != null && openPanel == cheats.Panel) TogglePanel(openPanel);
         recruit.Dispose();
         reveal.Destroy();
@@ -190,7 +194,7 @@ public class UIManager : MonoBehaviour
             Destroy(dialogue.gameObject);
             dialogue = DialogueBox.Create(characterPanel.transform.parent, buttonPrefab);
         }
-        List<GameObject> oldPanels = new List<GameObject> { town.Panel, recruit.Panel, storyMenu.Panel, questMenu.Panel, notificationMenu.Panel };
+        List<GameObject> oldPanels = new List<GameObject> { town.Panel, recruit.Panel, storyMenu.Panel, questMenu.Panel, notificationMenu.Panel, connectionMenu.Panel };
         if (cheats != null) oldPanels.Add(cheats.Panel);
         foreach (GameObject old in oldPanels)
         {
@@ -202,6 +206,7 @@ public class UIManager : MonoBehaviour
         recruit = new RecruitMenu(this, buttonPrefab, characterPanel, assignPanel);
         storyMenu = new StoryMenu(this, buttonPrefab, characterPanel, assignPanel);
         questMenu = new QuestMenu(this, buttonPrefab, characterPanel, assignPanel);
+        connectionMenu = new ConnectionMenu(this, buttonPrefab, characterPanel, assignPanel);
         notificationMenu = new NotificationMenu(this, buttonPrefab, characterPanel, assignPanel);
         if (cheats != null) cheats = new CheatMenu(this, buttonPrefab, characterPanel, assignPanel);
 
@@ -327,6 +332,11 @@ public class UIManager : MonoBehaviour
             questMenu.Refresh();
         }
         UpdateQuestButton();
+        if (connectionMenu != null && connectionMenu.Panel.activeInHierarchy && Time.unscaledTime >= nextConnectionRefresh)
+        {
+            nextConnectionRefresh = Time.unscaledTime + BuildingRefreshInterval;
+            connectionMenu.Refresh();
+        }
         if (notificationMenu != null && notificationMenu.Panel.activeInHierarchy && Time.unscaledTime >= nextNotificationRefresh)
         {
             nextNotificationRefresh = Time.unscaledTime + BuildingRefreshInterval;
@@ -618,14 +628,14 @@ public class UIManager : MonoBehaviour
         if (assignJobButton != null) assignJobButton.SetActive(true);
         if (moveButton != null) moveButton.SetActive(false);
         RefreshCharacterText();
-        UpdateTalkButton();
+        UpdateConnectionButton();
     }
 
     private void RefreshCharacterText()
     {
-        UpdateTalkButton(); // (a chapter can become due while the panel is open)
+        UpdateConnectionButton(); // (a chapter can become due while the panel is open)
         OwnedCharacter c = selectedCharacter;
-        characterText.text = $"Name: {c.DisplayName}\nLevel: {c.Level}\nLoyalty: {c.Loyalty:0}\nMood: {c.Mood:0}\nFed: {DescribeHunger(c)}\nSpeed: {c.DescribeSpeed()}\nWorking Location: {c.WorkBuilding?.DisplayName}\nHome: {c.HomeBuilding?.DisplayName}\nRarity: {c.Type.rarity}{DescribeSpecialty(c)}\nSelf-awareness: {c.DescribeAwareness()}\nWage: {c.DailyWage}/day{(c.WagePaid ? "" : " (UNPAID - refuses to work)")}";
+        characterText.text = $"Name: {c.DisplayName}\nLevel: {c.Level}\nLoyalty: {c.Loyalty:0}{DescribeLoyaltyChange(c)}\nMood: {c.Mood:0}\nFed: {DescribeHunger(c)}\nSpeed: {c.DescribeSpeed()}\nWorking Location: {c.WorkBuilding?.DisplayName}\nHome: {c.HomeBuilding?.DisplayName}\nRarity: {c.Type.rarity}{DescribeSpecialty(c)}\nSelf-awareness: {c.DescribeAwareness()}\nWage: {c.DailyWage}/day{(c.WagePaid ? "" : " (UNPAID - refuses to work)")}";
     }
 
     public void ShowBuildingDetails(Building building)
@@ -645,7 +655,7 @@ public class UIManager : MonoBehaviour
         SetDetailsPortrait(null);
         if (assignJobButton != null) assignJobButton.SetActive(false); // assigning a job makes no sense here
         if (moveButton != null) moveButton.SetActive(building.buildingType != null && building.buildingType.movable);
-        if (talkButton != null) talkButton.SetActive(false);
+        if (connectionButton != null) connectionButton.SetActive(false);
         ClearList();
         occupantListSignature = null;
         nextBuildingRefresh = Time.unscaledTime + BuildingRefreshInterval;
@@ -664,6 +674,13 @@ public class UIManager : MonoBehaviour
             occupantListSignature = signature;
             RebuildOccupantList(selectedBuilding);
         }
+    }
+
+    // " (+2 today)": how loyalty moved at the latest payday
+    private static string DescribeLoyaltyChange(OwnedCharacter c)
+    {
+        if (Mathf.Abs(c.LastLoyaltyChange) < 0.01f) return "";
+        return $" ({(c.LastLoyaltyChange > 0f ? "+" : "")}{c.LastLoyaltyChange:0.#} today)";
     }
 
     // "\nSpecialty: bakery x1.5" (nothing for most characters)
@@ -975,43 +992,56 @@ public class UIManager : MonoBehaviour
         if (button != null) button.interactable = !view.Editing;
     }
 
-    // The "Talk" button: a copy of the Assign button, beside it, shown while the selected character has a story chapter to tell
-    private void CreateTalkButton()
+    // The "Connection" button: a copy of the Assign button, beside it, shown for a character that has a Connection (chapters or quests of
+    // its own). It says "Connection (1)" when something waits there.
+    private void CreateConnectionButton()
     {
         if (assignJobButton == null) return;
 
-        talkButton = Instantiate(assignJobButton, assignJobButton.transform.parent);
-        talkButton.name = "TalkButton";
+        connectionButton = Instantiate(assignJobButton, assignJobButton.transform.parent);
+        connectionButton.name = "ConnectionButton";
         RectTransform sourceRect = assignJobButton.GetComponent<RectTransform>();
-        RectTransform rect = talkButton.GetComponent<RectTransform>();
+        RectTransform rect = connectionButton.GetComponent<RectTransform>();
         if (sourceRect != null && rect != null) rect.anchoredPosition = sourceRect.anchoredPosition + new Vector2(sourceRect.sizeDelta.x + 10f, 0f);
 
-        Button button = talkButton.GetComponent<Button>();
+        Button button = connectionButton.GetComponent<Button>();
         if (button != null)
         {
             for (int i = 0; i < button.onClick.GetPersistentEventCount(); i++) button.onClick.SetPersistentListenerState(i, UnityEventCallState.Off);
-            button.onClick.AddListener(TalkToSelected);
+            button.onClick.AddListener(() => { if (selectedCharacter != null) OpenConnection(selectedCharacter); });
         }
-        TMP_Text label = talkButton.GetComponentInChildren<TMP_Text>();
-        if (label != null) label.text = "Talk";
-        talkButton.SetActive(false);
+        connectionLabel = connectionButton.GetComponentInChildren<TMP_Text>();
+        if (connectionLabel != null) connectionLabel.text = "Connection";
+        connectionButton.SetActive(false);
     }
 
-    private void UpdateTalkButton()
+    private void UpdateConnectionButton()
     {
-        if (talkButton == null) return;
-        bool show = panelMode == PanelMode.Character && selectedCharacter != null && StoryManager.Instance != null && StoryManager.Instance.TalkChapterFor(selectedCharacter.Type) != null;
-        if (talkButton.activeSelf != show) talkButton.SetActive(show);
+        if (connectionButton == null) return;
+        bool show = panelMode == PanelMode.Character && selectedCharacter != null && Connection.HasAny(selectedCharacter.Type);
+        if (connectionButton.activeSelf != show) connectionButton.SetActive(show);
+        if (!show || connectionLabel == null) return;
+        int waiting = Connection.WaitingCount(selectedCharacter.Type);
+        string text = waiting > 0 ? $"Connection ({waiting})" : "Connection";
+        if (connectionLabel.text != text) connectionLabel.text = text;
     }
 
-    // Called by the "Talk" button: the character's story chapter plays
-    public void TalkToSelected()
+    // Opens a character's Connection (from its details, or a message about it)
+    public void OpenConnection(OwnedCharacter character)
     {
-        if (selectedCharacter == null || StoryManager.Instance == null) return;
-        StoryChapter chapter = StoryManager.Instance.TalkChapterFor(selectedCharacter.Type);
-        if (chapter == null) return;
+        if (character == null || connectionMenu == null) return;
+        if (connectionMenu.Panel.activeInHierarchy && connectionMenu.Character == character) return;
         CloseCharacterPanels();
-        StoryManager.Instance.Play(chapter);
+        if (!connectionMenu.Panel.activeInHierarchy) TogglePanel(connectionMenu.Panel);
+        connectionMenu.Show(character);
+    }
+
+    // A chapter from a Connection: the menus close and it plays (again, if it was read before: then nothing it does is kept)
+    public void PlayConnectionChapter(StoryChapter chapter, bool replay)
+    {
+        if (chapter == null || StoryManager.Instance == null) return;
+        CloseEverything();
+        StoryManager.Instance.Play(chapter, replay);
     }
 
     // A chapter from the Story menu is played again

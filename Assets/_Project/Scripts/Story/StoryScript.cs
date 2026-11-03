@@ -15,10 +15,12 @@ using System.Text.RegularExpressions;
 //   => Farmer: Thank you!                a reply, shown only if the option above it was picked (several allowed)
 //   @add kindness 1                      change a value on the spot (@set name n, @give Gold 50 too)
 //   @quest build-mine                    start a quest (in an option: "> Sure | quest build-mine")
+//   @loyalty 5                           the character's loyalty up (or -3 down); in an option: "| loyalty +5"
 //   [if kindness >= 2] Mayor: Well done. only plays when it is true (also in front of ">" and "@"); join with "and"
 //
 // Conditions: "name >= 2" (also <= < > == !=), "name" (is more than 0), "not name", "done chapter-id", "not done chapter-id",
-// "quest done quest-id" (finished and claimed), "quest active quest-id" (started, not claimed yet), "not quest done quest-id".
+// "quest done quest-id" (finished and claimed), "quest active quest-id" (started, not claimed yet), "not quest done quest-id",
+// "loyalty >= 40" (the chapter's character: its Talk To). "loyalty" is a reserved word: it is never a story value.
 // What an option does: "name +1", "name -2", "name =3" (set), "give Item amount".
 public enum StoryBeatKind { Line, Choice, Effect }
 
@@ -51,7 +53,8 @@ public static class StoryScript
     private static readonly Regex NotPlain = new Regex(@"^not\s+([A-Za-z_][A-Za-z0-9_]*)$", RegexOptions.IgnoreCase);
     private static readonly Regex Change = new Regex(@"^([A-Za-z_][A-Za-z0-9_]*)\s*([+\-=])\s*(\d+)$");
     private static readonly Regex Give = new Regex(@"^give\s+(.+?)\s+(-?\d+)$", RegexOptions.IgnoreCase);
-    private static readonly Regex Directive = new Regex(@"^@(set|add|give|quest)\s+(.+)$", RegexOptions.IgnoreCase);
+    private static readonly Regex Directive = new Regex(@"^@(set|add|give|quest|loyalty)\s+(.+)$", RegexOptions.IgnoreCase);
+    public const string LoyaltyWord = "loyalty"; // in a condition or a change, "loyalty" means the character's loyalty, not a story value
     private static readonly Regex QuestChange = new Regex(@"^quest\s+([A-Za-z0-9_.\-]+)$", RegexOptions.IgnoreCase);
     private static readonly Regex QuestCondition = new Regex(@"^(not\s+)?quest\s+(done|active)\s+([A-Za-z0-9_.\-]+)$", RegexOptions.IgnoreCase);
     private static readonly Regex ValueRef = new Regex(@"\{([A-Za-z_][A-Za-z0-9_]*)\}");
@@ -171,6 +174,11 @@ public static class StoryScript
         Match change = Change.Match(text);
         if (!change.Success) return null;
         int amount = int.Parse(change.Groups[3].Value);
+        if (string.Equals(change.Groups[1].Value, LoyaltyWord, StringComparison.OrdinalIgnoreCase))
+        {
+            if (change.Groups[2].Value == "=") return null; // loyalty moves up or down; it is not set
+            return new StoryEffect(StoryEffect.Kind.Loyalty, "", change.Groups[2].Value == "-" ? -amount : amount);
+        }
         switch (change.Groups[2].Value)
         {
             case "+": return new StoryEffect(StoryEffect.Kind.Add, change.Groups[1].Value, amount);
@@ -184,6 +192,7 @@ public static class StoryScript
     {
         string[] pieces = rest.Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
         if (verb == "quest") return pieces.Length == 1 ? new StoryEffect(StoryEffect.Kind.StartQuest, pieces[0], 1) : null;
+        if (verb == "loyalty") return pieces.Length == 1 && int.TryParse(pieces[0], out int change) ? new StoryEffect(StoryEffect.Kind.Loyalty, "", change) : null;
         if (pieces.Length < 2 || !int.TryParse(pieces[pieces.Length - 1], out int amount)) return null;
         string name = string.Join(" ", pieces, 0, pieces.Length - 1);
         if (verb == "give") return new StoryEffect(StoryEffect.Kind.Give, name, amount);
@@ -230,7 +239,8 @@ public static class StoryScript
                 case "!=": compare = StoryCondition.Compare.NotEqual; break;
                 default: compare = StoryCondition.Compare.Exactly; break;
             }
-            condition = new StoryCondition { kind = StoryCondition.Kind.Value, name = compared.Groups[1].Value, compare = compare, amount = amount };
+            bool loyalty = string.Equals(compared.Groups[1].Value, LoyaltyWord, StringComparison.OrdinalIgnoreCase);
+            condition = new StoryCondition { kind = loyalty ? StoryCondition.Kind.Loyalty : StoryCondition.Kind.Value, name = loyalty ? "" : compared.Groups[1].Value, compare = compare, amount = amount };
             return true;
         }
 

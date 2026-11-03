@@ -28,7 +28,6 @@ The button does nothing until a building uses 3/4 art.
 - [ ] On a fresh game (Cheats > Story > "Forget all story progress"), the placeholder **welcome** chapter opens by itself after a moment: portrait area, name, words appearing, tap to continue.
 - [ ] The choice shows two buttons; the reply after "Firmly" appears only for that option.
 - [ ] After placing a building, chapter 2 plays and its line depends on the choice made in chapter 1.
-- [ ] With Darkie owned: Darkie's details show a **Talk** button (to the right of Assign: check it fits the panel); Talk plays the chat; the button disappears afterwards.
 - [ ] **Story** button (bottom bar): "What next" goals, chapters seen; tapping one replays it with a Skip button and changes nothing.
 - [ ] Save, quit, reopen: finished chapters stay finished.
 - [ ] Eryville > New Story Chapter makes an asset in `Resources/Story`; Eryville > Check Story reports nothing for the samples.
@@ -58,9 +57,24 @@ The button does nothing until a building uses 3/4 art.
 - [ ] Claiming "Someone to help" with the local backend adds 1 letter.
 - [ ] Save, quit, reopen: quest states are kept.
 - [ ] Phone layout: six buttons fit in the bottom bar, including "Quests (2)".
+- [ ] The details panel's Talk button is now **Connection** (see section 8).
 - [ ] Eryville > New Quest / Check Quests work; Check Quests reports nothing for the samples.
 
-## 8. Older, never confirmed
+## 8. Connection: character stories and loyalty (this change)
+
+- [ ] **Re-save check**: the sample chapter `03_TalkToDarkie` became `03_JohnFirstWord` (John is the only unique character). Unity should pick up the rename without complaint.
+- [ ] A character's details show **Loyalty: N** and, after a payday, "(+2 today)" (Cheats > "Pay wages now").
+- [ ] With **John** owned (Cheats > Spawn John) and the welcome chapter done: John's details show **Connection (1)** to the right of Assign (check it fits the panel). Darkie, Baker... show no Connection button.
+- [ ] Connection opens in the details' place: header "John: loyalty N" and **Back**; "Talk: A word with John"; "Next: John opens up" with "Needs: Loyalty 10 (now N)". Later entries are hidden.
+- [ ] Talk plays the chapter; the "Glad to have you here" option raises John's loyalty by 2 (check after the chapter ends).
+- [ ] Cheats > "Everyone: loyalty +10": a toast "John has something to share"; tapping it opens John's Connection; "John opens up" can be played.
+- [ ] After it: **Bonuses** shows "Productivity x1.1"; John's building produces a bit more.
+- [ ] At loyalty 15+: the side quest "A favour for John" is offered (toast with John's face; tapping it opens John's Connection); Accept, get 50 wood, Claim: loyalty +5 and 30 gold.
+- [ ] Done shows "Read again: ..." rows; reading again changes nothing.
+- [ ] Phone layout: the Connection button and panel fit.
+- [ ] Eryville > Check Quests and Check Story report nothing for the samples.
+
+## 9. Older, never confirmed
 
 Built earlier in this project; tick them if you have already seen them working.
 - [ ] Title screen: click anywhere fades into GameScene; Play in the editor starts from the title (PlayFromTitle).

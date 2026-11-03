@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fba5770dc4494a26ae1d6b3494a4928c, type: 3}
+  m_Name: LoyaltySettings
+  m_EditorClassIdentifier: 
+  paidHappy: 2
+  happyMood: 60
+  paid: 1
+  unpaid: -3
+  unhappy: -1
+  unhappyMood: 30
+  homeless: -1

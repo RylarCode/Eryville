@@ -76,6 +76,8 @@ Created at runtime (nothing to add to the scene):
 
 **Notifications/** - messages to the player: `Notify.Show(...)` from anywhere (`docs/NOTIFICATIONS.md`); its screens are `UI/ToastView.cs`, `UI/ToastItem.cs` and `UI/NotificationMenu.cs`
 
+**Connection/** - character stories: a character's chapters and quests unlocked by loyalty and the story, and the bonuses they give (`docs/CONNECTION.md`); loyalty rules are in `Gameplay/Characters/LoyaltyRules.cs`; its screen is `UI/ConnectionMenu.cs`
+
 **Quests/** - main and side quests with objectives, claimed rewards, letters paid by the server (`docs/QUESTS.md`); its screen is `UI/QuestMenu.cs`
 
 **Story/** - chapters of dialogue, story values, unlocking buildings (`docs/STORY.md`); its screens are `UI/DialogueBox.cs` and `UI/StoryMenu.cs`
@@ -154,6 +156,7 @@ Data assets (`Assets/_Project/ScriptableObjects`): Buildings (Gold Mine, Lumbery
 | Offline reward | `OfflineProgress` (efficiency, cap) |
 | Hunger and meal numbers, starter food | `Resources/FoodSettings` (`docs/FOOD.md`) |
 | A new item, recipe or production chain | assets only: `docs/PRODUCTION.md` |
+| Character stories, loyalty rules | assets only, plus `Resources/LoyaltySettings`: `docs/CONNECTION.md` |
 | Quests (main, side, rewards) | assets only (`Resources/Quests`): `docs/QUESTS.md` |
 | Deploying the server, Google Play builds | `docs/DEPLOYMENT.md` (and `docs/FIREBASE_SETUP.md`) |
 | What to check in Unity next time | `docs/TO_TEST.md` |

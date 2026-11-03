@@ -205,6 +205,11 @@ public static class Cheats
         }
     }
 
+    public static void AddLoyaltyToEveryone(float amount)
+    {
+        foreach (OwnedCharacter owned in CharacterManager.Instance.Roster) owned.Loyalty += amount;
+    }
+
     public static void DismissAllCharacters()
     {
         CharacterManager.Instance.ClearAll();

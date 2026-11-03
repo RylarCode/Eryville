@@ -75,7 +75,7 @@ public class StoryPlayer
             Frame frame = frames.Peek();
             if (frame.next >= frame.beats.Count) { frames.Pop(); continue; }
             StoryBeat beat = frame.beats[frame.next++];
-            if (!StoryCondition.All(beat.onlyIf, scratch, world)) continue;
+            if (!StoryCondition.All(beat.onlyIf, scratch, world, chapter.talkTo)) continue;
 
             switch (beat.kind)
             {
@@ -89,7 +89,7 @@ public class StoryPlayer
                 case StoryBeatKind.Choice:
                     for (int i = 0; i < beat.options.Count; i++)
                     {
-                        if (!StoryCondition.All(beat.options[i].onlyIf, scratch, world)) continue;
+                        if (!StoryCondition.All(beat.options[i].onlyIf, scratch, world, chapter.talkTo)) continue;
                         choices.Add(new ChoiceView { Text = StoryScript.Fill(beat.options[i].text, scratch), Index = i });
                     }
                     if (choices.Count == 0) break; // nothing to pick from: carry on
@@ -117,6 +117,7 @@ public class StoryPlayer
         {
             if (world == null) break;
             if (effect.kind == StoryEffect.Kind.StartQuest) { if (!string.IsNullOrWhiteSpace(effect.QuestId)) world.StartQuest(effect.QuestId.Trim()); }
+            else if (effect.kind == StoryEffect.Kind.Loyalty) { CharacterType who = effect.character != null ? effect.character : chapter.talkTo; if (who != null) world.AddLoyalty(who, effect.amount); }
             else if (!string.IsNullOrWhiteSpace(effect.name)) world.Give(effect.name.Trim(), effect.amount);
         }
         real.MarkDone(chapter.Id);

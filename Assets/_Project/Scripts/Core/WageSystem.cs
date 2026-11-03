@@ -10,7 +10,6 @@ public class WageSystem : MonoBehaviour
 {
     public static WageSystem Instance { get; private set; }
 
-    [SerializeField] private float unpaidLoyaltyLoss = 10f;
     [SerializeField] private float unpaidMoodLoss = 10f;
 
     // What the latest payday did, for the UI
@@ -92,11 +91,13 @@ public class WageSystem : MonoBehaviour
             else
             {
                 LastUnpaidCount++;
-                owned.Loyalty -= unpaidLoyaltyLoss;
                 owned.Mood -= unpaidMoodLoss;
                 owned.WagePaid = false;
             }
         }
+
+        // Once a day everyone's loyalty moves a little (paid or not, happy or not, housed or not: see LoyaltyRules)
+        foreach (OwnedCharacter owned in CharacterManager.Instance.Roster) LoyaltyRules.ApplyPayday(owned, owned.WagePaid);
 
         Debug.Log($"Payday: {LastPaid}/{LastDue} gold paid, {LastUnpaidCount} unpaid.");
         if (LastDue > 0)

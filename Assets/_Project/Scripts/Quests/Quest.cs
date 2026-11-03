@@ -16,8 +16,10 @@ public class Quest : ScriptableObject
     public string title;
     [TextArea(2, 5)] public string description;
     public QuestCategory category = QuestCategory.Main;
-    [Tooltip("Main quests are tried in this order; side quests are listed in it.")]
+    [Tooltip("Main quests are tried in this order; side quests are listed in it (and in a character's Connection, mixed with its chapters).")]
     public int order;
+    [Tooltip("Optional: the character this quest belongs to. It is listed in that character's Connection, and Loyalty conditions and rewards with no character picked are about them. Story characters must be unique (Max Owned 1).")]
+    public CharacterType character;
 
     [Header("When it starts")]
     [Tooltip("Automatic: starts by itself. Offered: shows as available and waits for the player to accept it (a story chapter can also start it with '@quest id').")]

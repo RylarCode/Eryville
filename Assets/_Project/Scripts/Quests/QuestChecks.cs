@@ -36,7 +36,7 @@ public static class QuestChecks
             {
                 if (reward == null) continue;
                 if (reward.kind == StoryEffect.Kind.StartQuest && !byId.ContainsKey(reward.QuestId ?? "")) problems.Add($"{who} (rewards): there is no quest with the id \"{reward.QuestId}\" to start.");
-                else if (reward.kind != StoryEffect.Kind.StartQuest && string.IsNullOrWhiteSpace(reward.name)) problems.Add($"{who} (rewards): a reward without a name.");
+                else if ((reward.kind == StoryEffect.Kind.Add || reward.kind == StoryEffect.Kind.Set || reward.kind == StoryEffect.Kind.Give) && string.IsNullOrWhiteSpace(reward.name)) problems.Add($"{who} (rewards): a reward without a name.");
             }
         }
 
@@ -51,7 +51,58 @@ public static class QuestChecks
                 CheckBeats(chapter.Beats, $"\"{chapter.name}\"", byId, chapterIds, problems);
             }
         }
+
+        CheckConnections(all, chapters, problems);
         return problems;
+    }
+
+    // Story characters are unique, and loyalty and buffs need to know whose
+    private static void CheckConnections(List<Quest> quests, IEnumerable<StoryChapter> chapters, List<string> problems)
+    {
+        HashSet<CharacterType> warned = new HashSet<CharacterType>();
+        void Unique(CharacterType type, string who)
+        {
+            if (type == null || type.maxOwned == 1 || !warned.Add(type)) return;
+            problems.Add($"{type.displayName} has a Connection ({who}) but Max Owned is {type.maxOwned}: story characters must be unique (Max Owned 1).");
+        }
+        bool NeedsSubject(StoryCondition c) => c != null && c.kind == StoryCondition.Kind.Loyalty && c.character == null;
+        bool EffectNeedsSubject(StoryEffect e) => e != null && (e.kind == StoryEffect.Kind.Loyalty || e.kind == StoryEffect.Kind.Buff) && e.character == null;
+
+        foreach (Quest quest in quests)
+        {
+            Unique(quest.character, $"quest \"{quest.name}\"");
+            if (quest.character != null) continue;
+            string who = $"\"{quest.name}\"";
+            foreach (StoryCondition c in quest.requires) if (NeedsSubject(c)) problems.Add($"{who}: a Loyalty requirement, but whose? Set the quest's Character, or the condition's character.");
+            foreach (QuestObjective o in quest.objectives) if (o != null && NeedsSubject(o.condition)) problems.Add($"{who}: a Loyalty objective, but whose? Set the quest's Character, or the condition's character.");
+            foreach (StoryEffect e in quest.rewards) if (EffectNeedsSubject(e)) problems.Add($"{who}: a {e.kind} reward, but for whom? Set the quest's Character, or the reward's character.");
+        }
+
+        if (chapters == null) return;
+        foreach (StoryChapter chapter in chapters)
+        {
+            if (chapter == null) continue;
+            if (chapter.trigger == StoryTrigger.Talk) Unique(chapter.talkTo, $"chapter \"{chapter.name}\"");
+            if (chapter.talkTo != null) continue;
+            string who = $"\"{chapter.name}\"";
+            foreach (StoryCondition c in chapter.requires) if (NeedsSubject(c)) problems.Add($"{who}: a Loyalty requirement, but whose? Make it a Talk chapter, or pick the condition's character.");
+            foreach (StoryEffect e in chapter.rewards) if (EffectNeedsSubject(e)) problems.Add($"{who}: a {e.kind} reward, but for whom? Make it a Talk chapter, or pick the reward's character.");
+            foreach (StoryBeat beat in Flatten(chapter.Beats))
+            {
+                foreach (StoryCondition c in beat.onlyIf) if (NeedsSubject(c)) problems.Add($"{who} line {beat.sourceLine}: \"loyalty\" in a chapter with nobody to talk to: whose loyalty?");
+                if (EffectNeedsSubject(beat.effect)) problems.Add($"{who} line {beat.sourceLine}: a loyalty change in a chapter with nobody to talk to: whose?");
+                foreach (StoryOption option in beat.options) foreach (StoryEffect e in option.effects) if (EffectNeedsSubject(e)) problems.Add($"{who} line {beat.sourceLine}: a loyalty change in a chapter with nobody to talk to: whose?");
+            }
+        }
+    }
+
+    private static IEnumerable<StoryBeat> Flatten(IEnumerable<StoryBeat> beats)
+    {
+        foreach (StoryBeat beat in beats)
+        {
+            yield return beat;
+            foreach (StoryOption option in beat.options) foreach (StoryBeat reply in Flatten(option.replies)) yield return reply;
+        }
     }
 
     private static void CheckBeats(IEnumerable<StoryBeat> beats, string who, Dictionary<string, Quest> byId, HashSet<string> chapterIds, List<string> problems)

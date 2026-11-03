@@ -11,6 +11,15 @@ public class StoryState
     // Raised when a value or a finished chapter changes
     public event Action Changed;
 
+    // Goes up with every change (so things worked out from the story know when to work them out again)
+    public int Version { get; private set; }
+
+    private void RaiseChanged()
+    {
+        Version++;
+        Changed?.Invoke();
+    }
+
     public IEnumerable<KeyValuePair<string, int>> Values => values;
     public IReadOnlyCollection<string> Done => done;
 
@@ -25,7 +34,7 @@ public class StoryState
         name = name.Trim();
         if (Get(name) == value && (value != 0 || !values.ContainsKey(name))) return;
         values[name] = value;
-        Changed?.Invoke();
+        RaiseChanged();
     }
 
     public void Add(string name, int amount)
@@ -42,7 +51,7 @@ public class StoryState
     public bool MarkDone(string chapterId)
     {
         if (string.IsNullOrWhiteSpace(chapterId) || !done.Add(chapterId.Trim())) return false;
-        Changed?.Invoke();
+        RaiseChanged();
         return true;
     }
 
@@ -51,7 +60,7 @@ public class StoryState
         if (values.Count == 0 && done.Count == 0) return;
         values.Clear();
         done.Clear();
-        Changed?.Invoke();
+        RaiseChanged();
     }
 
     public StoryState Clone()
@@ -67,7 +76,7 @@ public class StoryState
     {
         values.Clear();
         foreach (KeyValuePair<string, int> pair in other.values) values[pair.Key] = pair.Value;
-        Changed?.Invoke();
+        RaiseChanged();
     }
 
     // --- Saving ---
@@ -86,7 +95,7 @@ public class StoryState
         done.Clear();
         if (valuesIn != null) foreach (StoryValueData saved in valuesIn) if (saved != null && !string.IsNullOrWhiteSpace(saved.name)) values[saved.name.Trim()] = saved.value;
         if (doneIn != null) foreach (string id in doneIn) if (!string.IsNullOrWhiteSpace(id)) done.Add(id.Trim());
-        Changed?.Invoke();
+        RaiseChanged();
     }
 }
 

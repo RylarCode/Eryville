@@ -26,6 +26,9 @@ public class OwnedCharacter
     // Raised when loyalty, mood or a speed modifier changes
     public event Action StatsChanged;
 
+    // How much loyalty changed at the latest payday (shown on the details panel; not saved)
+    public float LastLoyaltyChange { get; set; }
+
     // How fast this character walks on open ground, in world units per second. Worked out as
     //   type's base speed x (loyalty effect) x (mood effect) x every named modifier
     // and only recalculated when one of those changes. The terrain underfoot (roads) is applied on top, while walking.
@@ -101,10 +104,11 @@ public class OwnedCharacter
         }
     }
 
-    // The combined multiplier of every buff of this stat the character has unlocked
+    // The combined multiplier of every buff of this stat the character has unlocked: self-awareness levels, and what its Connection
+    // (finished chapters, completed quests) gives
     public float BuffMultiplier(BuffStat stat)
     {
-        float multiplier = 1f;
+        float multiplier = ConnectionBuffs.Multiplier(Type, stat);
         for (int level = 0; level < awarenessLevel && level < MaxAwareness; level++)
         {
             AwarenessLevel entry = Type.awarenessLevels[level];
@@ -177,6 +181,13 @@ public class OwnedCharacter
         StatsChanged?.Invoke();
     }
 
+    // Something that gives buffs changed (a Connection chapter was finished...): walk at the new speed and tell the panels
+    public void RefreshBuffs()
+    {
+        RecalculateSpeed();
+        StatsChanged?.Invoke();
+    }
+
     private void RecalculateSpeed()
     {
         float speed = Type.moveSpeed * LoyaltyFactor * MoodFactor * BuffMultiplier(BuffStat.MoveSpeed);
@@ -190,7 +201,7 @@ public class OwnedCharacter
         StringBuilder text = new StringBuilder();
         text.Append($"{MoveSpeed:0.##} (base {Type.moveSpeed:0.##} x loyalty {LoyaltyFactor:0.##} x mood {MoodFactor:0.##}");
         float awareness = BuffMultiplier(BuffStat.MoveSpeed);
-        if (awareness != 1f) text.Append($" x self-awareness {awareness:0.##}");
+        if (awareness != 1f) text.Append($" x buffs {awareness:0.##}");
         foreach (KeyValuePair<string, float> modifier in speedModifiers) text.Append($" x {modifier.Key} {modifier.Value:0.##}");
         text.Append(")");
         return text.ToString();

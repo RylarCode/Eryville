@@ -33,10 +33,11 @@ A quest is an asset (like a story chapter): a title, objectives, rewards and rul
 | **Title / Description** | What the player reads. |
 | **Category** | *Main* or *Side*. |
 | **Order** | Main quests are tried in this order; side quests are listed in it. |
+| **Character** | Optional: the character the quest belongs to. It shows in that character's **Connection** (`docs/CONNECTION.md`), starts only once the player owns the character, and *Loyalty* requirements, objectives and rewards with no character picked are about them. |
 | **Start** | *Automatic*: starts by itself once its requirements are met. *Offered*: shows as available and waits for Accept. (A main quest should be Automatic: an offered one holds the whole main line.) |
 | **Requires** | Everything here must be true before it starts. Same conditions as chapters: *Quest Done* (put quests in order), *Chapter Done* (follow the story), a story value, has a building / character / item. |
 | **Objectives** | All must be done. Each is a condition with an optional label. If it counts ("have 3 Gold Mines") the menu shows "(2/3)"; with no label the text is made up ("Build a Gold Mine"). |
-| **Rewards** | Given when claimed: *Give* an item (Gold, Wood, Letters, Wheat...), *Add* / *Set* a story value, or *Start Quest*. |
+| **Rewards** | Given when claimed: *Give* an item (Gold, Wood, Letters, Wheat...), *Add* / *Set* a story value, *Start Quest*, *Loyalty* (+/-), or a *Buff* (a lasting stat bonus for the character: see `docs/CONNECTION.md`). |
 
 ## Recruitment letters
 
