@@ -155,6 +155,8 @@ Data assets (`Assets/_Project/ScriptableObjects`): Buildings (Gold Mine, Lumbery
 | Hunger and meal numbers, starter food | `Resources/FoodSettings` (`docs/FOOD.md`) |
 | A new item, recipe or production chain | assets only: `docs/PRODUCTION.md` |
 | Quests (main, side, rewards) | assets only (`Resources/Quests`): `docs/QUESTS.md` |
+| Deploying the server, Google Play builds | `docs/DEPLOYMENT.md` (and `docs/FIREBASE_SETUP.md`) |
+| What to check in Unity next time | `docs/TO_TEST.md` |
 | A message to the player | `Notify.Show(...)` (`docs/NOTIFICATIONS.md`) |
 | Story chapters, tutorial steps, locked buildings | assets only (`Resources/Story`): `docs/STORY.md` |
 | A new building | Eryville > New Building... (`docs/NEW_BUILDING.md`) |
