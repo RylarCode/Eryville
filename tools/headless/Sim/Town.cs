@@ -43,6 +43,7 @@ public class Town
     {
         GameObject go = new GameObject(name + "Prefab", typeof(SpriteRenderer), typeof(BoxCollider2D), typeof(Building));
         if (produces) go.AddComponent<ResourceProducer>();
+        if (name == "Tavern") go.AddComponent<Tavern>(); // where characters are recruited
         return World.MakePrefab(go);
     }
 

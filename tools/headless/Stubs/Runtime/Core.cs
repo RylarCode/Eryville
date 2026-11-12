@@ -774,29 +774,62 @@ namespace UnityEngine
             if (from is RectTransform a && to is RectTransform b) b.CopyRect(a);
         }
 
-        // Copies a component's fields; references to things inside the copied object are pointed at their copies
+        // Copies a component's fields the way Unity does: the serialized ones (public, or [SerializeField]) are copied, deeply, with
+        // references to things inside the copied object pointed at their copies; everything else starts fresh. The stand-ins' own
+        // classes (UnityEngine...) keep all their fields, since their properties stand for what Unity serializes. UnityEvents are
+        // never shared: a copy gets its own, with the inspector (persistent) listeners only.
         private static void CopyFields(object src, object dst, Dictionary<Object, Object> map)
         {
             for (Type t = src.GetType(); t != null && t != typeof(MonoBehaviour) && t != typeof(Behaviour) && t != typeof(Component) && t != typeof(ScriptableObject) && t != typeof(Object) && t != typeof(object); t = t.BaseType)
             {
+                bool engine = t.Namespace != null && (t.Namespace.StartsWith("UnityEngine") || t.Namespace.StartsWith("TMPro"));
                 foreach (FieldInfo f in t.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly))
                 {
-                    if (f.IsInitOnly && f.FieldType.IsGenericType) continue; // readonly collections: the new object has its own
+                    if (f.IsNotSerialized) continue;
+                    bool serialized = f.IsPublic || f.GetCustomAttribute<SerializeField>() != null;
+                    if (!engine && !serialized) continue;
                     object value = f.GetValue(src);
-                    if (value is Object o && map != null && map.TryGetValue(o, out Object mapped)) value = mapped;
-                    else if (value is IList list && map != null && !(value is Array) && f.FieldType.IsGenericType)
-                    {
-                        IList copy = (IList)Activator.CreateInstance(f.FieldType);
-                        foreach (object item in list) copy.Add(item is Object io && map.TryGetValue(io, out Object m2) ? m2 : item);
-                        value = copy;
-                    }
-                    else if (value != null && !f.FieldType.IsValueType && f.FieldType != typeof(string) && !(value is Object) && !(value is Delegate) && f.FieldType.GetCustomAttributes(typeof(SerializableAttribute), false).Length > 0)
-                    {
-                        value = JsonUtility.FromJson(JsonUtility.ToJson(value), value.GetType()); // serializable data is copied by value, like Unity
-                    }
-                    try { f.SetValue(dst, value); } catch { }
+                    if (value is UnityEngine.Events.UnityEventBase ev) { f.SetValue(dst, CloneEvent(ev)); continue; }
+                    if (f.IsInitOnly && value != null && !(value is Object) && !f.FieldType.IsValueType && f.FieldType != typeof(string)) continue; // readonly collections: the copy has its own
+                    try { f.SetValue(dst, CloneValue(value, map, engine)); } catch { }
                 }
             }
+        }
+
+        private static object CloneEvent(UnityEngine.Events.UnityEventBase ev)
+        {
+            UnityEngine.Events.UnityEventBase copy = (UnityEngine.Events.UnityEventBase)Activator.CreateInstance(ev.GetType(), true);
+            copy.persistent.AddRange(ev.persistent);
+            return copy;
+        }
+
+        private static object CloneValue(object value, Dictionary<Object, Object> map, bool engine)
+        {
+            if (value == null) return null;
+            if (value is Object o) return map != null && map.TryGetValue(o, out Object mapped) ? mapped : o;
+            Type t = value.GetType();
+            if (t.IsPrimitive || t.IsEnum || t == typeof(string) || t == typeof(decimal) || t.IsValueType) return value;
+            if (value is Delegate) return engine ? value : null;
+            if (value is UnityEngine.Events.UnityEventBase ev) return CloneEvent(ev);
+            if (value is Array arr)
+            {
+                Array copy = Array.CreateInstance(t.GetElementType(), arr.Length);
+                for (int i = 0; i < arr.Length; i++) copy.SetValue(CloneValue(arr.GetValue(i), map, engine), i);
+                return copy;
+            }
+            if (t.IsGenericType && t.GetGenericTypeDefinition() == typeof(List<>))
+            {
+                IList copy = (IList)Activator.CreateInstance(t);
+                foreach (object item in (IList)value) copy.Add(CloneValue(item, map, engine));
+                return copy;
+            }
+            if (t.GetCustomAttribute<SerializableAttribute>() != null && !t.IsGenericType)
+            {
+                object copy = Activator.CreateInstance(t, true);
+                CopyFields(value, copy, map);
+                return copy;
+            }
+            return engine ? value : null; // something Unity does not serialize: the copy does not get it
         }
 
         public static void Destroy(Object o)

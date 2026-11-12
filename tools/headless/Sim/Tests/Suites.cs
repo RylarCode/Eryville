@@ -13,6 +13,15 @@ public static partial class Suites
         ("Gacha odds and pity", LogicTests.Gacha),
         ("Times of day and lighting", LogicTests.TimeAndLight),
         ("Building layout", LogicTests.Layout),
+        ("Story scripts", StoryLogicTests.Script),
+        ("Story player and conditions", StoryLogicTests.Player),
+        ("Notification rules", StoryLogicTests.Notifications),
+        ("Quest and loyalty rules", StoryLogicTests.QuestsAndLoyalty),
         ("Town: buildings, characters, jobs", TownTests.Run),
+        ("Town life: a day, roads, payday", GameTests.TownLife),
+        ("Saving and loading", GameTests.SaveAndLoad),
+        ("Menus and layout", GameTests.Menus),
+        ("Recruiting", GameTests.Recruiting),
+        ("Time away (offline)", GameTests.Offline),
     };
 }
