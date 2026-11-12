@@ -15,6 +15,12 @@ Code names (class and field names) do not have to match, but player-facing text 
 |---|---|---|---|
 | Eryville | The game's title: title screen, the name under the phone icon (Unity Product Name), the repository | **Locked** | |
 
+## The Map
+
+| Name | What it is | Status | Notes |
+|---|---|---|---|
+| Map | The playable ground the town is built on (the grid of cells, its background and what is on it). Also the name in code (`MapGrid`) | **Locked** | Not "world", "level", "grid" or "background" in player-facing text |
+
 ## Currencies and items
 
 | Name | What it is | Status | Code / asset |
