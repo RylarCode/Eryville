@@ -189,14 +189,21 @@ namespace UnityEngine
         {
             foreach (GameObject g in World.Tree(this))
             {
-                if (!includeInactive && !g.activeInHierarchy && g != this) continue;
+                if (!includeInactive && g != this && !ActiveBelow(g)) continue;
                 T found = g.GetComponent<T>();
                 if (found != null) return found;
             }
             return default;
         }
         public T[] GetComponentsInChildren<T>() => GetComponentsInChildren<T>(false);
-        public T[] GetComponentsInChildren<T>(bool includeInactive) => World.Tree(this).Where(g => includeInactive || g.activeInHierarchy || g == this).SelectMany(g => g.GetComponents<T>()).ToArray();
+        public T[] GetComponentsInChildren<T>(bool includeInactive) => World.Tree(this).Where(g => includeInactive || g == this || ActiveBelow(g)).SelectMany(g => g.GetComponents<T>()).ToArray();
+
+        // Whether a descendant is active counting only the objects between it and this one (what GetComponentInChildren looks at)
+        private bool ActiveBelow(GameObject g)
+        {
+            for (Transform t = g.transform; t != null && t != transform; t = t.parent) if (!t.gameObject.activeSelf) return false;
+            return true;
+        }
         public T GetComponentInParent<T>() { for (Transform t = transform; t != null; t = t.parent) { T found = t.gameObject.GetComponent<T>(); if (found != null) return found; } return default; }
         public T GetComponentInParent<T>(bool includeInactive) => GetComponentInParent<T>();
         public T[] GetComponentsInParent<T>() { List<T> list = new List<T>(); for (Transform t = transform; t != null; t = t.parent) list.AddRange(t.gameObject.GetComponents<T>()); return list.ToArray(); }
@@ -691,7 +698,7 @@ namespace UnityEngine
             }
             catch (TargetInvocationException e)
             {
-                if (ThrowExceptions) throw e.InnerException ?? e;
+                if (ThrowExceptions) System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(e.InnerException ?? e).Throw();
                 Debug.LogException(e.InnerException ?? e);
             }
         }
