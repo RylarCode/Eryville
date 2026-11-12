@@ -158,6 +158,7 @@ Data assets (`Assets/_Project/ScriptableObjects`): Buildings (Gold Mine, Lumbery
 | A new item, recipe or production chain | assets only: `docs/PRODUCTION.md` |
 | Character stories, loyalty rules | assets only, plus `Resources/LoyaltySettings`: `docs/CONNECTION.md` |
 | Quests (main, side, rewards) | assets only (`Resources/Quests`): `docs/QUESTS.md` |
+| Checking the code without Unity | `tools/headless/run.sh` (`tools/headless/README.md`) |
 | Player-facing names (the glossary) | `docs/NAMING.md` |
 | Deploying the server, Google Play builds | `docs/DEPLOYMENT.md` (and `docs/FIREBASE_SETUP.md`) |
 | What to check in Unity next time | `docs/TO_TEST.md` |

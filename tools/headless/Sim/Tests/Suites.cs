@@ -23,5 +23,11 @@ public static partial class Suites
         ("Menus and layout", GameTests.Menus),
         ("Recruiting", GameTests.Recruiting),
         ("Time away (offline)", GameTests.Offline),
+        ("Story in the game", FeatureTests.StoryInGame),
+        ("Quests in the game", FeatureTests.QuestsInGame),
+        ("Connection", FeatureTests.Connection),
+        ("Toasts and history", FeatureTests.Toasts),
+        ("Firebase client", FeatureTests.FirebaseClient),
+        ("Project files", ProjectFileTests.Run),
     };
 }
