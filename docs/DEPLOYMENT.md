@@ -19,7 +19,7 @@ Update this table as each step is done.
 ## Decisions still open
 
 - **Package name** (for example `com.rylar.eryville`). It is permanent once uploaded to Play.
-- **Company name / product name** shown on the phone (currently `DefaultCompany` / `City Building Gacha`).
+- **Company name** (currently `DefaultCompany`). The product name, shown under the phone icon, is **Eryville**.
 - **One Firebase project or two.** Recommended: `eryville-dev` (cheats allowed, used from the editor) and `eryville-live` (no cheats, used by Play builds). Internal testing can start on dev if you accept that the dev server's testing actions are on.
 - **Commit `FirebaseConfig.json` or not.** It holds the project id and web API key, which are not secrets, but dev and live builds need different files. Not committing it (and keeping a copy per project) avoids shipping the dev one by mistake.
 - **What testers start with.** Release builds have no Cheats menu, so testers get `startingLetters` (2) and whatever gold they earn. Raise it in `config.ts` (or the Firestore `config/game` document) if testers should pull more.
@@ -37,7 +37,7 @@ The server has its own copy of a few game rules. If they drift, things silently 
 
 **After changing `config.ts`, redeploy** (`firebase deploy --only functions`). Small changes can also go in Firestore `config/game` without a deploy (see `FIREBASE_SETUP.md`), but `pools` and `quests` are easier to keep right in the file.
 
-Currently in `config.ts`: characters typeId 1-5 (Darkie, John, Baker, Fisherman, Farmer) and the quest `hire-someone` (1 letter). **Add the Gold Digger once it exists.**
+Currently in `config.ts`: characters typeId 1-5 (Firsy, Condo, Baker, Fisherman, Farmer) and the quest `hire-someone` (1 letter). **Add the Gold Digger once it exists.**
 
 ## What the server does
 

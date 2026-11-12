@@ -10,11 +10,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7516f926274e41719873893e095da5f6, type: 3}
-  m_Name: 03_JohnFirstWord
+  m_Name: 03_CondoFirstWord
   m_EditorClassIdentifier: 
-  id: john-first-word
-  title: A word with John
-  summary: "(placeholder) John introduced himself."
+  id: condo-first-word
+  title: A word with Condo
+  summary: "(placeholder) Condo introduced himself."
   order: 30
   trigger: 1
   talkTo: {fileID: 11400000, guid: 021970b8cfe460b4095cda9e77f33239, type: 2}
@@ -31,5 +31,5 @@ MonoBehaviour:
   goal: ""
   rewards: []
   cast: []
-  script: "# PLACEHOLDER. A Connection chapter: select John, open his Connection, tap Talk. (John's picture is found by name.)\n# John is unique (Max Owned 1): Connection characters must be.\n\nJohn: Hey, boss. (placeholder)\n[if warmth >= 1] John: You seem like a kind leader. (placeholder)\n[if warmth < 1] John: You run a tight ship. (placeholder)\n> Glad to have you here | loyalty +2\n=> John: Thanks. That means something. (placeholder)\n> Just do your job\n=> John: Sure thing. (placeholder)\nJohn: Anything you need, just say. (placeholder)\n"
+  script: "# PLACEHOLDER. A Connection chapter: select Condo, open his Connection, tap Talk. (Condo's picture is found by name.)\n# Condo is unique (Max Owned 1): Connection characters must be.\n\nCondo: Hey, boss. (placeholder)\n[if warmth >= 1] Condo: You seem like a kind leader. (placeholder)\n[if warmth < 1] Condo: You run a tight ship. (placeholder)\n> Glad to have you here | loyalty +2\n=> Condo: Thanks. That means something. (placeholder)\n> Just do your job\n=> Condo: Sure thing. (placeholder)\nCondo: Anything you need, just say. (placeholder)\n"
   scriptFile: {fileID: 0}

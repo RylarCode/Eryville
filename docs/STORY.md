@@ -29,7 +29,7 @@ What exists:
 | **Requires** | Everything here must be true. Kinds: *Value* (a story value, with at least / at most / exactly / not), *Chapter Done* / *Chapter Not Done* (this is how chapters are put in order), *Has Building* (empty building = any), *Has Character* (empty = any), *Has Item* (gold, wood, wheat...). |
 | **Goal** | Optional hint ("Build a Gold Mine") shown in the Story menu while this is the next step (every chapter it needs is done, but it has not played). |
 | **Rewards** | Given once when the chapter finishes: *Give* an item (Gold, Wood, Letters, Wheat...), *Add* to or *Set* a story value. Letters cannot be given while the server owns them (online). |
-| **Cast** | A picture for each person who speaks but is not a character of the game (the Mayor). A character of the game is found by its name (a line from `Darkie:` shows Darkie's portrait). |
+| **Cast** | A picture for each person who speaks but is not a character of the game (the Mayor). A character of the game is found by its name (a line from `Firsy:` shows Firsy's portrait). |
 | **Script / Script File** | The dialogue. Write it in the box, or in a `.txt` file (assign it to Script File, which wins). A text file is easier for long writing. |
 
 To lock a building: on its **BuildingType**, set **Unlocked By** to the chapter. It shows greyed out in the Build menu, saying what unlocks it (or is left out entirely with **Hide While Locked**). The chapter must be in `Resources/Story`.
@@ -65,7 +65,7 @@ Mayor: You have {kindness} points.      <- {name} shows a story value
 
 ## A small example: a tutorial step
 
-`01_Welcome` (Automatic, no requirements) → `02_FirstBuilding` (Automatic; Requires: Chapter Done `welcome`, Has Building (any) at least 1; Goal "Open Build and place your first building") → a Talk chapter with Darkie. And a Tavern with **Unlocked By** = `02_FirstBuilding` stays locked until the second chapter is seen. The three sample chapters in `Resources/Story` are exactly this, with placeholder text.
+`01_Welcome` (Automatic, no requirements) → `02_FirstBuilding` (Automatic; Requires: Chapter Done `welcome`, Has Building (any) at least 1; Goal "Open Build and place your first building") → a Talk chapter with Firsy. And a Tavern with **Unlocked By** = `02_FirstBuilding` stays locked until the second chapter is seen. The three sample chapters in `Resources/Story` are exactly this, with placeholder text.
 
 ## How it works (for changing the code)
 

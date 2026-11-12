@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f7eb774a1211d4241baf0aa68613f860, type: 3}
   m_Name: 01
   m_EditorClassIdentifier: 
-  displayName: Darkie
+  displayName: Firsy
   typeId: 1
   sprite: {fileID: -3164809056393425246, guid: c573041da7b1f7f4186212b1f970dbd1, type: 3}
   dailyWage: 10

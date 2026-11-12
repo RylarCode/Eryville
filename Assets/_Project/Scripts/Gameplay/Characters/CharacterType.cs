@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-// Template for a kind of character (a "John", a "Darkie"...). Static data only;
+// Template for a kind of character (a "Condo", a "Firsy"...). Static data only;
 // the live character is created from it.
 [CreateAssetMenu(fileName = "NewCharacter", menuName = "Scriptable Objects/Character")]
 public class CharacterType : ScriptableObject
@@ -23,7 +23,7 @@ public class CharacterType : ScriptableObject
     public Role role = Role.Resource;
 
     [Header("Ownership")]
-    public int maxOwned = 10;          // how many of this character the player can own: generic types (villager, guard) allow many,
+    public int maxOwned = 10;          // how many of this character the player can own: generic types (Firsy, a guard) allow many,
                                        // a named story character allows 1. 0 or less means no limit.
 
     [Header("Recruitment")]

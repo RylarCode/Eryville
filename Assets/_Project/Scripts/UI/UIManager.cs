@@ -635,7 +635,7 @@ public class UIManager : MonoBehaviour
     {
         UpdateConnectionButton(); // (a chapter can become due while the panel is open)
         OwnedCharacter c = selectedCharacter;
-        characterText.text = $"Name: {c.DisplayName}\nLevel: {c.Level}\nLoyalty: {c.Loyalty:0}{DescribeLoyaltyChange(c)}\nMood: {c.Mood:0}\nFed: {DescribeHunger(c)}\nSpeed: {c.DescribeSpeed()}\nWorking Location: {c.WorkBuilding?.DisplayName}\nHome: {c.HomeBuilding?.DisplayName}\nRarity: {c.Type.rarity}{DescribeSpecialty(c)}\nSelf-awareness: {c.DescribeAwareness()}\nWage: {c.DailyWage}/day{(c.WagePaid ? "" : " (UNPAID - refuses to work)")}";
+        characterText.text = $"Name: {c.DisplayName}\nLevel: {c.Level}\nLoyalty: {c.Loyalty:0}{DescribeLoyaltyChange(c)}\nMood: {c.Mood:0}\nSatiety: {DescribeHunger(c)}\nSpeed: {c.DescribeSpeed()}\nJob: {c.WorkBuilding?.DisplayName}\nHome: {c.HomeBuilding?.DisplayName}\nRarity: {c.Type.rarity}{DescribeSpecialty(c)}\nAwareness: {c.DescribeAwareness()}\nWage: {c.DailyWage}/day{(c.WagePaid ? "" : " (UNPAID - refuses to work)")}";
     }
 
     public void ShowBuildingDetails(Building building)

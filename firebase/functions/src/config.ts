@@ -36,8 +36,8 @@ export const defaultConfig: GameConfig = {
   pools: {
     Tavern: {
       characters: [
-        { typeId: 1, rarity: 0, weight: 1 }, // Darkie
-        { typeId: 2, rarity: 2, weight: 1 }, // John
+        { typeId: 1, rarity: 0, weight: 1 }, // Firsy
+        { typeId: 2, rarity: 2, weight: 1 }, // Condo
         { typeId: 3, rarity: 1, weight: 1 }, // Baker
         { typeId: 4, rarity: 1, weight: 1 }, // Fisherman
         { typeId: 5, rarity: 0, weight: 1 }, // Farmer

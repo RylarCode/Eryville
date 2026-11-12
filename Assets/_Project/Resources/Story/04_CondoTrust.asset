@@ -10,11 +10,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7516f926274e41719873893e095da5f6, type: 3}
-  m_Name: 04_JohnTrust
+  m_Name: 04_CondoTrust
   m_EditorClassIdentifier: 
-  id: john-trust
-  title: John opens up
-  summary: "(placeholder) John trusts you a little more. (Productivity bonus)"
+  id: condo-trust
+  title: Condo opens up
+  summary: "(placeholder) Condo trusts you a little more. (Productivity bonus)"
   order: 40
   trigger: 1
   talkTo: {fileID: 11400000, guid: 021970b8cfe460b4095cda9e77f33239, type: 2}
@@ -47,5 +47,5 @@ MonoBehaviour:
     stat: 0
     multiplier: 1.1
   cast: []
-  script: "# PLACEHOLDER. Unlocks when \"john-first-word\" is done AND John's loyalty is 10 or more.\n# Finishing it gives John a lasting Productivity x1.1 bonus (the chapter's Rewards: a Buff).\n\nJohn: Can I tell you something? (placeholder)\n[if loyalty >= 20] John: I've never felt this at home anywhere. (placeholder: only above loyalty 20)\n[if loyalty < 20] John: This place is starting to grow on me. (placeholder)\nJohn: I'll work harder for this town. (placeholder)\n"
+  script: "# PLACEHOLDER. Unlocks when \"condo-first-word\" is done AND Condo's loyalty is 10 or more.\n# Finishing it gives Condo a lasting Productivity x1.1 bonus (the chapter's Rewards: a Buff).\n\nCondo: Can I tell you something? (placeholder)\n[if loyalty >= 20] Condo: I've never felt this at home anywhere. (placeholder: only above loyalty 20)\n[if loyalty < 20] Condo: This place is starting to grow on me. (placeholder)\nCondo: I'll work harder for this town. (placeholder)\n"
   scriptFile: {fileID: 0}

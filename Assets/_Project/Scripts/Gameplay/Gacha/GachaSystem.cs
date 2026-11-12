@@ -10,15 +10,15 @@ public class PullResult
     public bool PityApplied;          // the pity rules forced a minimum rarity
     public OwnedCharacter Character;  // the new character, or (for a duplicate) the one that got stronger
     public bool IsNew;                // a new character joined (otherwise this was a duplicate)
-    public int AwarenessLevel;        // for duplicates: the character's self-awareness level afterwards
-    public bool ConvertedToLoyalty;   // the duplicate's character was already at max self-awareness, so it gave loyalty instead
+    public int AwarenessLevel;        // for duplicates: the character's awareness level afterwards
+    public bool ConvertedToLoyalty;   // the duplicate's character was already at max awareness, so it gave loyalty instead
     public float LoyaltyGained;       // how much, in that case
 }
 
 // Recruitment: spend recruitment letters at the tavern to pull characters. A pull picks a rarity by the pool's
 // odds (with pity rules), then a character of that rarity. If the player can still own another of that
 // character it joins and appears in front of the tavern; if not (maxOwned reached), the pull is a duplicate
-// and raises the self-awareness of the character they already have.
+// and raises the awareness of the character they already have.
 public class GachaSystem : MonoBehaviour
 {
     public static GachaSystem Instance { get; private set; }
@@ -270,7 +270,7 @@ public class GachaSystem : MonoBehaviour
             return result;
         }
 
-        // Duplicate: give it to whoever of this type has the least self-awareness
+        // Duplicate: give it to whoever of this type has the least awareness
         OwnedCharacter target = null;
         foreach (OwnedCharacter owned in characters.OwnedOf(type))
         {

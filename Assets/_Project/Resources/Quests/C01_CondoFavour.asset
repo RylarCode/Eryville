@@ -10,11 +10,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2b4f1f335b4c43b2aec5e06ce1322800, type: 3}
-  m_Name: C01_JohnFavour
+  m_Name: C01_CondoFavour
   m_EditorClassIdentifier: 
-  id: john-favour
-  title: "A favour for John"
-  description: "(placeholder) John needs some wood for a project of his."
+  id: condo-favour
+  title: "A favour for Condo"
+  description: "(placeholder) Condo needs some wood for a project of his."
   category: 1
   order: 45
   character: {fileID: 11400000, guid: 021970b8cfe460b4095cda9e77f33239, type: 2}

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 // The buffs a character has earned through its Connection: every Buff reward of a finished Talk chapter (whose Talk To is the
 // character) or of a completed quest (whose Character is the character), unless the reward names another character. They hold for as
 // long as what gave them stays finished, so nothing extra is saved: they are worked out again whenever the story or the quests change.
-// OwnedCharacter.BuffMultiplier multiplies them in with self-awareness.
+// OwnedCharacter.BuffMultiplier multiplies them in with awareness.
 public static class ConnectionBuffs
 {
     private static readonly Dictionary<CharacterType, List<StoryEffect>> byCharacter = new Dictionary<CharacterType, List<StoryEffect>>();

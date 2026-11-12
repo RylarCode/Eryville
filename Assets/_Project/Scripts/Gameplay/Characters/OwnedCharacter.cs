@@ -84,7 +84,7 @@ public class OwnedCharacter
         return multiplier;
     }
 
-    // --- Self-awareness (gained from duplicate pulls) ---
+    // --- Awareness (gained from duplicate pulls) ---
 
     private int awarenessLevel;
     public int MaxAwareness => Type.awarenessLevels != null ? Type.awarenessLevels.Count : 0;
@@ -104,7 +104,7 @@ public class OwnedCharacter
         }
     }
 
-    // The combined multiplier of every buff of this stat the character has unlocked: self-awareness levels, and what its Connection
+    // The combined multiplier of every buff of this stat the character has unlocked: awareness levels, and what its Connection
     // (finished chapters, completed quests) gives
     public float BuffMultiplier(BuffStat stat)
     {

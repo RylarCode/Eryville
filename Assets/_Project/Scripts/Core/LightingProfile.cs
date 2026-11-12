@@ -24,26 +24,28 @@ public class LightingProfile : ScriptableObject
 {
     public List<LightKey> keys = DefaultKeys();
 
+    // The looks are not the times of day: Morning / Afternoon / Evening / Night (6 / 12 / 18 / 24) are the clock's four phases;
+    // dawn (6-8) and dusk (18-20) are short stretches of the lighting inside them.
     [Header("Names of the four looks (for labels; the colours come from the keys)")]
-    public float dawnStart = 5f;
+    public float dawnStart = 6f;
     public float dayStart = 8f;
-    public float duskStart = 17.5f;
-    public float nightStart = 20.5f;
+    public float duskStart = 18f;
+    public float nightStart = 20f;
 
     public static List<LightKey> DefaultKeys()
     {
         return new List<LightKey>
         {
             new LightKey(0f, 0.22f, 0.26f, 0.45f),   // deep night
-            new LightKey(5f, 0.24f, 0.28f, 0.48f),   // still night
-            new LightKey(6f, 0.95f, 0.62f, 0.55f),   // dawn: pink
+            new LightKey(5.5f, 0.24f, 0.28f, 0.48f), // still night
+            new LightKey(6f, 0.95f, 0.62f, 0.55f),   // dawn (6-8): pink
             new LightKey(7f, 1.00f, 0.80f, 0.62f),   // dawn: warm gold
-            new LightKey(9f, 1.00f, 1.00f, 1.00f),   // day
-            new LightKey(16.5f, 1.00f, 1.00f, 0.96f),
-            new LightKey(18f, 1.00f, 0.72f, 0.45f),  // dusk: orange
-            new LightKey(19.5f, 0.70f, 0.45f, 0.58f),// dusk: purple
-            new LightKey(21f, 0.35f, 0.35f, 0.58f),  // evening blue
-            new LightKey(22f, 0.22f, 0.26f, 0.45f),  // night
+            new LightKey(8f, 1.00f, 1.00f, 1.00f),   // day
+            new LightKey(17f, 1.00f, 1.00f, 0.96f),
+            new LightKey(18f, 1.00f, 0.72f, 0.45f),  // dusk (18-20): orange
+            new LightKey(19f, 0.70f, 0.45f, 0.58f),  // dusk: purple
+            new LightKey(20f, 0.35f, 0.35f, 0.58f),  // night begins: evening blue
+            new LightKey(21.5f, 0.22f, 0.26f, 0.45f),// night
         };
     }
 

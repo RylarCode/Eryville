@@ -7,8 +7,8 @@ public class RealTimeCalendar
 {
     public float morningHour = 6f;     // Morning   06:00 - 12:00
     public float afternoonHour = 12f;  // Afternoon 12:00 - 18:00
-    public float eveningHour = 18f;    // Evening   18:00 - 22:00
-    public float nightHour = 22f;      // Night     22:00 - 06:00
+    public float eveningHour = 18f;    // Evening   18:00 - 24:00
+    public float nightHour = 24f;      // Night     00:00 - 06:00 (24 = midnight; anything from 12 to 24 works)
 
     private static readonly DateTime Epoch = new DateTime(2000, 1, 1);
 

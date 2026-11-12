@@ -181,7 +181,7 @@ public static class TownList
         foreach (OwnedCharacter c in CharacterManager.Instance.Roster) if (c.IsHungry) hungry++;
         float food = 0f;
         foreach (ItemType item in ItemCatalog.All) if (item.edible) food += stock.Get(item.Name) * item.nourishment;
-        if (food < 1f) yield return new TownRow { Key = "h:nofood", Label = "No food in stock: villagers find a little by themselves", Note = true };
+        if (food < 1f) yield return new TownRow { Key = "h:nofood", Label = "No food in stock: characters find a little by themselves", Note = true };
         if (hungry > 0) yield return new TownRow { Key = "h:hungry", Label = $"{hungry} of {CharacterManager.Instance.Roster.Count} characters are hungry", Note = true };
     }
 

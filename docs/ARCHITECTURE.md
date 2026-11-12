@@ -97,13 +97,13 @@ Created at runtime (nothing to add to the scene):
 - Components on building prefabs: `ResourceProducer` (output; only runs with a worker on site), `Housing`, `CityHall`, `Tavern` (marks the recruitment building; gives the spawn point).
 
 **Gameplay/Characters/**
-- `CharacterType` (SO: stats, rarity, schedule, rest options, wage, self-awareness levels), `OwnedCharacter` (data), `CharacterManager` (roster, hire / dismiss, spawn avatars).
+- `CharacterType` (SO: stats, rarity, schedule, rest options, wage, awareness levels), `OwnedCharacter` (data), `CharacterManager` (roster, hire / dismiss, spawn avatars).
 - `Character` (avatar: follows the schedule, asks for routes, walks, goes inside buildings), `CharacterMovement` (walks waypoints, speed from road), `CharacterSchedule`.
-- `MoodSystem` (mood rules), `OwnedCharacter` speed = base x loyalty x mood x self-awareness buffs.
+- `MoodSystem` (mood rules), `OwnedCharacter` speed = base x loyalty x mood x awareness buffs.
 
 **Gameplay/Navigation/** - `GridPathfinder` (A*), `PathService` (cached, spread over frames, re-routes when buildings change).
 **Gameplay/Roads/** - `RoadType` (SO), `RoadManager` (tilemap), `RoadPlacer` (paint / erase by mouse or finger stroke).
-**Gameplay/Gacha/** - `GachaPool` (SO: characters, rarity odds, pity), `GachaRoller` (pure dice), `GachaSystem` (letters, pulls, duplicates -> self-awareness), `Tavern`, `Rarity`, `SelfAwareness`.
+**Gameplay/Gacha/** - `GachaPool` (SO: characters, rarity odds, pity), `GachaRoller` (pure dice), `GachaSystem` (letters, pulls, duplicates -> awareness), `Tavern`, `Rarity`, `SelfAwareness`.
 
 **Backend/** - everything "server-like"
 - `IGameBackend` (the interface), `LocalBackend` (files + device clock + local rolls), `Backend.Current` (which one is in use), `BackendMessages` (request / response data), `BackendSelector` (picks Firebase if `Resources/FirebaseConfig.json` exists, else local).
@@ -117,7 +117,7 @@ Created at runtime (nothing to add to the scene):
 
 **Diagnostics/** - `Cheats` (testing tools), `PerfOverlay`, `FrameStatsWindow`, `StressTest`, `StressBenchmark`.
 
-Data assets (`Assets/_Project/ScriptableObjects`): Buildings (Gold Mine, Lumberyard, Home, City Hall, Tavern), Characters (Darkie, John), Roads (Dirt Road), Gacha (TavernPool). Prefabs: building shells, `RandomVillager`, UI button prefab.
+Data assets (`Assets/_Project/ScriptableObjects`): Buildings (Gold Mine, Lumberyard, Home, Town Hall, Tavern), Characters (Firsy, Condo), Roads (Dirt Road), Gacha (TavernPool). Prefabs: building shells, `RandomVillager`, UI button prefab.
 
 ## 4. How it runs
 
@@ -136,7 +136,7 @@ Data assets (`Assets/_Project/ScriptableObjects`): Buildings (Gold Mine, Lumbery
 
 **A character's day.** Time of day changes -> `Character.ApplySchedule` -> picks a place (work / home / rest option) -> `PathService` route -> `CharacterMovement` walks it (faster on roads) -> on arrival `EnterActivity`: hidden inside; workers register on site, which is what makes the building produce.
 
-**Recruiting.** Recruit menu -> `GachaSystem.Pull` -> `Backend.Pull` -> (local: `GachaRoller` rolls) -> response: letters left, pity, rolls -> the game hires the character (spawns in front of the Tavern) or, at the ownership limit, raises its self-awareness.
+**Recruiting.** Recruit menu -> `GachaSystem.Pull` -> `Backend.Pull` -> (local: `GachaRoller` rolls) -> response: letters left, pity, rolls -> the game hires the character (spawns in front of the Tavern) or, at the ownership limit, raises its awareness.
 
 **Saving / loading.** `SaveSystem.Save` -> `Backend.SaveBlob` (local: a file). Load validates the file first, then clears and rebuilds buildings, roads and characters through the same managers. The save records the time, so loading in real time pays the time away.
 

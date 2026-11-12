@@ -13,7 +13,7 @@ Code names (class and field names) do not have to match, but player-facing text 
 
 | Name | What it is | Status | Notes |
 |---|---|---|---|
-| Eryville | The game's title (title screen, repository) | To decide | Unity's Product Name is still "City Building Gacha", which is what shows under the phone icon. See decision D1. |
+| Eryville | The game's title: title screen, the name under the phone icon (Unity Product Name), the repository | **Locked** | |
 
 ## Currencies and items
 
@@ -36,7 +36,7 @@ Item categories (code `ItemCategory`, shown in the Stock tab filter): Currency, 
 
 | Name | What it does | Status | Asset |
 |---|---|---|---|
-| City Hall | The town's centre | To decide (D3: city or town) | `Buildings/City Hall` |
+| Town Hall | The town's centre | **Locked** | `Buildings/Town Hall` |
 | Home | Housing (2 residents) | Current | `Buildings/Home` |
 | Gold Mine | Makes gold (3 workers) | Current | `Buildings/GoldMine` |
 | Lumberyard | Makes wood (3 workers) | Current | `Buildings/Lumberyard` |
@@ -57,14 +57,14 @@ Recipes (shown on a building's details, "Making: ..."): Grow Wheat, Mill Flour, 
 
 | Name | Who | Status | Asset | Notes |
 |---|---|---|---|---|
-| Darkie | Common worker, Max Owned 10 | **To decide (D2)** | `Characters/01` | "Darkie" is a racial slur in English. Strongly recommend renaming before anyone else sees the game. |
-| John | Epic, unique (Max Owned 1), the sample Connection character | To decide (D4) | `Characters/NewCharacter` | Reads as a placeholder |
+| Firsy | Common worker, Max Owned 10 | **Locked** | `Characters/01` | Was "Darkie" (renamed) |
+| Condo | Epic, unique (Max Owned 1), the sample Connection character | **Locked** (for now) | `Characters/NewCharacter` | Was "John" |
 | Baker | Rare, works best at a bakery | Current | `Characters/Baker` | |
 | Fisherman | Rare, works best at a fishery | Current | `Characters/Fisherman` | |
 | Farmer | Common, works best at a farm | Current | `Characters/Farmer` | |
 | Gold Digger | Planned: the user's first drawn character | Current (planned) | not made yet | |
 
-The word for the people in the town: the game says "characters" in menus and "villagers" in one stock note. See D5.
+The word for the people in the town: **Characters** (Locked). Never "villagers", "townsfolk" or "units". "Residents" and "workers" are only the roles (who lives / works in a building).
 
 ## Character stats and states
 
@@ -73,27 +73,27 @@ The word for the people in the town: the game says "characters" in menus and "vi
 | Level | Character level | Current | `Level` | Not used for anything yet |
 | Loyalty | 0-100, grows slowly (payday), unlocks Connection | Current | `Loyalty` | |
 | Mood | 0-100, short-term happiness | Current | `Mood` | |
-| Fed | How full a character is, as a % (details panel) | To decide (D6) | `Satiety` | Docs say "satiety", the game says "Fed" |
+| Satiety | How full a character is, 0-100% ("Satiety: 72%") | **Locked** | `Satiety` | |
 | Hungry / Well fed | Hunger states | Current | `IsHungry`, `IsWellFed` | |
 | Speed | Walking speed (details panel) | Current | `MoveSpeed` | The breakdown text ("base x loyalty x mood x buffs") reads like debug output |
 | Wage | Daily cost in gold ("Wage: 10/day") | Current | `DailyWage` | "Unpaid" when wages could not be paid |
 | Rarity | Common, Rare, Epic, Legendary | Current | `Rarity` | |
 | Specialty | A building type the character is better at ("Specialty: bakery x1.5") | Current | `Specialty` | |
-| Self-awareness | Levels gained from duplicate pulls, each with buffs | To decide (D7) | `AwarenessLevel` | Sounds like a code name |
+| Awareness | Levels gained from duplicate pulls, each with buffs ("Awareness: 2/5"): each duplicate makes the character more aware of who they are and what they can do | **Locked** | `AwarenessLevel` | Was "self-awareness". Not "rank" or "awakening" |
 | Bonuses | Buffs earned through a Connection | Current | `ConnectionBuffs` | |
 | Favourite food | Eaten first; a meal of it lifts mood more ("likes Bread") | Current | `favouriteFood` | |
 | Activities | Idle, Walking, Working, Resting, Eating (Town list) | Current | `Character.Activity` | Code says "Traveling" |
-| Job / Working Location / Home | Where a character works and lives | To decide (D8) | `WorkBuilding`, `HomeBuilding` | The details say "Working Location", the Town list says "No job" |
+| Job / Home | Where a character works ("Job: Gold Mine", "No job") and lives ("Home: ...", "No home") | **Locked** | `WorkBuilding`, `HomeBuilding` | Was "Working Location" |
 
 ## Recruitment
 
 | Name | What it is | Status | Notes |
 |---|---|---|---|
 | Recruit | The gacha menu, and the act of pulling | Current | |
-| Hire | The old free hire menu (kept for testing) | Current | See D9 |
+| Hire | The old free hire menu (kept for testing) | Current | Kept alongside Recruit for now; may go away |
 | Pull x1 / Pull x10 | One pull / ten pulls | Current | |
 | Buy letter | Buy one letter with gold | Current | |
-| Pity ("Sure: ...") | Guaranteed rarity after N pulls | To decide (D10) | "Sure:" is unclear |
+| Guaranteed | The pity counter, shown as "Guaranteed Rare in 3 pulls" (several rules: "Guaranteed Rare in 3 pulls, Epic in 47 pulls") | **Locked** | Code calls it pity |
 | New recruit / Duplicate | Reveal screen results | Current | |
 
 ## Production and food
@@ -112,7 +112,8 @@ The word for the people in the town: the game says "characters" in menus and "vi
 
 | Name | What it is | Status | Notes |
 |---|---|---|---|
-| Morning, Afternoon, Evening, Night | Times of day (toasts, schedules) | To decide (D11) | The lighting uses dawn / day / dusk / night |
+| Morning, Afternoon, Evening, Night | The four **times of day**: Morning 06-12, Afternoon 12-18, Evening 18-24, Night 00-06 (schedules, wages, toasts) | **Locked** | `TimeOfDay`, `RealTimeCalendar` |
+| Dawn, Day, Dusk, Night | The **lighting** looks, separate from the times of day: Dawn 06-08, Day 08-18, Dusk 18-20, Night 20-06 | **Locked** | `LightingProfile` (only named in Cheats) |
 | Day | One real day (real-time clock) | Current | |
 | Payday | When wages are paid and loyalty changes (each morning) | Current | |
 | Peace / War | World state (affects mood and rest places) | Current | Only visible in Cheats so far |
@@ -139,7 +140,7 @@ The word for the people in the town: the game says "characters" in menus and "vi
 |---|---|---|
 | Build | Bottom bar: buildings and roads | Current |
 | Hire | Bottom bar (testing) | Current |
-| Town | Bottom bar: everything you own (tabs: Characters, Buildings, Stock) | To decide (D3) |
+| Town | Bottom bar: everything you own (tabs: Characters, Buildings, Stock). Always "town", never "city" | **Locked** |
 | Recruit | Bottom bar: gacha | Current |
 | Story | Bottom bar | Current |
 | Quests | Bottom bar ("Quests (2)" when something waits) | Current |
@@ -151,18 +152,22 @@ The word for the people in the town: the game says "characters" in menus and "vi
 | Sort / Filter | Town menu | Current |
 | Cheats | Game menu (editor and development builds only) | Current (dev only) |
 
+## Decisions made
+
+| # | Question | Decision |
+|---|---|---|
+| D1 | The game's name | **Eryville** everywhere (also the Unity Product Name) |
+| D2 | Rename Darkie | **Firsy** |
+| D3 | City or town | **Town**: Town Hall, the Town menu; never "city" |
+| D4 | John | **Condo** (for now) |
+| D5 | The word for the people | **Characters** |
+| D6 | Fed or Satiety | **Satiety** |
+| D7 | Self-awareness | **Awareness** |
+| D8 | Job, Workplace or Working Location | **Job** |
+| D9 | Hire vs Recruit | Keep both for now |
+| D10 | Pity wording | **"Guaranteed Rare in 3 pulls"** |
+| D11 | Times of day vs lighting | Separate: times of day Morning / Afternoon / Evening / Night (6 / 12 / 18 / 24); lighting looks Dawn 6-8, Day, Dusk 18-20, Night |
+
 ## Open decisions
 
-| # | Question | Options / recommendation |
-|---|---|---|
-| D1 | The game's name everywhere: "Eryville" (title screen) or something else; and the phone's product name | Recommend "Eryville" everywhere |
-| D2 | Rename **Darkie** | Recommend a new name now (any name; it is a common worker) |
-| D3 | City or town? "City Hall", product name "City Building Gacha", but the menu is "Town" | Pick one word: "Town Hall" + "Town", or "City Hall" + "City" |
-| D4 | **John**: keep or give a proper name | |
-| D5 | The word for the people: characters, villagers, residents, townsfolk | Recommend one word in all player text; "residents" / "workers" stay for the roles |
-| D6 | "Fed" or "Satiety" (or "Hunger" counting the other way) | Recommend "Fed" in the UI, "satiety" only in code |
-| D7 | "Self-awareness" (duplicate pull levels) | Something like "Awakening", "Rank", "Stars", "Bond" (not "Connection") |
-| D8 | "Job", "Workplace" or "Working Location" | Recommend "Job" (details: "Job: Gold Mine") |
-| D9 | "Hire" vs "Recruit" | Keep both for now (Hire is for testing and may go away) |
-| D10 | Pity wording ("Sure: Rare in 3") | e.g. "Guaranteed Rare in 3 pulls" |
-| D11 | Times of day: Morning / Afternoon / Evening / Night, or Dawn / Day / Dusk / Night | Pick one set for the UI |
+None right now. Names still marked **Current** can be reviewed any time; say "lock the rest" to lock them as they are.

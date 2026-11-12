@@ -149,7 +149,7 @@ public class RecruitMenu
         if (result.IsNew) return text + " - NEW";
         if (result.ConvertedToLoyalty) return text + $" - duplicate: loyalty +{result.LoyaltyGained:0.#}";
         int max = result.Character != null ? result.Character.MaxAwareness : 0;
-        return text + $" - duplicate: self-awareness {result.AwarenessLevel}/{max}";
+        return text + $" - duplicate: awareness {result.AwarenessLevel}/{max}";
     }
 
     private static string DescribePity(GachaSystem gacha)
@@ -163,8 +163,9 @@ public class RecruitMenu
             if (rules[i].every <= 0) continue;
             int left = rules[i].every - gacha.PityCounters[i];
             if (text.Length > 0) text.Append(", ");
-            text.Append($"{rules[i].minRarity}+ in {Mathf.Max(1, left)}");
+            int pulls = Mathf.Max(1, left);
+            text.Append($"{rules[i].minRarity} in {pulls} {(pulls == 1 ? "pull" : "pulls")}");
         }
-        return text.Length > 0 ? "Sure: " + text : "No pity";
+        return text.Length > 0 ? "Guaranteed " + text : "No pity";
     }
 }

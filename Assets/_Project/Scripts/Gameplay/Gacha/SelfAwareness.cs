@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-// Self-awareness: what a character gains from every duplicate pull. Each character type defines its own
+// Awareness: what a character gains from every duplicate pull. Each character type defines its own
 // levels (CharacterType.awarenessLevels), and each level has its own buffs. A character at level N has
 // the buffs of levels 1..N, multiplied together.
 

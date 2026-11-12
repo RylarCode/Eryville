@@ -11,6 +11,15 @@ Before starting: pull the branch `first-cleanup`, let Unity import (no restart n
 - [ ] "There are 2 event systems in the scene" no longer appears (fixed in 589b21a, never confirmed).
 - [ ] Re-save assets once (open and save GameScene; right-click the `ScriptableObjects` folder > Reimport, or change and revert a field) so Claude can remove the three `FormerlySerializedAs` attributes (BuildingType.buildingPrefab, BuildingType.role, Building.cell). Tell Claude when done.
 
+## 1b. Names and times of day (the naming decisions)
+
+- [ ] **Your local save and settings will look empty after pulling.** The product name changed to Eryville, and Unity keeps the save file and PlayerPrefs in a folder named after the company and product. To keep your game: copy `savegame.json` from the old folder (`.../DefaultCompany/City Building Gacha/`, e.g. `%USERPROFILE%\AppData\LocalLow\DefaultCompany\City Building Gacha` on Windows) to the new one (`.../DefaultCompany/Eryville/`). Settings like the View choice reset once.
+- [ ] Names in the game: **Firsy** (was Darkie), **Condo** (was John), **Town Hall** (was City Hall).
+- [ ] Character details: **Satiety: ...**, **Job: ...**, **Awareness: ...** (no "Fed", "Working Location", "Self-awareness").
+- [ ] Recruit menu: "Guaranteed Rare in N pulls, Epic in N pulls". The reveal screen says "Duplicate: awareness 2/5".
+- [ ] Times of day: Evening now lasts until midnight, Night is 00:00-06:00 (toasts "Evening falls" at 18:00, "Night falls" at 00:00). Characters' Night schedule (home) starts at midnight now.
+- [ ] Lighting: dawn colours 06:00-08:00, full day from 08:00, dusk 18:00-20:00, dark from 20:00 (Cheats > "Look at an hour of the day" to check quickly).
+
 ## 2. Menus and layout (c3325ff)
 
 - [ ] The **View** button sits just left of the Menu button (top right), with its own label, and does not cover Build.
@@ -62,14 +71,14 @@ The button does nothing until a building uses 3/4 art.
 
 ## 8. Connection: character stories and loyalty (this change)
 
-- [ ] **Re-save check**: the sample chapter `03_TalkToDarkie` became `03_JohnFirstWord` (John is the only unique character). Unity should pick up the rename without complaint.
+- [ ] **Re-save check**: the sample Connection assets were renamed (`03_CondoFirstWord`, `04_CondoTrust`, `C01_CondoFavour`) and `Town Hall` became `Town Hall`. Unity should pick up the renames without complaint.
 - [ ] A character's details show **Loyalty: N** and, after a payday, "(+2 today)" (Cheats > "Pay wages now").
-- [ ] With **John** owned (Cheats > Spawn John) and the welcome chapter done: John's details show **Connection (1)** to the right of Assign (check it fits the panel). Darkie, Baker... show no Connection button.
-- [ ] Connection opens in the details' place: header "John: loyalty N" and **Back**; "Talk: A word with John"; "Next: John opens up" with "Needs: Loyalty 10 (now N)". Later entries are hidden.
-- [ ] Talk plays the chapter; the "Glad to have you here" option raises John's loyalty by 2 (check after the chapter ends).
-- [ ] Cheats > "Everyone: loyalty +10": a toast "John has something to share"; tapping it opens John's Connection; "John opens up" can be played.
-- [ ] After it: **Bonuses** shows "Productivity x1.1"; John's building produces a bit more.
-- [ ] At loyalty 15+: the side quest "A favour for John" is offered (toast with John's face; tapping it opens John's Connection); Accept, get 50 wood, Claim: loyalty +5 and 30 gold.
+- [ ] With **Condo** owned (Cheats > Spawn Condo) and the welcome chapter done: Condo's details show **Connection (1)** to the right of Assign (check it fits the panel). Firsy, Baker... show no Connection button.
+- [ ] Connection opens in the details' place: header "Condo: loyalty N" and **Back**; "Talk: A word with Condo"; "Next: Condo opens up" with "Needs: Loyalty 10 (now N)". Later entries are hidden.
+- [ ] Talk plays the chapter; the "Glad to have you here" option raises Condo's loyalty by 2 (check after the chapter ends).
+- [ ] Cheats > "Everyone: loyalty +10": a toast "Condo has something to share"; tapping it opens Condo's Connection; "Condo opens up" can be played.
+- [ ] After it: **Bonuses** shows "Productivity x1.1"; Condo's building produces a bit more.
+- [ ] At loyalty 15+: the side quest "A favour for Condo" is offered (toast with Condo's face; tapping it opens Condo's Connection); Accept, get 50 wood, Claim: loyalty +5 and 30 gold.
 - [ ] Done shows "Read again: ..." rows; reading again changes nothing.
 - [ ] Phone layout: the Connection button and panel fit.
 - [ ] Eryville > Check Quests and Check Story report nothing for the samples.

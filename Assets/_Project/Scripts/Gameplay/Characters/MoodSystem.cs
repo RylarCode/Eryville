@@ -57,7 +57,7 @@ public class MoodSystem : MonoBehaviour
             foreach (IMoodRule rule in rules)
             {
                 float effect = rule.ChangePerSecond(character);
-                // Self-awareness buffs: gains scale by MoodRecovery, losses by MoodDrain
+                // Awareness buffs: gains scale by MoodRecovery, losses by MoodDrain
                 effect *= effect > 0f ? character.BuffMultiplier(BuffStat.MoodRecovery) : character.BuffMultiplier(BuffStat.MoodDrain);
                 change += effect;
             }

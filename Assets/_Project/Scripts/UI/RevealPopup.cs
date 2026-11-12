@@ -148,7 +148,7 @@ public class RevealPopup
         else
         {
             int max = result.Character != null ? result.Character.MaxAwareness : 0;
-            text = $"Duplicate: self-awareness {result.AwarenessLevel}/{max}";
+            text = $"Duplicate: awareness {result.AwarenessLevel}/{max}";
             if (result.Character != null && result.AwarenessLevel >= 1 && result.AwarenessLevel <= max)
             {
                 text += "\n" + result.Type.awarenessLevels[result.AwarenessLevel - 1].Describe();

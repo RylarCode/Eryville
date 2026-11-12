@@ -26,7 +26,7 @@ So a character eats roughly three meals a day if there is food, and a town with 
 ## Seeing it
 
 - A small **picture of the food floats over a character** for a few seconds while it eats (only while it is in view; nothing inside buildings). If the character's animation set has an **eat** animation it plays when the character is standing still: name the frames `eat_down_0`, `eat_down_1`, ... like the others.
-- **Character details**: *Fed: 72%* (*hungry* below 30) and *likes Bread*.
+- **Character details**: *Satiety: 72%* (*hungry* below 30) and *likes Bread*.
 - **Town > Characters** has a **Hungry** filter and a "hungry" tag on each hungry row.
 - **Town > Stock**: edible items show *eaten today: N*, and notes say how many characters are hungry and whether there is no food at all.
 - **Cheats**: everyone full / very hungry, everyone eats a meal now.
