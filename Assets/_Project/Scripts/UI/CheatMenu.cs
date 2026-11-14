@@ -115,6 +115,12 @@ public class CheatMenu
         Add("Play the next chapter that is not done (whatever it needs)", () => Cheats.PlayNextChapter());
         Add("Forget all story progress (the intro plays again)", Cheats.ResetStory, true);
 
+        Section("Map");
+        Info(Cheats.DescribeRegions);
+        Add("Clear every region", Cheats.ClearAllRegions);
+        Add("Lock every region except the start", Cheats.ResetRegions, true);
+        Add(() => MapRegions.Existing != null && MapRegions.Existing.Enabled ? "Regions: ON (tap to turn off: all land usable, no fog)" : "Regions: OFF (tap to turn on)", Cheats.ToggleRegions);
+
         Section("Quests");
         Info(Cheats.DescribeQuests);
         Add("Make every active quest ready to claim", () => Cheats.ReadyQuests());

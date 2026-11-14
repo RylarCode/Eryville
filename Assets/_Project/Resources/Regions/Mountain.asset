@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8c6d5bc0460346e882e07a3f287d8911, type: 3}
+  m_Name: Mountain
+  m_EditorClassIdentifier: 
+  id: mountain
+  displayName: Mountain
+  description: "(placeholder) A mountain: very costly to clear. Clear around it first."
+  terrain: 3
+  color: {r: 0.352941176, g: 0.274509804, b: 0.431372549, a: 1}
+  startsCleared: 0
+  goldCost: 3000
+  charactersNeeded: 6
+  clearSeconds: 7200
+  yields:
+  - item: Stone
+    amount: 500

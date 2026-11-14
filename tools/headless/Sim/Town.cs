@@ -230,6 +230,18 @@ public class Town
         uiGO.SetActive(true);
     }
 
+    // --- The Map's regions ---
+
+    // Puts the project's own sample regions on the Map (the image and assets in Resources/Regions), as the game does when it loads
+    public List<Region> UseSampleMap()
+    {
+        List<Region> regions = SampleMap.ReadRegions();
+        SampleMap.Image image = SampleMap.ReadPng(System.IO.Path.Combine(SampleMap.Folder, "RegionMap.png"));
+        map.SetBounds(new Vector2Int(-28, -17), new Vector2Int(28, 11));
+        MapRegions.Existing.Configure(regions, image.Pixels, image.Width, image.Height);
+        return regions;
+    }
+
     // --- Helpers for the tests ---
 
     public Building Place(BuildingType type, int cx, int cy) => bm.Build(type, new Vector2Int(cx, cy), Center(cx, cy, type.size.x));

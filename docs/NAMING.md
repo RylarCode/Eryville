@@ -20,6 +20,12 @@ Code names (class and field names) do not have to match, but player-facing text 
 | Name | What it is | Status | Notes |
 |---|---|---|---|
 | Map | The playable ground the town is built on (the grid of cells, its background and what is on it). Also the name in code (`MapGrid`) | **Locked** | Not "world", "level", "grid" or "background" in player-facing text |
+| Region | A hand-drawn part of the Map with its own name, terrain and cost to clear | **Locked** | Not "area", "zone", "plot" or "tile" |
+| Clear / Cleared | Making a region usable (the verb), and the state of a region that is. The opposite is "locked" | **Locked** | Not "unlock", "buy" or "expand" |
+| Fog | The very dense cover over regions the player cannot reach yet; only regions touching a cleared one along an edge are revealed | **Locked** | |
+| Terrain: Forest, Rocks, Debris, Mountain, River, Quarry | What a region is made of. A River can never be cleared; a Quarry is cleared land for a quarry (later) | **Locked** | |
+| Stone | A new material, next to Wood (from clearing rocks and mountains; a quarry later) | **Locked** | Not built yet (Map step 4) |
+| Characters (clearing) | Who clears land. Always "characters", never "workers" or "crew". A region needs a number of characters, assigned like a job | **Locked** | |
 
 ## Currencies and items
 

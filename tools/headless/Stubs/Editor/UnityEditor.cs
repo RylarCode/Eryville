@@ -204,6 +204,17 @@ namespace UnityEditor
 
     public class SceneAsset : UnityEngine.Object { }
 
+    public class AssetImporter : UnityEngine.Object { public string assetPath; }
+    public enum TextureImporterType { Default, NormalMap, Sprite = 8 }
+    public enum TextureImporterCompression { Uncompressed, Compressed, CompressedHQ, CompressedLQ }
+    public enum TextureImporterNPOTScale { None, ToNearest, ToLarger, ToSmaller }
+    public class TextureImporter : AssetImporter
+    {
+        public TextureImporterType textureType; public bool isReadable, mipmapEnabled, alphaIsTransparency, sRGBTexture;
+        public TextureImporterCompression textureCompression; public FilterMode filterMode; public TextureImporterNPOTScale npotScale;
+    }
+    public class AssetPostprocessor { public string assetPath { get; set; } public AssetImporter assetImporter { get; set; } }
+
     public static class Menu
     {
         public static void SetChecked(string path, bool value) { }

@@ -83,6 +83,21 @@ The button does nothing until a building uses 3/4 art.
 - [ ] Phone layout: the Connection button and panel fit.
 - [ ] Eryville > Check Quests and Check Story report nothing for the samples.
 
+## 8b. The Map and its regions (step 1 of the Map: the rules and the fog; you cannot clear land yet)
+
+Before anything else: **land is now locked**, and clearing it is not built yet. If it gets in your way, game menu > Cheats > Map > **Regions: OFF** (everything usable again) or **Clear every region**.
+
+- [ ] The Map shows fog over most of it: very dense and dark, so you cannot see into it. Around the middle, a clear green area (the **Town Square**).
+- [ ] The regions touching the Town Square (West Forest, North Rocks, South Debris, East Meadow) are **not** hidden: they show an amber tint (the ground is visible under it). The river, mountain, pass and east fields stay fully hidden.
+- [ ] You can build on the Town Square. Trying to place a building on tinted land or fog is refused (the ghost shows it cannot be placed). A building half on cleared and half on locked land is refused too.
+- [ ] Roads can be painted on the Town Square only. Characters walk only on cleared land.
+- [ ] Cheats > Map > **Clear every region**: the fog and tint disappear; all land is usable. **Lock every region except the start**: the fog comes back (buildings already on locked land stay).
+- [ ] The edge rule (a region touching cleared land only at a corner stays hidden) is covered by the automated tests; nothing to check by hand.
+- [ ] The Console has no warning about the region image on Play ("the region image ... cannot be read", "has the colour ..."). If it does, tell Claude what it says.
+- [ ] **Your old save**: loading it keeps your buildings and roads and clears the regions they stand on; everything else is locked.
+- [ ] The region image (`Resources/Regions/RegionMap.png`): in the inspector it is **Read/Write: on, Compression: None, Filter: Point**. (Unity sets this itself; tell Claude if it does not.)
+- [ ] Optional, to try your own layout: draw a 57 x 29 image in Krita (see `docs/MAP.md`), replace `RegionMap.png`, and give each colour a Region asset.
+
 ## 9. Older, never confirmed
 
 Built earlier in this project; tick them if you have already seen them working.

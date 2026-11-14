@@ -65,6 +65,7 @@ public class MapGrid : MonoBehaviour
         instance = this;
         quitting = false;
         ComputeBounds();
+        if (GetComponent<MapRegions>() == null) gameObject.AddComponent<MapRegions>(); // the hand-drawn regions (none without Resources/Regions)
     }
 
     private void OnApplicationQuit()
@@ -131,10 +132,24 @@ public class MapGrid : MonoBehaviour
         return building;
     }
 
-    // Walking is not possible here (a building stands on it)
+    // Buildings, roads and walking are allowed here: on the Map, and (when the Map has regions) in a region that is cleared
+    public bool IsUsable(Vector2Int cell)
+    {
+        if (!InBounds(cell)) return false;
+        MapRegions regions = MapRegions.Existing;
+        return regions == null || regions.IsUsable(cell);
+    }
+
+    // Walking is not possible here (a building stands on it, or the land is not cleared)
     public bool IsBlocked(Vector2Int cell)
     {
-        return buildingCells.ContainsKey(cell);
+        return buildingCells.ContainsKey(cell) || !IsUsable(cell);
+    }
+
+    // What is cleared changed: paths and caches are out of date
+    internal void RegionsChanged()
+    {
+        Touch(true);
     }
 
     // --- Terrain speed ---

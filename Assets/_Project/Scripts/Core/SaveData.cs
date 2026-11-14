@@ -78,4 +78,6 @@ public class GameData
     public List<string> storyDone = new List<string>();                   // added in version 9: the ids of the finished story chapters
 
     public List<QuestSaveData> quests = new List<QuestSaveData>();        // added in version 10: where each quest is (by id)
+
+    public List<string> clearedRegions = new List<string>();              // added in version 11: the ids of the Map regions that are cleared
 }

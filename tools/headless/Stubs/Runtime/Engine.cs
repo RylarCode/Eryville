@@ -11,6 +11,7 @@ using System.Text.Json;
 
 namespace UnityEngine
 {
+    public class UnityException : Exception { public UnityException(string m) : base(m) { } }
     public enum FilterMode { Point, Bilinear, Trilinear }
     public enum TextureWrapMode { Repeat, Clamp, Mirror, MirrorOnce }
     public enum TextureFormat { RGBA32 = 4, ARGB32 = 5, RGB24 = 3, Alpha8 = 1 }
@@ -28,13 +29,20 @@ namespace UnityEngine
 
     public class Texture2D : Texture
     {
+        private Color32[] pixels;
+        public bool isReadable { get; set; } = true;
         public Texture2D(int width, int height) { this.width = width; this.height = height; }
         public Texture2D(int width, int height, TextureFormat format, bool mipChain) : this(width, height) { }
+        public Color32[] GetPixels32()
+        {
+            if (!isReadable) throw new UnityException("Texture is not readable");
+            return pixels != null ? (Color32[])pixels.Clone() : new Color32[width * height];
+        }
         public static Texture2D whiteTexture { get; } = new Texture2D(4, 4);
         public static Texture2D blackTexture { get; } = new Texture2D(4, 4);
         public void SetPixel(int x, int y, Color c) { }
         public void SetPixels(Color[] colors) { }
-        public void SetPixels32(Color32[] colors) { }
+        public void SetPixels32(Color32[] colors) { pixels = (Color32[])colors.Clone(); }
         public Color GetPixel(int x, int y) => Color.white;
         public void Apply() { }
         public void Apply(bool updateMipmaps) { }

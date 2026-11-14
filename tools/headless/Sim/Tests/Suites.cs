@@ -28,6 +28,10 @@ public static partial class Suites
         ("Connection", FeatureTests.Connection),
         ("Toasts and history", FeatureTests.Toasts),
         ("Firebase client", FeatureTests.FirebaseClient),
+        ("Map regions: the rules", MapTests.Rules),
+        ("Map regions: the shipped sample", MapTests.SampleContent),
+        ("Map regions in the game", MapTests.InTheGame),
+        ("Saving the Map", MapTests.SavingTheMap),
         ("Project files", ProjectFileTests.Run),
     };
 }

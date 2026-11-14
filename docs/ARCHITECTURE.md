@@ -76,6 +76,8 @@ Created at runtime (nothing to add to the scene):
 
 **Notifications/** - messages to the player: `Notify.Show(...)` from anywhere (`docs/NOTIFICATIONS.md`); its screens are `UI/ToastView.cs`, `UI/ToastItem.cs` and `UI/NotificationMenu.cs`
 
+**Gameplay/Map/** - the Map's hand-drawn regions: which land is cleared and usable, and the fog (`docs/MAP.md`); the rules are in `RegionMap`, the game side in `MapRegions`, the Map itself in `Gameplay/City/MapGrid.cs`
+
 **Connection/** - character stories: a character's chapters and quests unlocked by loyalty and the story, and the bonuses they give (`docs/CONNECTION.md`); loyalty rules are in `Gameplay/Characters/LoyaltyRules.cs`; its screen is `UI/ConnectionMenu.cs`
 
 **Quests/** - main and side quests with objectives, claimed rewards, letters paid by the server (`docs/QUESTS.md`); its screen is `UI/QuestMenu.cs`
@@ -156,6 +158,7 @@ Data assets (`Assets/_Project/ScriptableObjects`): Buildings (Gold Mine, Lumbery
 | Offline reward | `OfflineProgress` (efficiency, cap) |
 | Hunger and meal numbers, starter food | `Resources/FoodSettings` (`docs/FOOD.md`) |
 | A new item, recipe or production chain | assets only: `docs/PRODUCTION.md` |
+| The Map's regions and fog | the image and assets in `Resources/Regions`: `docs/MAP.md` |
 | Character stories, loyalty rules | assets only, plus `Resources/LoyaltySettings`: `docs/CONNECTION.md` |
 | Quests (main, side, rewards) | assets only (`Resources/Quests`): `docs/QUESTS.md` |
 | Checking the code without Unity | `tools/headless/run.sh` (`tools/headless/README.md`) |

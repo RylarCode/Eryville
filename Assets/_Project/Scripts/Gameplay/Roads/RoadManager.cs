@@ -62,7 +62,7 @@ public class RoadManager : MonoBehaviour
     public bool CanBuild(RoadType type, Vector2Int cell)
     {
         MapGrid map = MapGrid.Instance;
-        return type != null && map.InBounds(cell) && !map.IsBuildingCell(cell) && map.RoadAt(cell) != type;
+        return type != null && map.IsUsable(cell) && !map.IsBuildingCell(cell) && map.RoadAt(cell) != type;
     }
 
     // Builds (or replaces) the road on a cell. Cost is NOT handled here; the caller pays.

@@ -11,7 +11,7 @@ using UnityEngine;
 // so everything a loaded building or character needs (sprite, size, registration, assignments) is set up.
 public static class SaveSystem
 {
-    public const int CurrentVersion = 10; // 2 added roads, 3 added mood, 4 added wages (and recruitment), 5 the real-time clock, 6 the chosen recipe of each building (items are saved with the resources), 7 how full each character is, 8 what each character has been eating, 9 the story (finished chapters and values), 10 the quests; older saves still load with defaults
+    public const int CurrentVersion = 11; // 2 added roads, 3 added mood, 4 added wages (and recruitment), 5 the real-time clock, 6 the chosen recipe of each building (items are saved with the resources), 7 how full each character is, 8 what each character has been eating, 9 the story (finished chapters and values), 10 the quests, 11 the cleared Map regions; older saves still load with defaults
     public const string DefaultFileName = "savegame.json";
 
     private static string SlotFor(string fileName)
@@ -128,6 +128,7 @@ public static class SaveSystem
 
         if (StoryManager.Instance != null) StoryManager.Instance.Export(data);
         if (QuestManager.Instance != null) QuestManager.Instance.Export(data);
+        if (MapRegions.Existing != null && MapRegions.Existing.Map != null) data.clearedRegions = MapRegions.Existing.Map.ExportCleared();
 
         return data;
     }
@@ -185,6 +186,10 @@ public static class SaveSystem
         }
         if (Enum.IsDefined(typeof(WorldState), data.worldState)) GameManager.Instance.worldState = (WorldState)data.worldState;
         if (Enum.IsDefined(typeof(TimeOfDay), data.timeOfDay)) GameClock.Instance.SetTime((TimeOfDay)data.timeOfDay, data.phaseElapsed);
+
+        // 3b. The Map's regions: what the save cleared (an old save has none: it starts from the beginning). Land that the save already uses
+        // stays usable, so nothing built is ever lost.
+        RestoreRegions(data, buildingTypes);
 
         // 4. Buildings (no cost is charged: they were already paid for)
         Dictionary<string, Building> buildingsById = new Dictionary<string, Building>();
@@ -275,6 +280,24 @@ public static class SaveSystem
 
         Debug.Log($"Game loaded: {buildingsById.Count} buildings, {roadCount} road cells, {CharacterManager.Instance.Roster.Count} characters.");
         return true;
+    }
+
+    private static void RestoreRegions(GameData data, Dictionary<int, BuildingType> buildingTypes)
+    {
+        MapRegions regions = MapRegions.Existing;
+        if (regions == null || regions.Map == null) return;
+
+        if (data.version >= 11) regions.Map.ImportCleared(data.clearedRegions);
+        else regions.Map.ResetToStart();
+        if (regions.Map.ClearedCount == 0) regions.Map.ResetToStart(); // never start with nowhere to build
+
+        List<Vector2Int> used = new List<Vector2Int>();
+        foreach (BuildingData saved in data.buildings)
+        {
+            if (buildingTypes.TryGetValue(saved.typeId, out BuildingType type)) used.AddRange(BuildingManager.GetFootprint(new Vector2Int(saved.cellX, saved.cellY), type.size));
+        }
+        foreach (RoadData road in data.roads) used.Add(new Vector2Int(road.cellX, road.cellY));
+        regions.Map.ClearUnder(used);
     }
 
     private static bool TryGetBuilding(Dictionary<string, Building> buildingsById, string id, out Building building)

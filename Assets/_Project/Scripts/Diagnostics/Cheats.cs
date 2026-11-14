@@ -300,6 +300,31 @@ public static class Cheats
         return text.ToString();
     }
 
+    // --- Map regions ---
+
+    public static void ClearAllRegions()
+    {
+        if (MapRegions.Existing != null) MapRegions.Existing.ClearEverything();
+    }
+
+    // Back to the start: only the regions that start cleared (buildings on other land stay where they are)
+    public static void ResetRegions()
+    {
+        if (MapRegions.Existing != null) MapRegions.Existing.ResetToStart();
+    }
+
+    public static void ToggleRegions()
+    {
+        if (MapRegions.Existing != null) MapRegions.Existing.Enabled = !MapRegions.Existing.Enabled;
+    }
+
+    public static string DescribeRegions()
+    {
+        MapRegions regions = MapRegions.Existing;
+        if (regions == null || !regions.HasRegions) return "Map: no regions (all land is usable)";
+        return $"Map: {regions.Map.ClearedCount} of {regions.Map.Regions.Count} regions cleared ({regions.Map.ClearedCells} cells)" + (regions.Enabled ? "" : ", regions switched off");
+    }
+
     // --- Quests ---
 
     // Forgets where every quest was (the first main quest starts again)
@@ -362,6 +387,7 @@ public static class Cheats
         if (WageSystem.Instance != null) WageSystem.Instance.LastPayrollDay = -1;
         ResetStory();
         ResetQuests();
+        ResetRegions();
         ResetRecruitment();
         Time.timeScale = 1f;
         SaveSystem.Delete();
