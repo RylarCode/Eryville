@@ -133,7 +133,11 @@ public static class Connection
             }
             case StoryCondition.Kind.ChapterDone:
             case StoryCondition.Kind.QuestDone:
+            case StoryCondition.Kind.RegionCleared:
                 return condition.Friendly();
+            case StoryCondition.Kind.RegionsCleared:
+            case StoryCondition.Kind.CellsCleared:
+                return target > 1 ? $"{condition.Friendly()} ({current}/{target})" : condition.Friendly();
             case StoryCondition.Kind.HasBuilding:
             case StoryCondition.Kind.HasCharacter:
             case StoryCondition.Kind.HasItem:

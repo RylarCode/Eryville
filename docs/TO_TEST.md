@@ -139,6 +139,13 @@ Give yourself gold first (Cheats > "+1000 gold") and have a character or two (Ch
 - [ ] Is 20 Stone for the Granary the right size (a North Rocks clear gives 60)? Tell Claude what other buildings should cost Stone. Avoid the Tavern (it brings characters, and clearing needs them).
 - [ ] Re-save check: the Stone item and the Granary asset were written by hand (the Granary's new Extra Costs line points at Stone); open the Granary in the inspector and see Extra Costs: Stone 20.
 
+## 8f. Story and quests about regions (Map step 5)
+
+- [ ] After "Someone to help" is claimed, the side quest **Room to grow** is offered (Quests menu: Accept). Its objective "Clear a region" ticks when you clear any region other than the Town Square (also "Clear every region" from Cheats), and Claim gives 40 Stone.
+- [ ] Clearing a region by working (8d) toasts "<name> cleared: +..." and then "<other region> can now be cleared" for any land it opens up; tapping that toast opens the region's panel.
+- [ ] Try it in a story chapter: add `@clear west-forest` and `[if cleared west-forest] ...` lines to a test chapter (or put a Region Cleared requirement on one); Eryville > Check Story reports nothing when the ids are right, and a message when you misspell one.
+- [ ] A Region Cleared / Regions Cleared / Cells Cleared condition in the inspector (chapter Requires or quest objectives) shows the Region field and works as above.
+
 ## 9. Older, never confirmed
 
 Built earlier in this project; tick them if you have already seen them working.

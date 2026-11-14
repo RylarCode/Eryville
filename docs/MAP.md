@@ -10,7 +10,18 @@ The **Map** is the ground the town is built on: a grid of cells (today 57 x 29).
 
 **Step 3 (this): clearing.** The Region panel has a **Clear** button: it takes the gold at once and starts a job; you then put characters on it from the jobs list, and while they are at work the region is cleared over time (also while the game is closed).
 
-**Step 4 (this): Stone.** Stone is a real item now: it comes from clearing (North Rocks 60, Mountain 500), shows in the resource bar and the Stock tab, is stored up to 1000, and buildings can cost it. **Not built yet:** story and quest hooks, the editor tools. See "Planned" at the end.
+**Step 4 (this): Stone.** Stone is a real item now: it comes from clearing (North Rocks 60, Mountain 500), shows in the resource bar and the Stock tab, is stored up to 1000, and buildings can cost it.
+
+**Step 5 (this): story and quest hooks.** Chapters and quests can wait for regions to be cleared and can clear one. **Not built yet:** the editor tools. See "Planned" at the end.
+
+## Story and quest hooks
+
+- **Conditions** (chapter Requires, quest Requires and Objectives, `[if ...]` in scripts): **Region Cleared** (pick the Region asset, or type its id; *Not Equal* means "not cleared"), **Regions Cleared** and **Cells Cleared** (compared with *Amount*, usually "at least"). The two counts are what the **player** cleared: the region that starts cleared (the Town Square) does not count, so "Clear 2 regions" means two more. In scripts: `[if cleared west-forest]`, `[if not cleared west-forest]`, `[if regions >= 2]`, `[if cells >= 100]` (`regions` and `cells` are reserved words, like `loyalty`).
+- **Effect**: **Clear Region** (chapter rewards, quest rewards, an option, or `@clear west-forest` in a script): the region is cleared at once, free, with no yields; a clearing job for it is dropped. A river is left alone. An id that does not exist logs a warning.
+- Quest objectives show their progress ("Clear 3 regions (1/3)"), and the Connection menu says what is missing the same way.
+- **Checks**: Eryville > Check Story and Check Quests report a region id that does not exist (when the project has Region assets).
+- A **toast** "East Meadow can now be cleared" (tap it to open the region) appears when clearing a region makes new land clearable (only for regions finished by clearing, not by cheats or the story).
+- **The sample**: the side quest **Room to grow** ("Clear a region", reward 40 Stone) is offered once "Someone to help" is done.
 
 ## Stone
 
@@ -107,7 +118,7 @@ The shipped image and nine sample regions (all placeholders: names, costs and la
 2. ~~Seeing and choosing~~ (built; the Clear button comes with step 3).
 3. ~~Clearing~~ (built).
 4. ~~Stone~~ (built).
-5. **Story and quests**: conditions such as "region X cleared" and "N regions cleared", and effects that clear a region.
+5. ~~Story and quests~~ (built).
 6. **Tools**: Eryville > New Region and Check Regions.
 
 ## How it works (for changing the code)

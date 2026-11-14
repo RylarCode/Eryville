@@ -27,7 +27,7 @@ public static class FeatureTests
         public void DevAction(DevRequest r, Action<DevResponse> d) => d(new DevResponse());
     }
 
-    private static StoryManager Story(StoryLogicTests.FakeWorld world = null)
+    internal static StoryManager Story(StoryLogicTests.FakeWorld world = null)
     {
         StoryManager sm = new GameObject("StoryManager").AddComponent<StoryManager>();
         if (world != null) sm.World = world;
@@ -35,10 +35,10 @@ public static class FeatureTests
         return sm;
     }
 
-    private static QuestManager Quests() { QuestManager qm = new GameObject("QuestManager").AddComponent<QuestManager>(); qm.SetQuests(new Quest[0]); return qm; }
+    internal static QuestManager Quests() { QuestManager qm = new GameObject("QuestManager").AddComponent<QuestManager>(); qm.SetQuests(new Quest[0]); return qm; }
 
     // Taps the dialogue on to its end (or to a choice)
-    private static void TapThrough(DialogueBox d, int max = 20) { for (int i = 0; i < max && d.IsOpen && !d.ShowingChoices; i++) d.OnTap(); }
+    internal static void TapThrough(DialogueBox d, int max = 20) { for (int i = 0; i < max && d.IsOpen && !d.ShowingChoices; i++) d.OnTap(); }
 
     public static void StoryInGame()
     {

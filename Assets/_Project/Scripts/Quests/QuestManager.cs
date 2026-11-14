@@ -360,6 +360,7 @@ public class QuestManager : MonoBehaviour
                 case StoryEffect.Kind.Add: State.Add(reward.name, reward.amount); break;
                 case StoryEffect.Kind.Set: State.Set(reward.name, reward.amount); break;
                 case StoryEffect.Kind.StartQuest: StartById(reward.QuestId); break;
+                case StoryEffect.Kind.ClearRegion: if (!string.IsNullOrWhiteSpace(reward.RegionId)) world.ClearRegion(reward.RegionId.Trim()); break;
                 case StoryEffect.Kind.Loyalty:
                 {
                     CharacterType who = reward.character != null ? reward.character : quest.character;

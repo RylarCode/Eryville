@@ -26,7 +26,7 @@ What exists:
 | **Title / Summary** | Shown in the Story menu once the chapter is finished. |
 | **Order** | When several chapters could start at once, the lowest goes first. |
 | **Trigger** | *Automatic*, *Talk* (needs **Talk To**: whose Talk button), or *Manual* (only a replay, a cheat, or later an event starts it). |
-| **Requires** | Everything here must be true. Kinds: *Value* (a story value, with at least / at most / exactly / not), *Chapter Done* / *Chapter Not Done* (this is how chapters are put in order), *Has Building* (empty building = any), *Has Character* (empty = any), *Has Item* (gold, wood, wheat...). |
+| **Requires** | Everything here must be true. Kinds: *Value* (a story value, with at least / at most / exactly / not), *Chapter Done* / *Chapter Not Done* (this is how chapters are put in order), *Has Building* (empty building = any), *Has Character* (empty = any), *Has Item* (gold, wood, wheat...), *Region Cleared* (a Map region, by asset or id; Not Equal = not cleared), *Regions Cleared* / *Cells Cleared* (how many the player cleared, compared with Amount; the start region does not count). |
 | **Goal** | Optional hint ("Build a Gold Mine") shown in the Story menu while this is the next step (every chapter it needs is done, but it has not played). |
 | **Rewards** | Given once when the chapter finishes: *Give* an item (Gold, Wood, Letters, Wheat...), *Add* to or *Set* a story value. Letters cannot be given while the server owns them (online). |
 | **Cast** | A picture for each person who speaks but is not a character of the game (the Mayor). A character of the game is found by its name (a line from `Firsy:` shows Firsy's portrait). |
@@ -50,8 +50,10 @@ Mayor: You have {kindness} points.      <- {name} shows a story value
 => Farmer: Thank you!                   <- a reply, shown only if the option above it was picked
 
 @add kindness 1                         <- change a value on the spot (@set name 3, @give Gold 50 too)
+@clear west-forest                      <- clear a Map region at once, free (in an option: "> Sure | clear west-forest")
 [if kindness >= 2] Mayor: Well done.    <- only plays when true
 [if kindness >= 2 and not done intro] Mayor: ...
+[if cleared west-forest] Mayor: You cleared it.   <- also "not cleared id", "regions >= 2", "cells >= 100" (reserved words)
 [if met] > A secret option | x +1       <- works in front of options and @ lines too
 ```
 

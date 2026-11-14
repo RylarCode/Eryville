@@ -35,6 +35,8 @@ public static class QuestChecks
             foreach (StoryEffect reward in quest.rewards)
             {
                 if (reward == null) continue;
+                string unknownRegion = RegionChecks.UnknownRegion(reward);
+                if (unknownRegion != null) problems.Add($"{who} (rewards): {unknownRegion}");
                 if (reward.kind == StoryEffect.Kind.StartQuest && !byId.ContainsKey(reward.QuestId ?? "")) problems.Add($"{who} (rewards): there is no quest with the id \"{reward.QuestId}\" to start.");
                 else if ((reward.kind == StoryEffect.Kind.Add || reward.kind == StoryEffect.Kind.Set || reward.kind == StoryEffect.Kind.Give) && string.IsNullOrWhiteSpace(reward.name)) problems.Add($"{who} (rewards): a reward without a name.");
             }
@@ -123,6 +125,8 @@ public static class QuestChecks
     private static void CheckCondition(StoryCondition condition, string where, Dictionary<string, Quest> byId, HashSet<string> chapterIds, bool chaptersKnown, List<string> problems)
     {
         if (condition == null) return;
+        string unknownRegion = RegionChecks.UnknownRegion(condition);
+        if (unknownRegion != null) problems.Add($"{where}: {unknownRegion}");
         if ((condition.kind == StoryCondition.Kind.QuestDone || condition.kind == StoryCondition.Kind.QuestActive) && !byId.ContainsKey(condition.QuestId ?? ""))
             problems.Add($"{where}: there is no quest with the id \"{condition.QuestId}\".");
         if (chaptersKnown && (condition.kind == StoryCondition.Kind.ChapterDone || condition.kind == StoryCondition.Kind.ChapterNotDone) && !chapterIds.Contains(condition.ChapterId ?? ""))

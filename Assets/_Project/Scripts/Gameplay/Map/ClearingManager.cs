@@ -197,6 +197,8 @@ public class ClearingManager : MonoBehaviour
         if (job == null || !jobs.Contains(job)) return;
         Region region = job.region;
         RemoveJob(job);
+        List<Region> couldClear = new List<Region>();
+        foreach (Region other in regions.Map.Regions) if (regions.Map.CanClear(other)) couldClear.Add(other);
         regions.Map.Clear(region);
 
         if (ResourceManager.Instance != null && region.yields != null)
@@ -207,6 +209,12 @@ public class ClearingManager : MonoBehaviour
         }
         string gives = region.YieldText();
         Notify.Show(gives.Length > 0 ? $"{region.DisplayName} cleared: +{gives}" : $"{region.DisplayName} cleared", NotifyKind.Success, null, null, "region-cleared:" + region.Id);
+        foreach (Region other in regions.Map.Regions)
+        {
+            if (!regions.Map.CanClear(other) || couldClear.Contains(other)) continue;
+            Region opened = other;
+            Notify.Show($"{other.DisplayName} can now be cleared", NotifyKind.Info, null, () => UIManager.Instance?.OpenRegion(opened), "region-open:" + other.Id);
+        }
         Changed?.Invoke();
     }
 

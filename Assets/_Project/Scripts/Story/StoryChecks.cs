@@ -51,6 +51,8 @@ public static class StoryChecks
         bool chapterKind = condition.kind == StoryCondition.Kind.ChapterDone || condition.kind == StoryCondition.Kind.ChapterNotDone;
         if (chapterKind && !byId.ContainsKey(condition.ChapterId ?? "")) problems.Add($"{where}: there is no chapter with the id \"{condition.ChapterId}\".");
         if (condition.kind == StoryCondition.Kind.Value && string.IsNullOrWhiteSpace(condition.name)) problems.Add($"{where}: a value condition without a name.");
+        string region = RegionChecks.UnknownRegion(condition);
+        if (region != null) problems.Add($"{where}: {region}");
     }
 
     private static void CheckEffect(StoryEffect effect, string where, List<string> problems)
@@ -59,5 +61,7 @@ public static class StoryChecks
         bool named = effect.kind == StoryEffect.Kind.Add || effect.kind == StoryEffect.Kind.Set || effect.kind == StoryEffect.Kind.Give;
         if (named && string.IsNullOrWhiteSpace(effect.name)) problems.Add($"{where}: a change without a name.");
         if (effect.kind == StoryEffect.Kind.StartQuest && string.IsNullOrWhiteSpace(effect.QuestId)) problems.Add($"{where}: a quest to start without an id.");
+        string region = RegionChecks.UnknownRegion(effect);
+        if (region != null) problems.Add($"{where}: {region}");
     }
 }

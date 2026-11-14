@@ -55,6 +55,43 @@ public class UnityStoryWorld : IStoryWorld
         if (owned != null) owned.Loyalty += amount;
     }
 
+    public bool RegionCleared(string regionId)
+    {
+        MapRegions regions = MapRegions.Existing;
+        if (regions == null || regions.Map == null) return false;
+        Region region = regions.Map.Find(regionId);
+        return region != null && regions.Map.IsCleared(region);
+    }
+
+    // What the player has cleared: every cleared region except the ones that start cleared
+    public int RegionsCleared()
+    {
+        MapRegions regions = MapRegions.Existing;
+        if (regions == null || regions.Map == null) return 0;
+        int count = 0;
+        foreach (Region region in regions.Map.Regions) if (!region.startsCleared && regions.Map.IsCleared(region)) count++;
+        return count;
+    }
+
+    public int CellsCleared()
+    {
+        MapRegions regions = MapRegions.Existing;
+        if (regions == null || regions.Map == null) return 0;
+        int cells = 0;
+        foreach (Region region in regions.Map.Regions) if (!region.startsCleared && regions.Map.IsCleared(region)) cells += regions.Map.CellsOf(region).Count;
+        return cells;
+    }
+
+    // Clears the region at once: free, no yields, any clearing job for it is dropped (ClearingManager sees the change)
+    public void ClearRegion(string regionId)
+    {
+        MapRegions regions = MapRegions.Existing;
+        if (regions == null || regions.Map == null) return;
+        Region region = regions.Map.Find(regionId);
+        if (region == null) { Debug.LogWarning($"The story clears the region \"{regionId}\", but there is no such region."); return; }
+        if (region.Clearable) regions.Map.Clear(region);
+    }
+
     public void Give(string item, float amount)
     {
         if (ResourceManager.Instance == null) return;

@@ -23,6 +23,12 @@ public static class StoryLogicTests
         public void StartQuest(string id) => StartedQuests.Add(id);
         public int Loyalty(CharacterType t) => t != null && Loyalties.TryGetValue(t, out int v) ? v : -1;
         public void AddLoyalty(CharacterType t, int a) { if (t != null) Loyalties[t] = Math.Max(0, Math.Min(100, Loyalty(t) < 0 ? a : Loyalty(t) + a)); }
+        public HashSet<string> Cleared = new HashSet<string>();
+        public int Cells;
+        public bool RegionCleared(string id) => Cleared.Contains(id);
+        public int RegionsCleared() => Cleared.Count;
+        public int CellsCleared() => Cells;
+        public void ClearRegion(string id) => Cleared.Add(id);
     }
 
     public static StoryChapter Chapter(string id, string script, StoryTrigger trigger = StoryTrigger.Automatic, int order = 0, CharacterType talkTo = null, params StoryCondition[] requires)

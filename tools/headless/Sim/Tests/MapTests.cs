@@ -542,6 +542,124 @@ public static class MapTests
         T.Check(t.rm.Get("Stone") == 210f, "+200 stone cheat");
     }
 
+    public static void InTheStory()
+    {
+        T.Section("script syntax");
+        T.Check(StoryScript.TryParseCondition("cleared west-forest", out StoryCondition c) && c.kind == StoryCondition.Kind.RegionCleared && c.RegionId == "west-forest" && c.compare == StoryCondition.Compare.AtLeast, "\"cleared west-forest\"");
+        T.Check(StoryScript.TryParseCondition("not cleared west-forest", out c) && c.kind == StoryCondition.Kind.RegionCleared && c.compare == StoryCondition.Compare.NotEqual, "\"not cleared west-forest\"");
+        T.Check(StoryScript.TryParseCondition("regions >= 2", out c) && c.kind == StoryCondition.Kind.RegionsCleared && c.amount == 2 && c.compare == StoryCondition.Compare.AtLeast, "\"regions >= 2\" counts regions, not a story value");
+        T.Check(StoryScript.TryParseCondition("cells > 99", out c) && c.kind == StoryCondition.Kind.CellsCleared && c.amount == 100, "\"cells > 99\" is at least 100");
+        T.Check(StoryScript.TryParseCondition("kindness >= 2", out c) && c.kind == StoryCondition.Kind.Value, "other names stay story values");
+        T.Check(StoryScript.ParseChange("clear west-forest").kind == StoryEffect.Kind.ClearRegion && StoryScript.ParseChange("clear west-forest").RegionId == "west-forest", "an option can clear a region: \"clear west-forest\"");
+        var problems = new List<string>();
+        var beats = StoryScript.Parse("Mayor: Look.\n@clear west-forest\n[if cleared west-forest] Mayor: It is open.\n> Yes | clear north-rocks", problems);
+        T.Check(problems.Count == 0 && beats.Any(b => b.kind == StoryBeatKind.Effect && b.effect.kind == StoryEffect.Kind.ClearRegion && b.effect.RegionId == "west-forest") && beats.Any(b => b.onlyIf.Count == 1 && b.onlyIf[0].kind == StoryCondition.Kind.RegionCleared), "a script can use @clear and [if cleared ...]: " + string.Join("; ", problems));
+        T.Check(StoryScript.Parse("@clear", new List<string>()).Count == 0 && StoryScript.Parse("@clear a b", problems).Count == 0, "a malformed @clear is reported, not played");
+
+        T.Section("conditions on a fake world");
+        var fake = new StoryLogicTests.FakeWorld();
+        var state = new StoryState();
+        var cond = new StoryCondition { kind = StoryCondition.Kind.RegionCleared, name = "west-forest" };
+        T.Check(!cond.Test(state, fake) && cond.Friendly() == "Clear west-forest", "not cleared yet: " + cond.Friendly());
+        fake.Cleared.Add("west-forest");
+        T.Check(cond.Test(state, fake), "cleared");
+        cond.compare = StoryCondition.Compare.NotEqual;
+        T.Check(!cond.Test(state, fake) && cond.Describe() == "not cleared west-forest" && cond.Friendly().StartsWith("Leave"), "\"not cleared\" turns it round");
+        Region west = ScriptableObject.CreateInstance<Region>(); west.name = "x"; west.id = "other"; west.displayName = "Far Land";
+        var byAsset = new StoryCondition { kind = StoryCondition.Kind.RegionCleared, region = west, name = "west-forest" };
+        T.Check(byAsset.RegionId == "other" && !byAsset.Test(state, fake) && byAsset.Friendly() == "Clear Far Land", "a picked region asset wins over the name");
+        var count = new StoryCondition { kind = StoryCondition.Kind.RegionsCleared, amount = 3 };
+        count.Measure(state, fake, out int current, out int target);
+        T.Check(!count.Test(state, fake) && current == 1 && target == 3 && count.Friendly() == "Clear 3 regions", $"regions counted: {current} of {target}");
+        fake.Cleared.Add("a"); fake.Cleared.Add("b");
+        T.Check(count.Test(state, fake), "three is enough");
+        fake.Cells = 80;
+        var cells = new StoryCondition { kind = StoryCondition.Kind.CellsCleared, amount = 100 };
+        T.Check(!cells.Test(state, fake) && cells.Friendly() == "Clear 100 cells of land", "cells counted");
+        fake.Cells = 140;
+        T.Check(cells.Test(state, fake), "enough cells");
+        T.Check(!cond.Test(state, null) && !count.Test(state, null), "with no world nothing is cleared");
+
+        T.Section("the real Map");
+        Town t = Town.Build();
+        List<Region> regions = t.UseSampleMap();
+        MapRegions mr = MapRegions.Existing;
+        UnityStoryWorld world = new UnityStoryWorld();
+        Region forest = regions.First(r => r.id == "west-forest"), river = regions.First(r => r.id == "river"), rocks = regions.First(r => r.id == "north-rocks");
+        T.Check(world.RegionsCleared() == 0 && world.CellsCleared() == 0 && world.RegionCleared("town-square") && !world.RegionCleared("west-forest"), "at the start the player has cleared nothing (the start region does not count, though it is cleared)");
+        world.ClearRegion("west-forest");
+        int forestCells = mr.Map.CellsOf(forest).Count;
+        T.Check(world.RegionCleared("west-forest") && world.RegionsCleared() == 1 && world.CellsCleared() == forestCells, $"clearing counts: 1 region, {forestCells} cells");
+        world.ClearRegion("river"); world.ClearRegion("nowhere");
+        T.Check(!world.RegionCleared("river") && world.RegionsCleared() == 1, "a river or an unknown region is left alone");
+        mr.Map.Clear(rocks);
+        T.Check(world.RegionsCleared() == 2 && world.CellsCleared() == forestCells + mr.Map.CellsOf(rocks).Count, "clearing by the Map counts too");
+        mr.Enabled = false;
+        mr.Enabled = true;
+
+        T.Section("a chapter that clears a region");
+        mr.Map.ResetToStart();
+        StoryManager sm = FeatureTests.Story();
+        DialogueBox dlg = t.ui.Dialogue;
+        StoryChapter opens = StoryLogicTests.Chapter("opens", "Mayor: The way is open.\n@clear west-forest\nMayor: Go on.", StoryTrigger.Automatic, 1);
+        StoryChapter needs = StoryLogicTests.Chapter("needs", "[if cleared west-forest] Mayor: You cleared it.\nMayor: End.", StoryTrigger.Automatic, 2, null, new StoryCondition { kind = StoryCondition.Kind.RegionCleared, name = "west-forest" });
+        sm.SetChapters(new[] { opens, needs });
+        World.Run(3f);
+        FeatureTests.TapThrough(dlg);
+        T.Check(sm.State.IsDone("opens") && mr.Map.IsCleared(forest), "when the chapter ends its region is cleared");
+        World.Run(3f);
+        T.Check(dlg.IsOpen && sm.Playing == needs, "a chapter that requires the region starts once it is");
+        FeatureTests.TapThrough(dlg);
+        dlg.Close(false);
+
+        T.Section("a quest about regions");
+        mr.Map.ResetToStart();
+        t.ui.CloseEverything();
+        QuestManager qm = FeatureTests.Quests();
+        Quest q = StoryLogicTests.Quest("expand", QuestCategory.Main, QuestStart.Automatic, 1, null,
+            new List<QuestObjective> { new QuestObjective { label = "Clear 2 regions", condition = new StoryCondition { kind = StoryCondition.Kind.RegionsCleared, amount = 2 } } },
+            new StoryEffect { kind = StoryEffect.Kind.ClearRegion, name = "east-meadow" });
+        qm.SetQuests(new[] { q });
+        qm.Evaluate();
+        T.Check(qm.StatusOf(q) == QuestStatus.Active, "the quest starts");
+        mr.Map.Clear(forest);
+        qm.Evaluate();
+        T.Check(qm.StatusOf(q) == QuestStatus.Active, "one region is not enough");
+        mr.Map.Clear(rocks);
+        qm.Evaluate();
+        T.Check(qm.StatusOf(q) == QuestStatus.Ready, "two are");
+        qm.Claim(q);
+        World.Run(1f);
+        T.Check(qm.StatusOf(q) == QuestStatus.Complete && mr.Map.IsCleared(regions.First(r => r.id == "east-meadow")), "its reward cleared another region");
+
+        T.Section("checks");
+        Resources.Add("Regions/WestForest", forest);
+        var bad = StoryLogicTests.Chapter("bad", "Mayor: Hi.\n@clear nowhere-land\n[if cleared also-nowhere] Mayor: x", StoryTrigger.Manual, 1);
+        var problemsFound = StoryChecks.Problems(new[] { bad });
+        T.Check(problemsFound.Any(p => p.Contains("nowhere-land") && p.Contains("no Map region")) && problemsFound.Any(p => p.Contains("also-nowhere")), "Check Story reports regions that do not exist: " + string.Join(" | ", problemsFound));
+        var good = StoryLogicTests.Chapter("good", "Mayor: Hi.\n@clear west-forest", StoryTrigger.Manual, 1);
+        T.Check(StoryChecks.Problems(new[] { good }).Count == 0, "and nothing for one that does");
+        Quest badQuest = StoryLogicTests.Quest("bq", QuestCategory.Side, QuestStart.Offered, 1, null, new List<QuestObjective> { new QuestObjective { condition = new StoryCondition { kind = StoryCondition.Kind.RegionCleared, name = "ghost" } } }, new StoryEffect { kind = StoryEffect.Kind.ClearRegion, name = "spirit" });
+        var qProblems = QuestChecks.Problems(new[] { badQuest }, null);
+        T.Check(qProblems.Any(p => p.Contains("ghost")) && qProblems.Any(p => p.Contains("spirit")), "Check Quests too: " + string.Join(" | ", qProblems));
+
+        T.Section("a toast for newly clearable land");
+        Notify.Center.Reset();
+        mr.Map.ResetToStart(); ClearingManager.Instance.ClearAll();
+        rocks.goldCost = 0; rocks.charactersNeeded = 1;
+        ClearingManager.Instance.StartClearing(rocks);
+        ClearingManager.Instance.Complete(ClearingManager.Instance.JobFor(rocks));
+        T.Check(Notify.Center.History.Any(n => n.Text == "North Rocks cleared: +60 Stone") && !Notify.Center.History.Any(n => n.Text == "North Rocks can now be cleared"), "clearing North Rocks says so, and does not announce itself");
+        T.Check(!Notify.Center.History.Any(n => n.Text == "West Forest can now be cleared"), "(land that could already be cleared is not announced again)");
+        Notify.Center.Reset();
+        mr.Map.ResetToStart();
+        var pass = regions.First(r => r.id == "pass"); var meadow = regions.First(r => r.id == "east-meadow");
+        meadow.goldCost = 0; meadow.charactersNeeded = 1;
+        ClearingManager.Instance.StartClearing(meadow);
+        ClearingManager.Instance.Complete(ClearingManager.Instance.JobFor(meadow));
+        T.Check(Notify.Center.History.Any(n => n.Text == pass.DisplayName + " can now be cleared") && !Notify.Center.History.Any(n => n.Text == "North Rocks can now be cleared"), "clearing the East Meadow opens only the Pass: " + string.Join(" | ", Notify.Center.History.Select(n => n.Text)));
+    }
+
     public static void SavingTheMap()
     {
         Town t = Town.Build();

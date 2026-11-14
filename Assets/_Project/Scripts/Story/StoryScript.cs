@@ -16,11 +16,14 @@ using System.Text.RegularExpressions;
 //   @add kindness 1                      change a value on the spot (@set name n, @give Gold 50 too)
 //   @quest build-mine                    start a quest (in an option: "> Sure | quest build-mine")
 //   @loyalty 5                           the character's loyalty up (or -3 down); in an option: "| loyalty +5"
+//   @clear west-forest                   clears a Map region at once, free (in an option: "> Sure | clear west-forest")
 //   [if kindness >= 2] Mayor: Well done. only plays when it is true (also in front of ">" and "@"); join with "and"
 //
 // Conditions: "name >= 2" (also <= < > == !=), "name" (is more than 0), "not name", "done chapter-id", "not done chapter-id",
 // "quest done quest-id" (finished and claimed), "quest active quest-id" (started, not claimed yet), "not quest done quest-id",
 // "loyalty >= 40" (the chapter's character: its Talk To). "loyalty" is a reserved word: it is never a story value.
+// "cleared west-forest" / "not cleared west-forest" (a Map region, by its id), "regions >= 2" (how many regions the player cleared, not
+// counting the one that starts cleared), "cells >= 100" (how many cells those cover). "regions" and "cells" are reserved words too.
 // What an option does: "name +1", "name -2", "name =3" (set), "give Item amount".
 public enum StoryBeatKind { Line, Choice, Effect }
 
@@ -53,7 +56,11 @@ public static class StoryScript
     private static readonly Regex NotPlain = new Regex(@"^not\s+([A-Za-z_][A-Za-z0-9_]*)$", RegexOptions.IgnoreCase);
     private static readonly Regex Change = new Regex(@"^([A-Za-z_][A-Za-z0-9_]*)\s*([+\-=])\s*(\d+)$");
     private static readonly Regex Give = new Regex(@"^give\s+(.+?)\s+(-?\d+)$", RegexOptions.IgnoreCase);
-    private static readonly Regex Directive = new Regex(@"^@(set|add|give|quest|loyalty)\s+(.+)$", RegexOptions.IgnoreCase);
+    private static readonly Regex Directive = new Regex(@"^@(set|add|give|quest|loyalty|clear)\s+(.+)$", RegexOptions.IgnoreCase);
+    private static readonly Regex ClearChange = new Regex(@"^clear\s+([A-Za-z0-9_.\-]+)$", RegexOptions.IgnoreCase);
+    private static readonly Regex ClearedCondition = new Regex(@"^(not\s+)?cleared\s+([A-Za-z0-9_.\-]+)$", RegexOptions.IgnoreCase);
+    public const string RegionsWord = "regions"; // in a condition, "regions >= 2" counts the regions the player cleared (reserved: never a story value)
+    public const string CellsWord = "cells";     // ... and "cells >= 100" the cells of land they cover
     public const string LoyaltyWord = "loyalty"; // in a condition or a change, "loyalty" means the character's loyalty, not a story value
     private static readonly Regex QuestChange = new Regex(@"^quest\s+([A-Za-z0-9_.\-]+)$", RegexOptions.IgnoreCase);
     private static readonly Regex QuestCondition = new Regex(@"^(not\s+)?quest\s+(done|active)\s+([A-Za-z0-9_.\-]+)$", RegexOptions.IgnoreCase);
@@ -169,6 +176,8 @@ public static class StoryScript
         text = text.Trim();
         Match quest = QuestChange.Match(text);
         if (quest.Success) return new StoryEffect(StoryEffect.Kind.StartQuest, quest.Groups[1].Value, 1);
+        Match clear = ClearChange.Match(text);
+        if (clear.Success) return new StoryEffect(StoryEffect.Kind.ClearRegion, clear.Groups[1].Value, 1);
         Match give = Give.Match(text);
         if (give.Success) return new StoryEffect(StoryEffect.Kind.Give, give.Groups[1].Value.Trim(), int.Parse(give.Groups[2].Value));
         Match change = Change.Match(text);
@@ -191,6 +200,7 @@ public static class StoryScript
     private static StoryEffect ParseDirective(string verb, string rest)
     {
         string[] pieces = rest.Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
+        if (verb == "clear") return pieces.Length == 1 ? new StoryEffect(StoryEffect.Kind.ClearRegion, pieces[0], 1) : null;
         if (verb == "quest") return pieces.Length == 1 ? new StoryEffect(StoryEffect.Kind.StartQuest, pieces[0], 1) : null;
         if (verb == "loyalty") return pieces.Length == 1 && int.TryParse(pieces[0], out int change) ? new StoryEffect(StoryEffect.Kind.Loyalty, "", change) : null;
         if (pieces.Length < 2 || !int.TryParse(pieces[pieces.Length - 1], out int amount)) return null;
@@ -218,6 +228,13 @@ public static class StoryScript
             return true;
         }
 
+        Match cleared = ClearedCondition.Match(text);
+        if (cleared.Success)
+        {
+            condition = new StoryCondition { kind = StoryCondition.Kind.RegionCleared, name = cleared.Groups[2].Value, compare = cleared.Groups[1].Success ? StoryCondition.Compare.NotEqual : StoryCondition.Compare.AtLeast };
+            return true;
+        }
+
         Match done = DoneOf.Match(text);
         if (done.Success)
         {
@@ -240,7 +257,10 @@ public static class StoryScript
                 default: compare = StoryCondition.Compare.Exactly; break;
             }
             bool loyalty = string.Equals(compared.Groups[1].Value, LoyaltyWord, StringComparison.OrdinalIgnoreCase);
-            condition = new StoryCondition { kind = loyalty ? StoryCondition.Kind.Loyalty : StoryCondition.Kind.Value, name = loyalty ? "" : compared.Groups[1].Value, compare = compare, amount = amount };
+            bool regionsCount = string.Equals(compared.Groups[1].Value, RegionsWord, StringComparison.OrdinalIgnoreCase);
+            bool cellsCount = string.Equals(compared.Groups[1].Value, CellsWord, StringComparison.OrdinalIgnoreCase);
+            StoryCondition.Kind kind = loyalty ? StoryCondition.Kind.Loyalty : regionsCount ? StoryCondition.Kind.RegionsCleared : cellsCount ? StoryCondition.Kind.CellsCleared : StoryCondition.Kind.Value;
+            condition = new StoryCondition { kind = kind, name = kind == StoryCondition.Kind.Value ? compared.Groups[1].Value : "", compare = compare, amount = amount };
             return true;
         }
 

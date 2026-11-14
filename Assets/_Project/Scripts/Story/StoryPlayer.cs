@@ -116,7 +116,8 @@ public class StoryPlayer
         foreach (StoryEffect effect in toGive)
         {
             if (world == null) break;
-            if (effect.kind == StoryEffect.Kind.StartQuest) { if (!string.IsNullOrWhiteSpace(effect.QuestId)) world.StartQuest(effect.QuestId.Trim()); }
+            if (effect.kind == StoryEffect.Kind.ClearRegion) { if (!string.IsNullOrWhiteSpace(effect.RegionId)) world.ClearRegion(effect.RegionId.Trim()); }
+            else if (effect.kind == StoryEffect.Kind.StartQuest) { if (!string.IsNullOrWhiteSpace(effect.QuestId)) world.StartQuest(effect.QuestId.Trim()); }
             else if (effect.kind == StoryEffect.Kind.Loyalty) { CharacterType who = effect.character != null ? effect.character : chapter.talkTo; if (who != null) world.AddLoyalty(who, effect.amount); }
             else if (!string.IsNullOrWhiteSpace(effect.name)) world.Give(effect.name.Trim(), effect.amount);
         }

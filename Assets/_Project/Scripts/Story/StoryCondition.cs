@@ -12,6 +12,10 @@ public interface IStoryWorld
     void StartQuest(string questId);
     int Loyalty(CharacterType type);                 // the owned character's loyalty (0..100), or -1 if not owned
     void AddLoyalty(CharacterType type, int amount);
+    bool RegionCleared(string regionId);             // the Map region (by id) is cleared
+    int RegionsCleared();                            // how many regions the player has cleared (not counting the ones that start cleared)
+    int CellsCleared();                              // how many cells those regions cover
+    void ClearRegion(string regionId);               // clears a region at once (no cost, no yields)
 }
 
 // One thing that must be true: a story value, a finished chapter, something the town has. Chapters list these in "Requires", scripts
@@ -21,7 +25,7 @@ public interface IStoryWorld
 [Serializable]
 public class StoryCondition
 {
-    public enum Kind { Value, ChapterDone, ChapterNotDone, HasBuilding, HasCharacter, HasItem, QuestDone, QuestActive, Loyalty }
+    public enum Kind { Value, ChapterDone, ChapterNotDone, HasBuilding, HasCharacter, HasItem, QuestDone, QuestActive, Loyalty, RegionCleared, RegionsCleared, CellsCleared }
     public enum Compare { AtLeast, AtMost, Exactly, NotEqual }
 
     public Kind kind = Kind.Value;
@@ -39,7 +43,10 @@ public class StoryCondition
     public ItemType item;
     [UnityEngine.Tooltip("QuestDone (finished and claimed) / QuestActive (started, not yet claimed). Set Compare to 'Not Equal' to mean 'not'.")]
     public Quest quest;
+    [UnityEngine.Tooltip("RegionCleared: the Map region (when none is picked, the id in Name). Set Compare to 'Not Equal' to mean 'not cleared'. RegionsCleared / CellsCleared count what the player cleared (the start region does not count), compared with Amount.")]
+    public Region region;
 
+    public string RegionId => region != null ? region.Id : name;
     public string ChapterId => chapter != null ? chapter.Id : name;
     public string QuestId => quest != null ? quest.Id : name;
 
@@ -65,6 +72,9 @@ public class StoryCondition
                 int loyalty = LoyaltyOf(world, subject);
                 return loyalty >= 0 && Check(loyalty);
             }
+            case Kind.RegionCleared: return world != null && world.RegionCleared(RegionId) != (compare == Compare.NotEqual);
+            case Kind.RegionsCleared: return world != null && Check(world.RegionsCleared());
+            case Kind.CellsCleared: return world != null && Check(world.CellsCleared());
         }
         return false;
     }
@@ -88,6 +98,8 @@ public class StoryCondition
             case Kind.HasCharacter: actual = world != null ? world.CharacterCount(character) : 0; break;
             case Kind.HasItem: actual = world != null ? (int)Math.Floor(world.ItemAmount(item != null ? item.Name : name)) : 0; break;
             case Kind.Loyalty: actual = Math.Max(0, LoyaltyOf(world, subject)); break;
+            case Kind.RegionsCleared: actual = world != null ? world.RegionsCleared() : 0; break;
+            case Kind.CellsCleared: actual = world != null ? world.CellsCleared() : 0; break;
         }
         if (actual >= 0 && compare == Compare.AtLeast && amount > 1)
         {
@@ -118,9 +130,14 @@ public class StoryCondition
             case Kind.ChapterDone: return $"Finish the story chapter \"{(chapter != null ? chapter.Title : name)}\"";
             case Kind.QuestDone: return $"Complete the quest \"{(quest != null ? quest.Title : name)}\"";
             case Kind.Loyalty: return character != null ? $"{character.displayName}'s loyalty {amount}" : $"Loyalty {amount}";
+            case Kind.RegionCleared: return compare == Compare.NotEqual ? $"Leave {RegionName()} uncleared" : $"Clear {RegionName()}";
+            case Kind.RegionsCleared: return amount <= 1 ? "Clear a region" : $"Clear {amount} regions";
+            case Kind.CellsCleared: return $"Clear {amount} cells of land";
             default: return Describe();
         }
     }
+
+    private string RegionName() => region != null ? region.DisplayName : name;
 
     private bool Check(int actual)
     {
@@ -162,6 +179,9 @@ public class StoryCondition
             case Kind.HasCharacter: return $"characters ({(character != null ? character.displayName : "any")}) {Op()} {amount}";
             case Kind.QuestDone: return $"{(compare == Compare.NotEqual ? "not " : "")}quest done {QuestId}";
             case Kind.QuestActive: return $"{(compare == Compare.NotEqual ? "not " : "")}quest active {QuestId}";
+            case Kind.RegionCleared: return $"{(compare == Compare.NotEqual ? "not " : "")}cleared {RegionId}";
+            case Kind.RegionsCleared: return $"regions {Op()} {amount}";
+            case Kind.CellsCleared: return $"cells {Op()} {amount}";
             case Kind.Loyalty: return $"loyalty{(character != null ? " (" + character.displayName + ")" : "")} {Op()} {amount}";
             default: return $"{(item != null ? item.Name : name)} {Op()} {amount}";
         }
