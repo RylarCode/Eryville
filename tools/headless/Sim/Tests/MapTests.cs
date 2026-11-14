@@ -489,6 +489,59 @@ public static class MapTests
         T.Check(firsy.WorkBuilding == job.site, "and pressing a job asks again instead of moving them");
     }
 
+    public static void StoneCosts()
+    {
+        Town t = Town.Build();
+        T.Section("what a building costs");
+        ItemType stone = ScriptableObject.CreateInstance<ItemType>();
+        stone.itemName = "Stone"; stone.category = ItemCategory.Material; stone.capacity = 1000f;
+        ItemCatalog.Register(stone);
+        T.Check(t.Home.extraCosts.Count == 0 && t.Home.CostText() == "20 gold, 10 wood", "a building with only gold and wood costs just that: " + t.Home.CostText());
+
+        BuildingType barn = Town.NewBuilding("Stone Barn", 77, 2, goldCost: 10, woodCost: 5);
+        barn.extraCosts = new List<ItemAmount> { new ItemAmount(stone, 20f) };
+        T.Check(barn.CostText() == "10 gold, 5 wood, 20 Stone", "the text lists everything: " + barn.CostText());
+        T.Check(Town.NewBuilding("Free Hut", 78, 2).CostText() == "free", "nothing to pay reads \"free\"");
+
+        t.rm.SetResourceAmount(ResourceManager.Gold, 100f); t.rm.SetResourceAmount(ResourceManager.Wood, 100f); t.rm.SetResourceAmount("Stone", 19f);
+        T.Check(!barn.CanAfford(t.rm), "19 stone is not enough for 20");
+        t.rm.SetResourceAmount("Stone", 20f);
+        T.Check(barn.CanAfford(t.rm), "20 is");
+        t.rm.SetResourceAmount(ResourceManager.Wood, 4f);
+        T.Check(!barn.CanAfford(t.rm), "and gold and wood still count");
+        t.rm.SetResourceAmount(ResourceManager.Wood, 100f);
+
+        T.Section("placing it");
+        t.placer.AllBuildings.Add(barn);
+        t.rm.SetResourceAmount("Stone", 5f);
+        t.placer.SelectBuildingToPlace(barn);
+        Notify.Center.Reset();
+        t.ClickWorld(new Vector3(-2f, 0f, 0));
+        T.Check(t.bm.Buildings.Count(b => b.buildingType == barn) == 0 && t.rm.Get(ResourceManager.Gold) == 100f && t.rm.Get("Stone") == 5f, "without the stone it is not built and nothing is taken");
+        T.Check(Notify.Center.History.Any(n => n.Text == "Not enough for Stone Barn: it costs 10 gold, 5 wood, 20 Stone"), "and the player is told why");
+        t.rm.SetResourceAmount("Stone", 50f);
+        t.placer.SelectBuildingToPlace(barn);
+        t.ClickWorld(new Vector3(-2f, 0f, 0));
+        T.Check(t.bm.Buildings.Count(b => b.buildingType == barn) == 1 && t.rm.Get(ResourceManager.Gold) == 90f && t.rm.Get(ResourceManager.Wood) == 95f && t.rm.Get("Stone") == 30f, "with it, it is built and all three are paid: gold " + t.rm.Get(ResourceManager.Gold) + ", wood " + t.rm.Get(ResourceManager.Wood) + ", stone " + t.rm.Get("Stone"));
+
+        T.Section("the build menu and the checks");
+        T.Check(UIManager.BuildCardText(barn) == "Stone Barn\n(10 gold, 5 wood, 20 Stone)" && UIManager.BuildCardText(t.Home) == "Home", "a card shows the price only when it needs more than gold and wood");
+        barn.extraCosts.Add(new ItemAmount(null, 3f));
+        barn.extraCosts.Add(new ItemAmount(stone, 0f));
+        List<string> problems = BuildingChecks.Problems(new List<BuildingType> { barn }, new List<BuildingType> { barn });
+        T.Check(problems.Any(p => p.Contains("extra cost with no item")) && problems.Any(p => p.Contains("extra cost of Stone with no amount")), "Check Buildings reports an extra cost with no item or no amount: " + string.Join(" | ", problems));
+
+        T.Section("stone in the stock");
+        t.rm.SetResourceAmount("Stone", 990f);
+        t.rm.Add("Stone", 60f);
+        T.Check(t.rm.Get("Stone") == 1000f, "the stock holds 1000 at most: " + t.rm.Get("Stone"));
+        Cheats.AddStone(200);
+        T.Check(t.rm.Get("Stone") == 1000f, "(the cheat obeys the limit too)");
+        t.rm.SetResourceAmount("Stone", 10f);
+        Cheats.AddStone(200);
+        T.Check(t.rm.Get("Stone") == 210f, "+200 stone cheat");
+    }
+
     public static void SavingTheMap()
     {
         Town t = Town.Build();

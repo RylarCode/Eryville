@@ -26,6 +26,15 @@ public static class BuildingChecks
 
             if (type.size.x < 1 || type.size.y < 1) problems.Add($"{who} has a size below 1x1 cells.");
 
+            if (type.extraCosts != null)
+            {
+                foreach (ItemAmount cost in type.extraCosts)
+                {
+                    if (cost == null || cost.item == null) problems.Add($"{who} has an extra cost with no item, which is ignored.");
+                    else if (cost.amount <= 0f) problems.Add($"{who} has an extra cost of {cost.Name} with no amount, which is ignored.");
+                }
+            }
+
             if (type.buildingPrefab == null) problems.Add($"{who} has no building prefab, so it cannot be built.");
             else
             {

@@ -24,7 +24,7 @@ Code names (class and field names) do not have to match, but player-facing text 
 | Clear / Cleared | Making a region usable (the verb), and the state of a region that is. The opposite is "locked" | **Locked** | Not "unlock", "buy" or "expand" |
 | Fog | The very dense cover over regions the player cannot reach yet; only regions touching a cleared one along an edge are revealed | **Locked** | |
 | Terrain: Forest, Rocks, Debris, Mountain, River, Quarry | What a region is made of. A River can never be cleared; a Quarry is cleared land for a quarry (later) | **Locked** | |
-| Stone | A new material, next to Wood (from clearing rocks and mountains; a quarry later) | **Locked** | Not built yet (Map step 4) |
+| Stone | A new material, next to Wood (from clearing rocks and mountains; a quarry later) | **Locked** | Built (Map step 4) |
 | Characters (clearing) | Who clears land. Always "characters", never "workers" or "crew". A region needs a number of characters, assigned like a job | **Locked** | |
 
 ## Currencies and items

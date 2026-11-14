@@ -105,6 +105,7 @@ public static class Cheats
     // --- Resources ---
 
     public static void AddGold(float amount) { ResourceManager.Instance.changeResourceAmount(ResourceManager.Gold, amount); }
+    public static void AddStone(float amount) { ResourceManager.Instance.Add("Stone", amount); UIManager.Instance?.UpdateResourceUI(ResourceManager.Instance.resources); }
     // 100 of every item the game knows (except gold, wood and letters, which have their own cheats), up to each limit
     public static void AddItems(float amount = 100f)
     {

@@ -24,6 +24,23 @@ public static class ProjectFileTests
             T.Check(m.Success && beats.Count >= 3 && problems.Count == 0, Path.GetFileName(file) + " reads cleanly (" + beats.Count + " lines" + (problems.Count > 0 ? ": " + string.Join("; ", problems) : "") + ")");
         }
 
+        T.Section("Stone");
+        string stoneAsset = File.ReadAllText(Path.Combine(Root, "Assets/_Project/Resources/Items/Stone.asset"));
+        string stoneGuid = Regex.Match(File.ReadAllText(Path.Combine(Root, "Assets/_Project/Resources/Items/Stone.asset.meta")), @"guid: ([0-9a-f]{32})").Groups[1].Value;
+        float stoneCapacity = float.Parse(Regex.Match(stoneAsset, @"(?m)^  capacity: (\d+)").Groups[1].Value);
+        T.Check(Regex.IsMatch(stoneAsset, @"(?m)^  itemName: Stone$") && Regex.IsMatch(stoneAsset, @"(?m)^  category: 1$") && stoneGuid.Length == 32, "Stone is a Material item with its own id");
+        var allGuids = Directory.GetFiles(Path.Combine(Root, "Assets/_Project/Resources/Items"), "*.meta").Select(f => Regex.Match(File.ReadAllText(f), @"guid: ([0-9a-f]{32})").Groups[1].Value).ToList();
+        T.Check(allGuids.Count(g => g == stoneGuid) == 1, "no other item shares its id");
+        int biggest = 0;
+        foreach (string file in Directory.GetFiles(Path.Combine(Root, "Assets/_Project/Resources/Regions"), "*.asset"))
+        {
+            Match y = Regex.Match(File.ReadAllText(file), @"- item: Stone\r?\n    amount: (\d+)");
+            if (y.Success) biggest = Math.Max(biggest, int.Parse(y.Groups[1].Value));
+        }
+        T.Check(biggest > 0 && biggest <= stoneCapacity, $"the most a region gives ({biggest}) fits in the stock limit ({stoneCapacity})");
+        string granary = File.ReadAllText(Path.Combine(Root, "Assets/_Project/ScriptableObjects/Buildings/Granary.asset"));
+        T.Check(Regex.IsMatch(granary, @"extraCosts:\r?\n  - item: \{fileID: 11400000, guid: " + stoneGuid + @", type: 2\}\r?\n    amount: \d+"), "the Granary costs Stone (its reference points at the Stone asset)");
+
         T.Section("quests that pay letters are listed on the server");
         string config = File.ReadAllText(Path.Combine(Root, "firebase/functions/src/config.ts"));
         foreach (string file in Directory.GetFiles(Path.Combine(Root, "Assets/_Project/Resources/Quests"), "*.asset"))

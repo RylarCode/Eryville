@@ -10,6 +10,8 @@ public class BuildingType : ScriptableObject
     public Sprite sprite;
     public int goldCost;
     public int woodCost;
+    [Tooltip("Other things it costs besides gold and wood, e.g. Stone 20.")]
+    public List<ItemAmount> extraCosts = new List<ItemAmount>();
 
     [Header("Story")]
     [Tooltip("Locked until this story chapter is finished. Empty: available from the start.")]
@@ -90,4 +92,32 @@ public class BuildingType : ScriptableObject
     [System.NonSerialized] private int legacyGold, legacyWood;
 
     public bool Produces => Recipes.Count > 0;
+
+    // --- What it costs ---
+
+    // Whether the stock covers the whole price (gold, wood and the extra costs)
+    public bool CanAfford(IItemStock stock)
+    {
+        if (stock.Get(ResourceManager.Gold) < goldCost || stock.Get(ResourceManager.Wood) < woodCost) return false;
+        foreach (ItemAmount cost in extraCosts) if (cost != null && cost.item != null && stock.Get(cost.Name) < cost.amount) return false;
+        return true;
+    }
+
+    // Takes the whole price from the stock (check CanAfford first)
+    public void Pay(ResourceManager stock)
+    {
+        stock.changeResourceAmount(ResourceManager.Gold, -goldCost);
+        stock.changeResourceAmount(ResourceManager.Wood, -woodCost);
+        foreach (ItemAmount cost in extraCosts) if (cost != null && cost.item != null && cost.amount > 0f) stock.changeResourceAmount(cost.Name, -cost.amount);
+    }
+
+    // "10 gold, 10 wood, 20 Stone" (what is free is left out; "free" if nothing)
+    public string CostText()
+    {
+        List<string> parts = new List<string>();
+        if (goldCost > 0) parts.Add($"{goldCost} gold");
+        if (woodCost > 0) parts.Add($"{woodCost} wood");
+        foreach (ItemAmount cost in extraCosts) if (cost != null && cost.item != null && cost.amount > 0f) parts.Add($"{cost.amount:0.##} {cost.Name}");
+        return parts.Count > 0 ? string.Join(", ", parts) : "free";
+    }
 }

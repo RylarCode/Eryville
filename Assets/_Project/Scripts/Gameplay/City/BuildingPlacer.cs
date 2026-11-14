@@ -273,9 +273,10 @@ public class BuildingPlacer : MonoBehaviour, IPlacementMode
         }
 
         // 2. Check Cost
-        if (buildingToPlace.goldCost > ResourceManager.Instance.resources["Gold"].currentAmount || buildingToPlace.woodCost > ResourceManager.Instance.resources["Wood"].currentAmount)
+        if (!buildingToPlace.CanAfford(ResourceManager.Instance))
         {
-            Debug.Log($"Cannot afford {buildingToPlace.buildingName}. Cost: {buildingToPlace.goldCost}G, {buildingToPlace.woodCost}W");
+            Debug.Log($"Cannot afford {buildingToPlace.buildingName}. Cost: {buildingToPlace.CostText()}");
+            Notify.Show($"Not enough for {buildingToPlace.buildingName}: it costs {buildingToPlace.CostText()}", NotifyKind.Warning, null, null, "cannot-afford", 3f);
             return; // Exit placement
         }
 
@@ -284,8 +285,7 @@ public class BuildingPlacer : MonoBehaviour, IPlacementMode
         if (newBuilding == null) return;
 
         // 4. Pay for it, now that it exists
-        ResourceManager.Instance.changeResourceAmount("Gold", -buildingToPlace.goldCost);
-        ResourceManager.Instance.changeResourceAmount("Wood", -buildingToPlace.woodCost);
+        buildingToPlace.Pay(ResourceManager.Instance);
 
         // 5. Deselect building after placement (optional, maybe allow multi-place)
         buildingToPlace = null;

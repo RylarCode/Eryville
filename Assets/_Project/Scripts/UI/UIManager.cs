@@ -516,7 +516,7 @@ public class UIManager : MonoBehaviour
     {
         foreach (BuildingType building in BuildingPlacer.Instance.AllBuildings)
         {
-            GameObject buttonGO = MenuPanels.MakeCard(buttonPrefab, buildingButtonContainer, $"{building.buildingName}Button", building.sprite, building.buildingName);
+            GameObject buttonGO = MenuPanels.MakeCard(buttonPrefab, buildingButtonContainer, $"{building.buildingName}Button", building.sprite, BuildCardText(building));
             Button button = buttonGO.GetComponent<Button>();
             buildingCards.Add(new BuildingCard { type = building, card = buttonGO, button = button, label = buttonGO.GetComponentInChildren<TMP_Text>() });
 
@@ -544,6 +544,12 @@ public class UIManager : MonoBehaviour
     }
     private readonly List<BuildingCard> buildingCards = new List<BuildingCard>();
 
+    // The card's caption: the name, and under it the price when it costs something beyond gold and wood (those two have always been taken for granted)
+    public static string BuildCardText(BuildingType type)
+    {
+        return type.extraCosts != null && type.extraCosts.Exists(c => c != null && c.item != null && c.amount > 0f) ? $"{type.buildingName}\n({type.CostText()})" : type.buildingName;
+    }
+
     private void RefreshBuildingCards()
     {
         StoryManager story = StoryManager.Instance;
@@ -553,7 +559,7 @@ public class UIManager : MonoBehaviour
             bool unlocked = story == null || story.IsUnlocked(entry.type);
             entry.card.SetActive(unlocked || !entry.type.hideWhileLocked);
             if (entry.button != null) entry.button.interactable = unlocked;
-            if (entry.label != null) entry.label.text = unlocked ? entry.type.buildingName : $"{entry.type.buildingName}\n({story.UnlockHint(entry.type)})";
+            if (entry.label != null) entry.label.text = unlocked ? BuildCardText(entry.type) : $"{entry.type.buildingName}\n({story.UnlockHint(entry.type)})";
         }
     }
 

@@ -8,7 +8,16 @@ The **Map** is the ground the town is built on: a grid of cells (today 57 x 29).
 
 **Step 2: seeing and choosing.** Tap a region you can see to open its **Region panel** (name, terrain, what it is, size, and for land you can clear: cost, characters, time, what it gives). Locked land is dotted with **decorations** (trees, rocks, rubble), and a special region can have **its own picture**.
 
-**Step 3 (this): clearing.** The Region panel has a **Clear** button: it takes the gold at once and starts a job; you then put characters on it from the jobs list, and while they are at work the region is cleared over time (also while the game is closed). **Not built yet:** Stone as a proper item, story and quest hooks, the editor tools. See "Planned" at the end.
+**Step 3 (this): clearing.** The Region panel has a **Clear** button: it takes the gold at once and starts a job; you then put characters on it from the jobs list, and while they are at work the region is cleared over time (also while the game is closed).
+
+**Step 4 (this): Stone.** Stone is a real item now: it comes from clearing (North Rocks 60, Mountain 500), shows in the resource bar and the Stock tab, is stored up to 1000, and buildings can cost it. **Not built yet:** story and quest hooks, the editor tools. See "Planned" at the end.
+
+## Stone
+
+- **The item**: `Resources/Items/Stone.asset` (a Material, grey placeholder square until you draw an icon, stock limit **1000**; storage buildings can add to it with a Storage Bonus like for wheat). Nothing makes it yet except clearing; a quarry later.
+- **Building costs**: a building type has **Extra Costs** (item and amount) besides Gold Cost and Wood Cost, so Stone, and any item added later, can be a price without code. The Granary costs 20 Stone as the example. Building, the Build menu card (it shows the price under the name when there is an extra cost), "not enough" toast and Eryville > Check Buildings all use it. Moving buildings and roads still cost only gold and wood.
+- **Cheats**: "+200 stone" (and "+100 of every item" includes it).
+- A building with a Stone price can only be built after something gives Stone, so keep Stone off the first buildings (the Tavern, which brings characters, must not need it: clearing needs characters).
 
 ## Clearing a region
 
@@ -97,7 +106,7 @@ The shipped image and nine sample regions (all placeholders: names, costs and la
 
 2. ~~Seeing and choosing~~ (built; the Clear button comes with step 3).
 3. ~~Clearing~~ (built).
-4. **Stone**: the new material, building costs that use it.
+4. ~~Stone~~ (built).
 5. **Story and quests**: conditions such as "region X cleared" and "N regions cleared", and effects that clear a region.
 6. **Tools**: Eryville > New Region and Check Regions.
 

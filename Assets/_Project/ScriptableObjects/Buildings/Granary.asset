@@ -17,6 +17,9 @@ MonoBehaviour:
   sprite: {fileID: 3345032760514067189, guid: 5668c60d880770a47bc493a8b3fed4ee, type: 3}
   goldCost: 50
   woodCost: 60
+  extraCosts:
+  - item: {fileID: 11400000, guid: 61ae82c9166b4a778c17c10467418083, type: 2}
+    amount: 20
   size: {x: 2, y: 2}
   buildingPrefab: {fileID: 8735228474764763001, guid: 4e17966a91236304b84b7d83934a3934, type: 3}
   storageBonus:

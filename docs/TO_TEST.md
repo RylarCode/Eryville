@@ -126,8 +126,18 @@ Give yourself gold first (Cheats > "+1000 gold") and have a character or two (Ch
 - [ ] Take someone off a half-done region (Assign list, pick another job): first the list shows "... is N% through clearing ... Moving them keeps the progress but the gold is not refunded. Pick a job again to confirm."; picking again moves them, and the region keeps its progress. With 0% it moves at once.
 - [ ] Save, quit, reopen: the region is still being cleared at the same progress, with the same characters on it.
 - [ ] Time away (real-time clock): leave a job running over a work period, tab out for a few minutes or use Cheats > "Pretend the game was closed for 3 hours": the progress moved, or the region finished with its toast.
-- [ ] Stone shows in the stock after clearing (it has no icon, no capacity and no use yet: step 4).
+- [ ] Stone shows in the stock after clearing (see 8e).
 - [ ] Phone layout: the Clear row and the jobs-list rows fit and read well.
+
+## 8e. Stone (Map step 4)
+
+- [ ] After clearing North Rocks: **Stone: 60/1000** in the resource bar (it appears once you have some), and a **Stone** row in Town > Stock with a grey square for an icon.
+- [ ] The **Granary** card in the Build menu shows its price under the name: "(50 gold, 60 wood, 20 Stone)". Cards of other buildings still show only the name. Check it fits on the card, also on a phone layout.
+- [ ] With less than 20 Stone, placing a Granary is refused with a toast "Not enough for Granary: it costs 50 gold, 60 wood, 20 Stone"; with enough, all three are taken.
+- [ ] Cheats > **+200 stone** works; the limit stops at 1000.
+- [ ] Eryville > Check Buildings reports nothing for the samples.
+- [ ] Is 20 Stone for the Granary the right size (a North Rocks clear gives 60)? Tell Claude what other buildings should cost Stone. Avoid the Tavern (it brings characters, and clearing needs them).
+- [ ] Re-save check: the Stone item and the Granary asset were written by hand (the Granary's new Extra Costs line points at Stone); open the Granary in the inspector and see Extra Costs: Stone 20.
 
 ## 9. Older, never confirmed
 

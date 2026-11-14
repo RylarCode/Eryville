@@ -6,7 +6,7 @@ Short version: **Eryville > New Building...**, name it, pick a similar building 
 
 | Piece | What it is | Where it lives |
 |---|---|---|
-| **Building type** | name, size on the ground, costs, workers, housing, output, art settings | `ScriptableObjects/Buildings/<Name>/<Name>.asset` |
+| **Building type** | name, size on the ground, costs (gold, wood, and Extra Costs such as Stone), workers, housing, output, art settings | `ScriptableObjects/Buildings/<Name>/<Name>.asset` |
 | **Animation set** | closed / open / opening / closing frames | `.../<Name>/<Name> Animations.asset` |
 | **Recipes** | what it makes and uses (see `PRODUCTION.md`); empty = the old gold / wood per second fields | the type's *Recipes* |
 | **Prefab** | the object placed in the world (Building, SpriteRenderer, BoxCollider2D + behaviour scripts such as ResourceProducer, Housing, Tavern) | `Prefabs/Buildings/<Name>.prefab` |
