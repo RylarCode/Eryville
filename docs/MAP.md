@@ -4,7 +4,24 @@ The **Map** is the ground the town is built on: a grid of cells (today 57 x 29).
 
 ## What is built so far
 
-**Step 1 (this): regions and the rules.** The image and assets, which land is usable, the fog, saving, and cheats to try it. **Not built yet:** clicking a region, paying to clear it, characters clearing it over time, Stone, story and quest hooks, decorations (the fog and tint are plain colours for now). See "Planned" at the end.
+**Step 1: regions and the rules.** The image and assets, which land is usable, the fog, saving, and cheats to try it.
+
+**Step 2 (this): seeing and choosing.** Tap a region you can see to open its **Region panel** (name, terrain, what it is, size, and for land you can clear: cost, characters, time, what it gives). Locked land is dotted with **decorations** (trees, rocks, rubble), and a special region can have **its own picture**. **Not built yet:** the Clear button itself (the panel's last row says "coming in the next update"), characters clearing over time, Stone, story and quest hooks. See "Planned" at the end.
+
+## Tapping a region
+
+- Tap (or click) land that is **visible but not cleared** (the amber tint, or a river): the Region panel opens in the details' place. Tapping cleared land or fog does nothing. Tapping the ground again closes it; tapping another region opens that one.
+- A **drag** (moving the camera) is not a tap: it only counts when the finger comes up within about 20 pixels of where it went down.
+- The panel is not offered while placing a building or road, or while another menu is open.
+- For land you cannot reach yet there is nothing to tap (it is under fog).
+
+## Decorations
+
+- Every visible, uncleared region (except rivers) is dotted with small pictures of its terrain: **trees on a forest, boulders on rocks, rubble on debris** (a mountain and a quarry use boulders). Each cell has one with a chance (forest 60%, mountain 50%, rocks 40%, debris 35%) at a random spot in the cell, a random picture of the pool and a slightly random size. It is **the same every time**: the spots come from the cell's own position, so it does not change between visits or after loading. Clearing the region removes them.
+- **Until you draw some, simple placeholder shapes** drawn by the game stand in (a green tree, a grey boulder, planks).
+- **Your pictures**: make a **Region Decor Set** (Assets > Create > Scriptable Objects > Region Decor Set) in `Resources/Regions`. One pool per terrain: the sprites (draw them standing, the base at the bottom centre, see `docs/ART_GUIDE.md`), the density and the size range. A terrain without a pool keeps the placeholders. The game uses the first set it finds.
+- **A special region's own picture**: on the Region asset, **Picture** (shown while it is locked, instead of the scatter) and **Cleared Picture** (shown once cleared); both stand with their bottom centre at the bottom centre of the region, moved by **Picture Offset** (in cells).
+- Decorations are sorted by height like buildings, so a character walking behind a tree is hidden by it.
 
 ## How a region is drawn
 
@@ -55,7 +72,7 @@ The shipped image and nine sample regions (all placeholders: names, costs and la
 
 ## Planned (the next steps)
 
-2. **Seeing and choosing**: tap a region for its details (name, terrain, cost, time, what it needs) and a **Clear** button; random decorations (trees, rocks, debris from sprites you draw) on locked land, and your own picture for special regions.
+2. ~~Seeing and choosing~~ (built; the Clear button comes with step 3).
 3. **Clearing**: pay the gold, assign characters through the jobs list, progress over time (also while the game is closed), specialties and a preferred job make characters better at it, regions give their yields when done. Taking characters off a half-cleared region asks for a second confirmation; progress is kept, gold is not refunded.
 4. **Stone**: the new material, building costs that use it.
 5. **Story and quests**: conditions such as "region X cleared" and "N regions cleared", and effects that clear a region.
@@ -64,4 +81,5 @@ The shipped image and nine sample regions (all placeholders: names, costs and la
 ## How it works (for changing the code)
 
 - `Region` (asset), `RegionMap` (pure rules: cells, neighbours, cleared, revealed, usable, saving; tested exactly), `MapRegions` (finds the assets and image, keeps the state, draws the fog on a `RegionOverlay` tilemap, tells the Map).
+- `RegionDecor` (pure: where decorations go, `PlaceholderDecor` the stand-in pictures), `RegionDecorSet` (the asset with your pictures), `MapRegions` draws them on a `RegionDecor` object and answers "which region is under this point"; `RegionMenu` (UI) is the panel and `UIManager` decides what is a tap.
 - `MapGrid.IsUsable(cell)` is the one question everything asks: placing (`BuildingManager.CanPlace`), roads (`RoadManager.CanBuild`) and walking (`MapGrid.IsBlocked`, which paths use). Clearing a region bumps the Map's version, so saved paths start over.

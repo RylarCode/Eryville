@@ -52,6 +52,14 @@ public class Region : ScriptableObject
     [Tooltip("What clearing it gives, e.g. Wood 40 or Stone 25.")]
     public List<RegionYield> yields = new List<RegionYield>();
 
+    [Header("Pictures (optional)")]
+    [Tooltip("Your own picture for a special region (a mountain, a ruin): shown while it is locked, instead of the random trees / rocks / debris. Drawn standing, its bottom centre at the bottom centre of the region.")]
+    public Sprite picture;
+    [Tooltip("Shown in its place once cleared (empty: nothing).")]
+    public Sprite clearedPicture;
+    [Tooltip("Moves the picture from the bottom centre of the region, in cells.")]
+    public Vector2 pictureOffset;
+
     public string Id => !string.IsNullOrWhiteSpace(id) ? id.Trim() : name;
     public string DisplayName => !string.IsNullOrWhiteSpace(displayName) ? displayName.Trim() : Id;
 

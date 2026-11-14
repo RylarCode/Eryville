@@ -31,6 +31,8 @@ public static partial class Suites
         ("Map regions: the rules", MapTests.Rules),
         ("Map regions: the shipped sample", MapTests.SampleContent),
         ("Map regions in the game", MapTests.InTheGame),
+        ("Map regions: decorations", MapTests.SeeingTheMap),
+        ("Map regions: tapping one", MapTests.TappingARegion),
         ("Saving the Map", MapTests.SavingTheMap),
         ("Project files", ProjectFileTests.Run),
     };

@@ -113,7 +113,7 @@ Shown while placing buildings: a **32 x 32 px** tile with a thin line, **Point**
 ### Regions (the Map's hand-drawn parts, `docs/MAP.md`)
 - **The region image** is a **57 x 29 px** picture (one pixel per cell) where each region is a flat, exact colour; transparent = the Map's border. It is a *layout diagram*, not art: the details are in `docs/MAP.md`. Draw it with antialiasing **off**.
 - **Fog** covers locked land. It is plain dark colour today. If you want fog art later: a **dark, nearly opaque, seamless one-cell tile** (clouds or mist) so the land underneath is not visible at all.
-- **Decorations on locked land** (coming with the Map's next step): a pool of small pictures for each wild terrain, scattered at random and removed when the region is cleared:
+- **Decorations on locked land** (built: until you draw some, simple shapes stand in; see `docs/MAP.md` for hooking yours up with a Region Decor Set): a pool of small pictures for each wild terrain, scattered at random and removed when the region is cleared:
 
 | Terrain | Pictures to draw | Size |
 |---|---|---|
@@ -164,7 +164,7 @@ Most of the interface is drawn by the game in plain colours (menus, toasts, the 
 | 2 | Buildings (top-down, or 3/4 with the base on the footprint) | 12 | 3 placeholders (Home, Gold Mine, Lumberyard), the rest plain |
 | 3 | Grass tile, dirt road tile | 2 (plus variants) | Placeholders |
 | 4 | Item icons | 11 | Plain coloured squares |
-| 5 | Region decorations (trees, rocks, debris) | about 20 | Not started (Map step 2) |
+| 5 | Region decorations (trees, rocks, debris) | about 20 | Placeholder shapes drawn by code; ready for your pictures |
 | 6 | Special region pictures (mountain...) | as needed | Not started |
 | 7 | Building animations (closed / open) | optional, per building | None yet |
 | 8 | Character animations beyond walking | optional | None yet |

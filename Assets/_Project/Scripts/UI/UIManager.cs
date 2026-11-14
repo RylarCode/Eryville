@@ -56,6 +56,9 @@ public class UIManager : MonoBehaviour
     private float nextConnectionRefresh;
     // The Quests menu and its button (which says when something is waiting)
     private QuestMenu questMenu;
+    private RegionMenu regionMenu;
+    private Vector2? regionTapStart; // where a press began that may turn out to be a tap on a region
+    private float nextRegionRefresh;
     private float nextQuestRefresh;
     private TMP_Text questButtonLabel;
     private string shownQuestLabel;
@@ -123,7 +126,11 @@ public class UIManager : MonoBehaviour
     void Start()
     {
         // Clicking empty ground closes the details panel
-        if (InputManager.Instance != null) InputManager.Instance.OnPointerClick += HandleWorldClick;
+        if (InputManager.Instance != null)
+        {
+            InputManager.Instance.OnPointerClick += HandleWorldClick;
+            InputManager.Instance.OnPointerReleased += HandleWorldRelease;
+        }
 
         if (assignJobButton == null)
         {
@@ -150,6 +157,7 @@ public class UIManager : MonoBehaviour
         storyMenu = new StoryMenu(this, buttonPrefab, characterPanel, assignPanel);
         CreateMenuButton("OpenStoryButton", "Story", 3, ToggleStoryMenu);
         questMenu = new QuestMenu(this, buttonPrefab, characterPanel, assignPanel);
+        regionMenu = new RegionMenu(this, buttonPrefab, characterPanel, assignPanel);
         CreateMenuButton("OpenQuestButton", "Quests", 4, ToggleQuestMenu);
         connectionMenu = new ConnectionMenu(this, buttonPrefab, characterPanel, assignPanel);
         questButtonLabel = characterPanel.transform.parent.Find("OpenQuestButton")?.GetComponentInChildren<TMP_Text>();
@@ -184,7 +192,7 @@ public class UIManager : MonoBehaviour
     // The screen changed between portrait and landscape: menus and cards were sized for the old shape, so make them again
     private void RebuildForNewLayout()
     {
-        if (openPanel != null && (openPanel == town.Panel || openPanel == recruit.Panel || openPanel == storyMenu.Panel || openPanel == questMenu.Panel || openPanel == notificationMenu.Panel || openPanel == connectionMenu.Panel)) TogglePanel(openPanel);
+        if (openPanel != null && (openPanel == town.Panel || openPanel == recruit.Panel || openPanel == storyMenu.Panel || openPanel == questMenu.Panel || openPanel == notificationMenu.Panel || openPanel == connectionMenu.Panel || openPanel == regionMenu.Panel)) TogglePanel(openPanel);
         if (cheats != null && openPanel == cheats.Panel) TogglePanel(openPanel);
         recruit.Dispose();
         reveal.Destroy();
@@ -194,7 +202,7 @@ public class UIManager : MonoBehaviour
             Destroy(dialogue.gameObject);
             dialogue = DialogueBox.Create(characterPanel.transform.parent, buttonPrefab);
         }
-        List<GameObject> oldPanels = new List<GameObject> { town.Panel, recruit.Panel, storyMenu.Panel, questMenu.Panel, notificationMenu.Panel, connectionMenu.Panel };
+        List<GameObject> oldPanels = new List<GameObject> { town.Panel, recruit.Panel, storyMenu.Panel, questMenu.Panel, notificationMenu.Panel, connectionMenu.Panel, regionMenu.Panel };
         if (cheats != null) oldPanels.Add(cheats.Panel);
         foreach (GameObject old in oldPanels)
         {
@@ -206,6 +214,7 @@ public class UIManager : MonoBehaviour
         recruit = new RecruitMenu(this, buttonPrefab, characterPanel, assignPanel);
         storyMenu = new StoryMenu(this, buttonPrefab, characterPanel, assignPanel);
         questMenu = new QuestMenu(this, buttonPrefab, characterPanel, assignPanel);
+        regionMenu = new RegionMenu(this, buttonPrefab, characterPanel, assignPanel);
         connectionMenu = new ConnectionMenu(this, buttonPrefab, characterPanel, assignPanel);
         notificationMenu = new NotificationMenu(this, buttonPrefab, characterPanel, assignPanel);
         if (cheats != null) cheats = new CheatMenu(this, buttonPrefab, characterPanel, assignPanel);
@@ -280,7 +289,7 @@ public class UIManager : MonoBehaviour
 
     private void OnDestroy()
     {
-        if (InputManager.Instance != null) InputManager.Instance.OnPointerClick -= HandleWorldClick;
+        if (InputManager.Instance != null) { InputManager.Instance.OnPointerClick -= HandleWorldClick; InputManager.Instance.OnPointerReleased -= HandleWorldRelease; }
         if (BuildingPlacer.Instance != null) BuildingPlacer.Instance.MovingEnded -= OnMovingEnded;
         if (CharacterManager.Instance != null) CharacterManager.Instance.RosterChanged -= RefreshHireButtons;
         recruit?.Dispose();
@@ -332,6 +341,11 @@ public class UIManager : MonoBehaviour
             questMenu.Refresh();
         }
         UpdateQuestButton();
+        if (regionMenu != null && regionMenu.Panel.activeInHierarchy && Time.unscaledTime >= nextRegionRefresh)
+        {
+            nextRegionRefresh = Time.unscaledTime + BuildingRefreshInterval;
+            regionMenu.Refresh();
+        }
         if (connectionMenu != null && connectionMenu.Panel.activeInHierarchy && Time.unscaledTime >= nextConnectionRefresh)
         {
             nextConnectionRefresh = Time.unscaledTime + BuildingRefreshInterval;
@@ -374,6 +388,34 @@ public class UIManager : MonoBehaviour
     private void HandleWorldClick(Vector2 screenPosition)
     {
         if (CharacterPanelsOpen) CloseCharacterPanels();
+        if (regionMenu != null && regionMenu.Panel.activeInHierarchy) TogglePanel(regionMenu.Panel); // tapping the ground closes it (a tap on another region opens that one when the finger comes up)
+        regionTapStart = screenPosition; // a tap on a region is decided when the finger comes up (a drag moves the camera instead)
+    }
+
+    private const float TapSlopPixels = 20f;
+
+    private void HandleWorldRelease(Vector2 screenPosition)
+    {
+        if (regionTapStart == null) return;
+        Vector2 start = regionTapStart.Value;
+        regionTapStart = null;
+        if ((screenPosition - start).magnitude > TapSlopPixels) return;
+        if (GameManager.Instance != null && GameManager.Instance.currentGameState == GameManager.gameState.Menu && openPanel != regionMenu?.Panel) return; // another menu is open
+        foreach (IPlacementMode mode in InputManager.PlacementModes) if (mode.IsPlacing) return;
+        MapRegions regions = MapRegions.Existing;
+        Camera cam = Camera.main;
+        if (regions == null || cam == null || regionMenu == null) return;
+        Region tapped = regions.RegionAtWorld(cam.ScreenToWorldPoint(new Vector3(start.x, start.y, cam.nearClipPlane + 10)));
+        if (tapped == null || regions.Map.IsCleared(tapped) || !regions.CanLookAt(tapped)) return;
+        OpenRegion(tapped);
+    }
+
+    // Opens the Region panel for a region (tapping it on the Map, or a notification about it)
+    public void OpenRegion(Region region)
+    {
+        if (regionMenu == null || region == null) return;
+        if (!regionMenu.Panel.activeInHierarchy) TogglePanel(regionMenu.Panel);
+        regionMenu.Show(region);
     }
 
     // Closes the details panel together with the list panel beside it

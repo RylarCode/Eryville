@@ -76,7 +76,7 @@ Created at runtime (nothing to add to the scene):
 
 **Notifications/** - messages to the player: `Notify.Show(...)` from anywhere (`docs/NOTIFICATIONS.md`); its screens are `UI/ToastView.cs`, `UI/ToastItem.cs` and `UI/NotificationMenu.cs`
 
-**Gameplay/Map/** - the Map's hand-drawn regions: which land is cleared and usable, and the fog (`docs/MAP.md`); the rules are in `RegionMap`, the game side in `MapRegions`, the Map itself in `Gameplay/City/MapGrid.cs`
+**Gameplay/Map/** - the Map's hand-drawn regions: which land is cleared and usable, and the fog (`docs/MAP.md`); the rules are in `RegionMap`, the game side in `MapRegions` (also the decorations: `RegionDecor`, `RegionDecorSet`; the Region panel is `UI/RegionMenu.cs`), the Map itself in `Gameplay/City/MapGrid.cs`
 
 **Connection/** - character stories: a character's chapters and quests unlocked by loyalty and the story, and the bonuses they give (`docs/CONNECTION.md`); loyalty rules are in `Gameplay/Characters/LoyaltyRules.cs`; its screen is `UI/ConnectionMenu.cs`
 

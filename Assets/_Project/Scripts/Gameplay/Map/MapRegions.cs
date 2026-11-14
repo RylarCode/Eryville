@@ -28,6 +28,9 @@ public class MapRegions : MonoBehaviour
     private MapGrid mapGrid;
     private Tilemap overlay;
     private Tile fogTile, clearableTile, riverTile;
+    private RegionDecorSet decorSet;
+    private Transform decorRoot;
+    private int decorCount;
 
     // Whether the Map has regions at all
     public bool HasRegions => Map != null && Map.Regions.Count > 0;
@@ -77,6 +80,8 @@ public class MapRegions : MonoBehaviour
     {
         Region[] regions = Resources.LoadAll<Region>(AssetsFolder);
         Texture2D image = Resources.Load<Texture2D>(ImageName);
+        RegionDecorSet[] sets = Resources.LoadAll<RegionDecorSet>(AssetsFolder);
+        decorSet = sets.Length > 0 ? sets[0] : null;
         if (image == null || regions.Length == 0) return;
 
         Color32[] pixels;
@@ -109,6 +114,7 @@ public class MapRegions : MonoBehaviour
     {
         if (mapGrid != null) mapGrid.RegionsChanged();
         RebuildOverlay();
+        RebuildDecor();
         Changed?.Invoke();
     }
 
@@ -160,6 +166,95 @@ public class MapRegions : MonoBehaviour
                 TileBase tile = OverlayTileAt(new Vector2Int(x, y));
                 if (tile != null) overlay.SetTile(new Vector3Int(x, y, 0), tile);
             }
+    }
+
+    // --- Trees, rocks and rubble ---
+
+    // How many decorations are standing now (for tests and the Check tools)
+    public int DecorCount => decorCount;
+
+    // Redraws every decoration: on each visible, uncleared region its picture or a scatter of its terrain's pictures; on a cleared one its
+    // "cleared" picture. Clearing is rare, so everything is simply rebuilt.
+    private void RebuildDecor()
+    {
+        if (decorRoot != null)
+        {
+            decorRoot.gameObject.SetActive(false);
+            Destroy(decorRoot.gameObject);
+            decorRoot = null;
+        }
+        decorCount = 0;
+        if (!Active || mapGrid == null) return;
+        GameObject root = new GameObject("RegionDecor");
+        if (mapGrid.Grid != null) root.transform.SetParent(mapGrid.Grid.transform);
+        decorRoot = root.transform;
+
+        foreach (Region region in Map.Regions)
+        {
+            if (Map.IsCleared(region))
+            {
+                if (region.clearedPicture != null) AddPicture(region, region.clearedPicture);
+            }
+            else if (RegionDecor.ShowsDecor(Map, region))
+            {
+                if (region.picture != null) AddPicture(region, region.picture);
+                else Scatter(region);
+            }
+        }
+    }
+
+    private void Scatter(Region region)
+    {
+        RegionDecorSet.Pool pool = decorSet != null ? decorSet.PoolFor(region.terrain) : null;
+        List<Sprite> sprites = pool != null ? pool.sprites.FindAll(sprite => sprite != null) : new List<Sprite>(PlaceholderDecor.For(region.terrain));
+        float density = pool != null ? pool.density : RegionDecor.DefaultDensity(region.terrain);
+        Vector2 scales = pool != null ? pool.scaleRange : new Vector2(0.85f, 1.15f);
+        foreach (DecorSpot spot in RegionDecor.Plan(Map, region, sprites.Count, density, scales))
+        {
+            Vector3 corner = mapGrid.CellCenterToWorld(spot.cell) - new Vector3(0.5f, 0.5f, 0f);
+            AddSprite(sprites[spot.variant], corner + new Vector3(spot.offset.x, spot.offset.y, 0f), spot.scale);
+        }
+    }
+
+    // A special region's own picture: standing at the bottom centre of the region's cells
+    private void AddPicture(Region region, Sprite sprite)
+    {
+        IReadOnlyList<Vector2Int> cells = Map.CellsOf(region);
+        if (cells.Count == 0) return;
+        int minX = int.MaxValue, maxX = int.MinValue, minY = int.MaxValue;
+        foreach (Vector2Int cell in cells) { minX = Mathf.Min(minX, cell.x); maxX = Mathf.Max(maxX, cell.x); minY = Mathf.Min(minY, cell.y); }
+        Vector3 bottomCentre = mapGrid.CellCenterToWorld(new Vector2Int(minX, minY)) + new Vector3((maxX - minX) * 0.5f, -0.5f, 0f);
+        AddSprite(sprite, bottomCentre + new Vector3(region.pictureOffset.x, region.pictureOffset.y, 0f), 1f);
+    }
+
+    private void AddSprite(Sprite sprite, Vector3 position, float scale)
+    {
+        GameObject go = new GameObject("Decor", typeof(SpriteRenderer));
+        go.transform.SetParent(decorRoot);
+        go.transform.position = position;
+        go.transform.localScale = new Vector3(scale, scale, 1f);
+        SpriteRenderer renderer = go.GetComponent<SpriteRenderer>();
+        renderer.sprite = sprite;
+        renderer.sortingOrder = DepthSorting.Order(position.y); // in front of what is further up the Map, behind what is lower
+        decorCount++;
+    }
+
+    // --- Looking up what is under a tap ---
+
+    public Region RegionAtCell(Vector2Int cell)
+    {
+        return Active ? Map.RegionAt(cell) : null;
+    }
+
+    public Region RegionAtWorld(Vector3 world)
+    {
+        return mapGrid != null ? RegionAtCell(mapGrid.WorldToCell(world)) : null;
+    }
+
+    // Whether the player may look at a region (it is visible: cleared or next to cleared land)
+    public bool CanLookAt(Region region)
+    {
+        return Active && region != null && Map.IsRevealed(region);
     }
 
     // --- For the rest of the game ---

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using TMPro;
 using UnityEngine.Tilemaps;
 
 // The Map's regions: the rules (pure), and the game with the project's own sample map
@@ -136,6 +137,124 @@ public static class MapTests
         T.Check(!mr.Active && t.map.IsUsable(new Vector2Int(20, -10)) && overlay.GetTile(new Vector3Int(20, -10, 0)) == null, "switched off: all land usable, no fog");
         mr.Enabled = true;
         T.Check(mr.Active && !t.map.IsUsable(new Vector2Int(20, -10)) && overlay.GetTile(new Vector3Int(20, -10, 0)) != null, "switched on again");
+    }
+
+    public static void SeeingTheMap()
+    {
+        T.Section("scatter rules (pure)");
+        Region forest0 = R("f", 10, 0, 0, RegionTerrain.Forest, start: true);
+        var key = new Dictionary<char, Region> { ['F'] = forest0 };
+        string[] rows = new string[10]; for (int i = 0; i < rows.Length; i++) rows[i] = "FFFFFFFFFF";
+        RegionMap map = Build(rows, key);
+        var a = RegionDecor.Plan(map, forest0, 3, 0.5f, new Vector2(0.8f, 1.2f));
+        var b = RegionDecor.Plan(map, forest0, 3, 0.5f, new Vector2(0.8f, 1.2f));
+        T.Check(a.Count > 25 && a.Count < 75 && a.Count == b.Count && a.Select(x => x.cell).SequenceEqual(b.Select(x => x.cell)) && a.Select(x => x.offset).SequenceEqual(b.Select(x => x.offset)), "about half the cells get one (" + a.Count + " of 100), and the same ones every time");
+        T.Check(a.All(x => x.variant >= 0 && x.variant < 3 && x.offset.x >= 0.15f && x.offset.x <= 0.85f && x.offset.y >= 0.1f && x.offset.y <= 0.9f && x.scale >= 0.8f && x.scale <= 1.2f), "variants, positions inside the cell and sizes are in range");
+        T.Check(a.Select(x => x.variant).Distinct().Count() == 3 && a.Select(x => x.offset.x).Distinct().Count() > 20, "the picks vary");
+        T.Check(RegionDecor.Plan(map, forest0, 3, 0f, Vector2.one).Count == 0 && RegionDecor.Plan(map, forest0, 3, 1f, Vector2.one).Count == 100 && RegionDecor.Plan(map, forest0, 0, 1f, Vector2.one).Count == 0, "density 0 none, 1 every cell, no pictures none");
+        T.Check(RegionDecor.DefaultDensity(RegionTerrain.River) == 0f && RegionDecor.DefaultDensity(RegionTerrain.Forest) > RegionDecor.DefaultDensity(RegionTerrain.Debris), "rivers stay bare; forests are denser than debris");
+
+        T.Section("decorations in the game");
+        Town t = Town.Build();
+        List<Region> regions = t.UseSampleMap();
+        MapRegions mr = MapRegions.Existing;
+        Region west = regions.First(r => r.id == "west-forest"), rocks = regions.First(r => r.id == "north-rocks"), river = regions.First(r => r.id == "river"), meadow = regions.First(r => r.id == "east-meadow"), mountain = regions.First(r => r.id == "mountain");
+        Transform decor = t.grid.transform.Find("RegionDecor");
+        int Count() { World.EndFrame(); return mr.DecorCount; }
+        int before = Count();
+        T.Check(before > 0 && decor != null, "the regions next to the Town Square have decorations (" + before + ")");
+        int expected = new[] { west, rocks, regions.First(r => r.id == "south-debris"), meadow }.Sum(r => RegionDecor.Plan(mr.Map, r, PlaceholderDecor.Variants, RegionDecor.DefaultDensity(r.terrain), new Vector2(0.85f, 1.15f)).Count);
+        T.Check(before == expected, "exactly the planned ones: " + before + " = " + expected);
+        T.Check(decor.GetComponentsInChildren<SpriteRenderer>().All(r => r.sprite != null && r.sortingOrder == DepthSorting.Order(r.transform.position.y)), "each is a sprite sorted by its height on the Map");
+        var inForest = decor.GetComponentsInChildren<SpriteRenderer>().Where(r => mr.Map.RegionAt(t.map.WorldToCell(r.transform.position)) == west).ToList();
+        T.Check(inForest.Count == RegionDecor.Plan(mr.Map, west, 3, 0.6f, new Vector2(0.85f, 1.15f)).Count && inForest.Count > 30, "the West Forest has its own trees (" + inForest.Count + ")");
+        T.Check(!decor.GetComponentsInChildren<SpriteRenderer>().Any(r => { Region at = mr.Map.RegionAt(t.map.WorldToCell(r.transform.position)); return at == null || at.id == "town-square" || at == mountain; }), "none on cleared land, hidden land or the border");
+
+        mr.Map.Clear(west);
+        T.Check(Count() < before && !t.grid.transform.Find("RegionDecor").GetComponentsInChildren<SpriteRenderer>().Any(r => mr.Map.RegionAt(t.map.WorldToCell(r.transform.position)) == west), "clearing a region removes its decorations (" + mr.DecorCount + ")");
+        int afterWest = mr.DecorCount;
+        mr.Map.Clear(meadow);
+        T.Check(mr.Map.IsRevealed(river) && mr.DecorCount <= afterWest + RegionDecor.Plan(mr.Map, mountain, 3, 0.5f, Vector2.one).Count, "a revealed river is left bare");
+        mr.Enabled = false;
+        T.Check(Count() == 0, "switched off: no decorations");
+        mr.Enabled = true;
+        T.Check(Count() > 0, "...and back on");
+
+        T.Section("a region's own picture");
+        Sprite art = new Sprite(256, 256);
+        mountain.picture = art; mountain.pictureOffset = new Vector2(0f, 1f);
+        Region pass = regions.First(r => r.id == "pass");
+        mr.Map.Clear(pass);
+        World.EndFrame(); Transform decor2 = t.grid.transform.Find("RegionDecor");
+        var pictures = decor2.GetComponentsInChildren<SpriteRenderer>().Where(r => r.sprite == art).ToList();
+        T.Check(pictures.Count == 1, "a revealed region with a picture shows it once (instead of scattering)");
+        var cells = mr.Map.CellsOf(mountain);
+        float centreX = (cells.Min(c => c.x) + cells.Max(c => c.x) + 1) / 2f;
+        T.Check(pictures.Count == 1 && System.Math.Abs(pictures[0].transform.position.x - centreX) < 0.01f && pictures[0].transform.position.y > cells.Min(c => c.y), "standing at the bottom centre of the region, moved by its offset: " + pictures[0].transform.position);
+        T.Check(!decor2.GetComponentsInChildren<SpriteRenderer>().Any(r => r.sprite != art && mr.Map.RegionAt(t.map.WorldToCell(r.transform.position)) == mountain), "no scatter on it");
+        Sprite done = new Sprite(64, 64);
+        mountain.clearedPicture = done;
+        mr.Map.Clear(mountain);
+        World.EndFrame(); decor2 = t.grid.transform.Find("RegionDecor");
+        var after = decor2.GetComponentsInChildren<SpriteRenderer>().Where(r => r.sprite == done || r.sprite == art).Select(r => r.sprite).ToList();
+        T.Check(after.Count == 1 && after[0] == done, "once cleared it shows its cleared picture");
+        mountain.picture = null; mountain.clearedPicture = null;
+    }
+
+    public static void TappingARegion()
+    {
+        Town t = Town.Build();
+        List<Region> regions = t.UseSampleMap();
+        MapRegions mr = MapRegions.Existing;
+        Region rocks = regions.First(r => r.id == "north-rocks"), river = regions.First(r => r.id == "river"), meadow = regions.First(r => r.id == "east-meadow");
+        Vector3 inRocks = new Vector3(0.5f, 6.5f, 0), inTown = new Vector3(0.5f, 0.5f, 0), inFog = new Vector3(22.5f, -10.5f, 0), inRiver = new Vector3(15.5f, -10.5f, 0);
+        World.Tick(0.1f);
+        bool Open() { World.EndFrame(); return t.Panel("RegionPanel") != null && t.Panel("RegionPanel").gameObject.activeInHierarchy; }
+
+        T.Section("what a tap opens");
+        t.ClickWorld(inTown);
+        T.Check(!Open(), "tapping cleared land opens nothing");
+        t.ClickWorld(inFog);
+        T.Check(!Open(), "tapping fog opens nothing");
+        t.ClickWorld(inRocks);
+        T.Check(Open(), "tapping land you can clear opens the Region panel");
+        List<string> rows = t.PanelRows("RegionPanel");
+        T.Check(rows.Any(r => r.StartsWith("Rocks: next to cleared land, can be cleared")) && rows.Any(r => r.StartsWith("Cost: " + rocks.goldCost + " gold")) && rows.Any(r => r.StartsWith("Characters needed: " + rocks.charactersNeeded)) && rows.Any(r => r.StartsWith("Time: ")) && rows.Any(r => r.StartsWith("Size: ")), "it shows the terrain, cost, characters, time and size: " + string.Join(" | ", rows));
+        T.Check(t.Panel("RegionPanel").GetComponentInChildren<TMP_Text>().text == rocks.DisplayName, "titled with the region's name: " + t.Panel("RegionPanel").GetComponentInChildren<TMP_Text>().text);
+
+        T.Section("other cases");
+        mr.Map.Clear(meadow);
+        t.ClickWorld(inTown);
+        T.Check(!Open(), "tapping the ground closes the panel");
+        t.ClickWorld(inRiver);
+        T.Check(Open(), "tapping a revealed river opens the panel too");
+        rows = t.PanelRows("RegionPanel");
+        T.Check(rows[0].Contains("cannot be cleared") && !rows.Any(r => r.StartsWith("Cost")), "...saying it cannot be cleared, with no cost: " + rows[0]);
+
+        t.ClickWorld(inRocks);
+        T.Check(Open() && t.PanelRows("RegionPanel").Any(r => r.StartsWith("Cost")), "tapping another region opens that one");
+        t.ClickWorld(inTown);
+        mr.Enabled = false;
+        t.ClickWorld(inRocks);
+        T.Check(!Open(), "switched off: tapping land opens nothing");
+        mr.Enabled = true;
+
+        T.Section("a drag is not a tap");
+        UIManager.Instance.CloseEverything();
+        Vector3 screen = t.camera.WorldToScreenPoint(inRocks);
+        t.actions.Gameplay.PointerPosition.Perform(new Vector2(screen.x, screen.y));
+        t.actions.Gameplay.PointerClick.Perform();
+        World.Tick(0.016f);
+        t.actions.Gameplay.PointerPosition.Perform(new Vector2(screen.x + 120f, screen.y + 40f));
+        t.actions.Gameplay.PointerClick.Cancel();
+        T.Check(!Open(), "dragging the camera across a region opens nothing");
+
+        T.Section("the rows (pure)");
+        T.Check(RegionMenu.FormatTime(45) == "45 s" && RegionMenu.FormatTime(120) == "2 min" && RegionMenu.FormatTime(3600) == "1 h" && RegionMenu.FormatTime(7200 + 1800) == "2 h 30 min", "times read as seconds, minutes, hours");
+        var lines = RegionMenu.Describe(regions.First(r => r.id == "mountain"), mr, 12.9f);
+        T.Check(lines.Any(l => l.Contains("not reachable yet")) && !lines.Any(l => l.StartsWith("Cost")), "a region you cannot reach yet says so: " + string.Join(" | ", lines));
+        lines = RegionMenu.Describe(rocks, mr, 12.9f);
+        T.Check(lines.Any(l => l.Contains("you have 12")), "the gold you have is shown");
     }
 
     public static void SavingTheMap()

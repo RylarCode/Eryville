@@ -98,6 +98,20 @@ Before anything else: **land is now locked**, and clearing it is not built yet. 
 - [ ] The region image (`Resources/Regions/RegionMap.png`): in the inspector it is **Read/Write: on, Compression: None, Filter: Point**. (Unity sets this itself; tell Claude if it does not.)
 - [ ] Optional, to try your own layout: draw a 57 x 29 image in Krita (see `docs/MAP.md`), replace `RegionMap.png`, and give each colour a Region asset.
 
+## 8c. Seeing and choosing (Map step 2: tap a region, decorations)
+
+- [ ] Locked land next to the Town Square is dotted with **placeholder trees** (West Forest), **grey boulders** (North Rocks) and **planks** (South Debris). They look the same every time you start. The river shows none.
+- [ ] They are not at hard grid positions: spread over the cell at random, a little different in size. Characters walking behind one are hidden by it.
+- [ ] **Tap a tinted region** (e.g. North Rocks): the **Region panel** opens in the details' place: terrain and "next to cleared land, can be cleared", its description, size, Cost (with the gold you have), characters, time, what it gives, and a last row "Clear: coming in the next update".
+- [ ] Tapping cleared land or fog opens nothing. Tapping the ground with the panel open closes it; tapping another region opens that one. Escape closes it.
+- [ ] **Dragging** the camera across a region does not open the panel (only a tap; check with mouse and with touch).
+- [ ] Tapping a **river** (once the East Meadow is cleared): the panel says it cannot be cleared and shows no cost.
+- [ ] While placing a building or a road, tapping a region does nothing.
+- [ ] Phone layout: the panel fits and scrolls; the rows read well.
+- [ ] Cheats > Map > **Clear every region** removes all decorations; **Lock every region except the start** brings them back. Regions OFF removes them too.
+- [ ] Try your own picture: make a Region Decor Set in `Resources/Regions` (see `docs/MAP.md`), or give a Region a **Picture** (e.g. the Mountain once you can reach it); it stands at the bottom centre of the region.
+- [ ] Performance: no stutter with all the decorations (about 500 pictures); tell Claude if the frame rate drops.
+
 ## 9. Older, never confirmed
 
 Built earlier in this project; tick them if you have already seen them working.
