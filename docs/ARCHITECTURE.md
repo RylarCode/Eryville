@@ -159,6 +159,7 @@ Data assets (`Assets/_Project/ScriptableObjects`): Buildings (Gold Mine, Lumbery
 | Hunger and meal numbers, starter food | `Resources/FoodSettings` (`docs/FOOD.md`) |
 | A new item, recipe or production chain | assets only: `docs/PRODUCTION.md` |
 | The Map's regions and fog | the image and assets in `Resources/Regions`: `docs/MAP.md` |
+| What art to draw, sizes, style | `docs/ART_GUIDE.md` |
 | Character stories, loyalty rules | assets only, plus `Resources/LoyaltySettings`: `docs/CONNECTION.md` |
 | Quests (main, side, rewards) | assets only (`Resources/Quests`): `docs/QUESTS.md` |
 | Checking the code without Unity | `tools/headless/run.sh` (`tools/headless/README.md`) |
