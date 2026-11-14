@@ -6,7 +6,30 @@ The **Map** is the ground the town is built on: a grid of cells (today 57 x 29).
 
 **Step 1: regions and the rules.** The image and assets, which land is usable, the fog, saving, and cheats to try it.
 
-**Step 2 (this): seeing and choosing.** Tap a region you can see to open its **Region panel** (name, terrain, what it is, size, and for land you can clear: cost, characters, time, what it gives). Locked land is dotted with **decorations** (trees, rocks, rubble), and a special region can have **its own picture**. **Not built yet:** the Clear button itself (the panel's last row says "coming in the next update"), characters clearing over time, Stone, story and quest hooks. See "Planned" at the end.
+**Step 2: seeing and choosing.** Tap a region you can see to open its **Region panel** (name, terrain, what it is, size, and for land you can clear: cost, characters, time, what it gives). Locked land is dotted with **decorations** (trees, rocks, rubble), and a special region can have **its own picture**.
+
+**Step 3 (this): clearing.** The Region panel has a **Clear** button: it takes the gold at once and starts a job; you then put characters on it from the jobs list, and while they are at work the region is cleared over time (also while the game is closed). **Not built yet:** Stone as a proper item, story and quest hooks, the editor tools. See "Planned" at the end.
+
+## Clearing a region
+
+1. Tap a region you can clear (amber tint). If you have the gold, the panel has **Clear <region> for N gold**; press it. The gold is taken at once (it is **not refunded** if you stop). If you are short, the panel says how much is missing; if no free ground touches the region (everything beside it is built over), it says so.
+2. A job now exists ("Clearing: 0% done, 0 of 2 places filled"). Open a character, press **Assign**, and pick **Clear <region> (0/2) 0%** from the jobs list (the list now ends with the regions being cleared, after the buildings).
+3. In work hours the character's schedule sends them there like to any workplace: they walk to the edge of the region, go "inside" (out of sight) and work. At night they go home and the job stands still. The panel shows the progress and the time left.
+4. When it reaches 100% the region is **cleared** (fog, tint and decorations go), its **yields** are added to the stock, the characters are free again, and a toast says so.
+
+**How fast.** A region's **Clear Seconds** is how long it takes with **every place filled by an ordinary character** (productivity 1). Each character at work adds their productivity (hunger and Connection buffs count, like at a building) multiplied by their **Clearing specialty** (a Specialty on the character type with the tag **`Clearing`**, the same thing as being good at a recipe), and the total is shared over the characters the region needs. So half the places filled = half speed, and a character who is twice as good at clearing counts twice. (Nobody has the specialty yet; the planned Gold Digger could.)
+
+**While the game is closed** the job goes on the same way as production: for each stretch of the away time, every paid character on the job whose schedule says "work" at that real time of day does their share (at most a day counts). A job can finish while you are away and gives its yields; the toast is there when you return.
+
+**Taking a character off a half-cleared region.** Picking another job for them in the jobs list asks first: the list shows "Firsy is 12% through clearing North Rocks. Moving them keeps the progress but the gold is not refunded. Pick a job again to confirm." Picking again moves them. A region with no progress yet just moves them. The job keeps its progress and waits for new characters.
+
+**Other ways a region gets cleared** (a cheat, later the story) drop its job and free the characters (no yields).
+
+**The clearing site.** Each job is an invisible, one-cell workplace on the region's edge beside free cleared ground (the cell with the most free ground around it). It is not one of the town's buildings (not listed, saved or built), but characters treat it as any workplace, so the schedule, walking, "inside", wages and time away all work as they do for buildings. If you later build over all the ground beside it, the region can still be finished only once there is a way in again.
+
+**Cheats** (Cheats > Map): **Finish every region being cleared now**; "Lock every region" also drops jobs.
+
+**Saving** (save version 12): the jobs and their progress. The characters' jobs are saved like any other (the site's id is `clear:<region id>`). Older saves have no jobs.
 
 ## Tapping a region
 
@@ -60,7 +83,7 @@ The game finds both by their place (`Resources/Regions`): nothing to set up in t
 
 ## Saving
 
-The ids of the cleared regions are saved (save version 11). An older save starts with the Town Square cleared **plus whatever land its buildings and roads stand on**, so nothing already built is lost. A save that clears nothing known still starts with the Town Square.
+The ids of the cleared regions are saved (save version 11), and the regions being cleared with their progress (version 12). An older save starts with the Town Square cleared **plus whatever land its buildings and roads stand on**, so nothing already built is lost. A save that clears nothing known still starts with the Town Square.
 
 ## Trying it
 
@@ -73,7 +96,7 @@ The shipped image and nine sample regions (all placeholders: names, costs and la
 ## Planned (the next steps)
 
 2. ~~Seeing and choosing~~ (built; the Clear button comes with step 3).
-3. **Clearing**: pay the gold, assign characters through the jobs list, progress over time (also while the game is closed), specialties and a preferred job make characters better at it, regions give their yields when done. Taking characters off a half-cleared region asks for a second confirmation; progress is kept, gold is not refunded.
+3. ~~Clearing~~ (built).
 4. **Stone**: the new material, building costs that use it.
 5. **Story and quests**: conditions such as "region X cleared" and "N regions cleared", and effects that clear a region.
 6. **Tools**: Eryville > New Region and Check Regions.
@@ -81,5 +104,6 @@ The shipped image and nine sample regions (all placeholders: names, costs and la
 ## How it works (for changing the code)
 
 - `Region` (asset), `RegionMap` (pure rules: cells, neighbours, cleared, revealed, usable, saving; tested exactly), `MapRegions` (finds the assets and image, keeps the state, draws the fog on a `RegionOverlay` tilemap, tells the Map).
+- `ClearingManager` (jobs, progress, time away, saving; added to the Map's object by `MapRegions`): each job is a `ClearingJob` with a runtime `Building` as its site (not registered with `BuildingManager`; `Building.Id` is `clear:<region id>`), so `Character`, `PathService`, the jobs list and `OfflineProgress` need no special cases. The jobs list and the second-press question are in `UIManager.FillAssignList` / `ChooseJob`; the Clear button is in `RegionMenu`.
 - `RegionDecor` (pure: where decorations go, `PlaceholderDecor` the stand-in pictures), `RegionDecorSet` (the asset with your pictures), `MapRegions` draws them on a `RegionDecor` object and answers "which region is under this point"; `RegionMenu` (UI) is the panel and `UIManager` decides what is a tap.
 - `MapGrid.IsUsable(cell)` is the one question everything asks: placing (`BuildingManager.CanPlace`), roads (`RoadManager.CanBuild`) and walking (`MapGrid.IsBlocked`, which paths use). Clearing a region bumps the Map's version, so saved paths start over.

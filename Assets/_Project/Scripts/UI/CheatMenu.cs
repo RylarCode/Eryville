@@ -118,6 +118,7 @@ public class CheatMenu
         Section("Map");
         Info(Cheats.DescribeRegions);
         Add("Clear every region", Cheats.ClearAllRegions);
+        Add("Finish every region being cleared now", () => Cheats.FinishClearing());
         Add("Lock every region except the start", Cheats.ResetRegions, true);
         Add(() => MapRegions.Existing != null && MapRegions.Existing.Enabled ? "Regions: ON (tap to turn off: all land usable, no fog)" : "Regions: OFF (tap to turn on)", Cheats.ToggleRegions);
 

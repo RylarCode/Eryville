@@ -255,6 +255,7 @@ public static class OfflineProgress
     public static Report Apply(float awaySeconds)
     {
         Report report = Compute(BuildingManager.Instance.Buildings, awaySeconds);
+        if (ClearingManager.Instance != null) ClearingManager.Instance.AdvanceAway(awaySeconds); // regions being cleared carry on too
         if (report.Anything || report.hunger != null)
         {
             foreach (KeyValuePair<string, float> change in report.items) ResourceManager.Instance.Add(change.Key, change.Value);

@@ -102,7 +102,7 @@ Before anything else: **land is now locked**, and clearing it is not built yet. 
 
 - [ ] Locked land next to the Town Square is dotted with **placeholder trees** (West Forest), **grey boulders** (North Rocks) and **planks** (South Debris). They look the same every time you start. The river shows none.
 - [ ] They are not at hard grid positions: spread over the cell at random, a little different in size. Characters walking behind one are hidden by it.
-- [ ] **Tap a tinted region** (e.g. North Rocks): the **Region panel** opens in the details' place: terrain and "next to cleared land, can be cleared", its description, size, Cost (with the gold you have), characters, time, what it gives, and a last row "Clear: coming in the next update".
+- [ ] **Tap a tinted region** (e.g. North Rocks): the **Region panel** opens in the details' place: terrain and "next to cleared land, can be cleared", its description, size, Cost (with the gold you have), characters, time, what it gives, and (with enough gold) a **Clear North Rocks for 200 gold** button (see 8d).
 - [ ] Tapping cleared land or fog opens nothing. Tapping the ground with the panel open closes it; tapping another region opens that one. Escape closes it.
 - [ ] **Dragging** the camera across a region does not open the panel (only a tap; check with mouse and with touch).
 - [ ] Tapping a **river** (once the East Meadow is cleared): the panel says it cannot be cleared and shows no cost.
@@ -111,6 +111,23 @@ Before anything else: **land is now locked**, and clearing it is not built yet. 
 - [ ] Cheats > Map > **Clear every region** removes all decorations; **Lock every region except the start** brings them back. Regions OFF removes them too.
 - [ ] Try your own picture: make a Region Decor Set in `Resources/Regions` (see `docs/MAP.md`), or give a Region a **Picture** (e.g. the Mountain once you can reach it); it stands at the bottom centre of the region.
 - [ ] Performance: no stutter with all the decorations (about 500 pictures); tell Claude if the frame rate drops.
+
+## 8d. Clearing land (Map step 3)
+
+Give yourself gold first (Cheats > "+1000 gold") and have a character or two (Cheats > Spawn).
+- [ ] Tap North Rocks: with less than 200 gold the panel says how much is missing, with no button. With the gold: **Clear North Rocks for 200 gold**. Press it: the gold goes at once, a toast "Clearing North Rocks: assign characters to it", the panel shows "Clearing: 0% done, 0 of 3 places filled, nobody assigned".
+- [ ] A second press is not offered; tapping the region again shows progress, not the cost.
+- [ ] Open a character, **Assign**: the list ends with **Clear North Rocks (0/3) 0%**. Pick it: the numbers change at once, their details say **Job: Clear North Rocks**.
+- [ ] In work hours (morning/afternoon) they walk to the edge of the region (the row of cells just above the Town Square), disappear into it, and the progress in the Region panel climbs. At night they go home and it stops.
+- [ ] Check it **looks** all right: the character walks to the fog's edge and vanishes. Tell Claude if it should look different (e.g. stay visible and chop, a marker or a little bar over the region showing the progress).
+- [ ] The game is paused while a menu is open (as production is): the progress only moves with the menus closed.
+- [ ] More characters = faster (the panel's "about N left" falls). With a Specialty tag `Clearing` on a character type, that character is faster.
+- [ ] Finish (or Cheats > Map > **Finish every region being cleared now**): the fog, tint and trees on that region disappear, a toast "North Rocks cleared: +60 Stone", the characters are free (Job empty), buildings can go up on it, and the regions next to it now show the amber tint.
+- [ ] Take someone off a half-done region (Assign list, pick another job): first the list shows "... is N% through clearing ... Moving them keeps the progress but the gold is not refunded. Pick a job again to confirm."; picking again moves them, and the region keeps its progress. With 0% it moves at once.
+- [ ] Save, quit, reopen: the region is still being cleared at the same progress, with the same characters on it.
+- [ ] Time away (real-time clock): leave a job running over a work period, tab out for a few minutes or use Cheats > "Pretend the game was closed for 3 hours": the progress moved, or the region finished with its toast.
+- [ ] Stone shows in the stock after clearing (it has no icon, no capacity and no use yet: step 4).
+- [ ] Phone layout: the Clear row and the jobs-list rows fit and read well.
 
 ## 9. Older, never confirmed
 

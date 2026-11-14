@@ -80,4 +80,5 @@ public class GameData
     public List<QuestSaveData> quests = new List<QuestSaveData>();        // added in version 10: where each quest is (by id)
 
     public List<string> clearedRegions = new List<string>();              // added in version 11: the ids of the Map regions that are cleared
+    public List<ClearingJobData> clearingJobs = new List<ClearingJobData>(); // added in version 12: regions being cleared and how far along they are
 }

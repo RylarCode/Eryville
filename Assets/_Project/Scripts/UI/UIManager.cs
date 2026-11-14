@@ -1185,37 +1185,69 @@ public class UIManager : MonoBehaviour
     {
         if (selectedCharacter == null) return;
 
+        confirmLeaving = null;
         FillAssignList();
         TogglePanel(assignPanel);
     }
 
-    // The jobs list: every building with room for workers and how full it is. Made again after each assignment so the numbers stay true.
+    private Building confirmLeaving; // a half-cleared region the selected character is about to be taken off (waiting for the second tap)
+
+    // The jobs list: every building with room for workers and how full it is, then the regions being cleared. Made again after each
+    // assignment so the numbers stay true.
     private void FillAssignList()
     {
         if (selectedCharacter == null) return;
 
         ClearList(); // pressing the button again must not stack a second copy of the list
+        ClearingJob leaving = ClearingManager.Instance != null ? ClearingManager.Instance.JobAt(confirmLeaving) : null;
+        if (confirmLeaving != null && leaving == null) confirmLeaving = null;
+        if (leaving != null)
+        {
+            MenuPanels.MakeRow(buttonPrefab, assignButtonContainer, "ConfirmLeaving", $"{selectedCharacter.DisplayName} is {Mathf.FloorToInt(leaving.Fraction * 100f)}% through clearing {leaving.region.DisplayName}. Moving them keeps the progress but the gold is not refunded. Pick a job again to confirm.", null, false);
+        }
         foreach (Building building in BuildingManager.Instance.Buildings)
         {
             if (building.WorkerSlots <= 0) continue; // nobody can work here (homes, city hall...)
-
-            GameObject buttonGO = MenuPanels.MakeRow(buttonPrefab, assignButtonContainer, $"{building.name}AssignButton", $"{building.DisplayName} ({building.Workers.Count}/{building.WorkerSlots})", building.buildingType.sprite);
-            Button button = buttonGO.GetComponent<Button>();
-
-            button.onClick.AddListener(() =>
-            {
-                if (selectedCharacter == null) return;
-                if (CharacterManager.Instance.AssignWorker(selectedCharacter, building))
-                {
-                    RefreshCharacterText(); // show the new job
-                }
-                else
-                {
-                    Debug.Log($"Could not assign {selectedCharacter.DisplayName} to {building.DisplayName} (full or already working there).");
-                }
-                FillAssignList(); // the slot counts changed (or someone else filled the place)
-            });
+            AddJobRow(building, $"{building.DisplayName} ({building.Workers.Count}/{building.WorkerSlots})");
         }
+        if (ClearingManager.Instance != null)
+        {
+            foreach (ClearingJob job in ClearingManager.Instance.Jobs)
+                AddJobRow(job.site, $"{job.site.DisplayName} ({job.site.Workers.Count}/{job.site.WorkerSlots}) {Mathf.FloorToInt(job.Fraction * 100f)}%");
+        }
+    }
+
+    private void AddJobRow(Building building, string label)
+    {
+        GameObject buttonGO = MenuPanels.MakeRow(buttonPrefab, assignButtonContainer, $"{building.name}AssignButton", label, building.buildingType.sprite);
+        buttonGO.GetComponent<Button>().onClick.AddListener(() => ChooseJob(building));
+    }
+
+    // A row of the jobs list was pressed. Taking someone off a region that is already partly cleared asks for a second press first.
+    private void ChooseJob(Building building)
+    {
+        if (selectedCharacter == null) return;
+        Building current = selectedCharacter.WorkBuilding;
+        if (current != null && current != building && confirmLeaving != current && ClearingManager.Instance != null)
+        {
+            ClearingJob leaving = ClearingManager.Instance.JobAt(current);
+            if (leaving != null && leaving.progress > 0f)
+            {
+                confirmLeaving = current;
+                FillAssignList();
+                return;
+            }
+        }
+        confirmLeaving = null;
+        if (CharacterManager.Instance.AssignWorker(selectedCharacter, building))
+        {
+            RefreshCharacterText(); // show the new job
+        }
+        else
+        {
+            Debug.Log($"Could not assign {selectedCharacter.DisplayName} to {building.DisplayName} (full or already working there).");
+        }
+        FillAssignList(); // the slot counts changed (or someone else filled the place)
     }
 
 }

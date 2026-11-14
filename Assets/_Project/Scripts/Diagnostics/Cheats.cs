@@ -310,7 +310,18 @@ public static class Cheats
     // Back to the start: only the regions that start cleared (buildings on other land stay where they are)
     public static void ResetRegions()
     {
+        if (ClearingManager.Instance != null) ClearingManager.Instance.ClearAll(); // (jobs in progress are dropped; the gold is not given back)
         if (MapRegions.Existing != null) MapRegions.Existing.ResetToStart();
+    }
+
+    // Every region being cleared is done now (yields given, characters freed)
+    public static int FinishClearing()
+    {
+        ClearingManager clearing = ClearingManager.Instance;
+        if (clearing == null) return 0;
+        int done = 0;
+        foreach (ClearingJob job in new System.Collections.Generic.List<ClearingJob>(clearing.Jobs)) { clearing.Complete(job); done++; }
+        return done;
     }
 
     public static void ToggleRegions()
@@ -322,7 +333,7 @@ public static class Cheats
     {
         MapRegions regions = MapRegions.Existing;
         if (regions == null || !regions.HasRegions) return "Map: no regions (all land is usable)";
-        return $"Map: {regions.Map.ClearedCount} of {regions.Map.Regions.Count} regions cleared ({regions.Map.ClearedCells} cells)" + (regions.Enabled ? "" : ", regions switched off");
+        return $"Map: {regions.Map.ClearedCount} of {regions.Map.Regions.Count} regions cleared ({regions.Map.ClearedCells} cells)" + (ClearingManager.Instance != null && ClearingManager.Instance.Jobs.Count > 0 ? $", {ClearingManager.Instance.Jobs.Count} being cleared" : "") + (regions.Enabled ? "" : ", regions switched off");
     }
 
     // --- Quests ---

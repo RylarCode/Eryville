@@ -84,6 +84,18 @@ public class OwnedCharacter
         return multiplier;
     }
 
+    // ...and for a job that is not a recipe (clearing land has the tag "Clearing")
+    public float SpecialtyMultiplier(string tag)
+    {
+        if (string.IsNullOrEmpty(tag) || Type.specialties == null) return 1f;
+        float multiplier = 1f;
+        foreach (Specialty specialty in Type.specialties)
+        {
+            if (specialty != null && specialty.tag == tag) multiplier *= specialty.multiplier;
+        }
+        return multiplier;
+    }
+
     // --- Awareness (gained from duplicate pulls) ---
 
     private int awarenessLevel;

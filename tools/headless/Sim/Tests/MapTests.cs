@@ -257,6 +257,238 @@ public static class MapTests
         T.Check(lines.Any(l => l.Contains("you have 12")), "the gold you have is shown");
     }
 
+    private static Transform RowNamed(Transform content, string name) => Town.Rows(content).FirstOrDefault(r => r.name == name);
+
+    public static void ClearingLand()
+    {
+        Town t = Town.Build();
+        List<Region> regions = t.UseSampleMap();
+        MapRegions mr = MapRegions.Existing;
+        ClearingManager clearing = ClearingManager.Instance;
+        Region rocks = regions.First(r => r.id == "north-rocks"), river = regions.First(r => r.id == "river"), mountain = regions.First(r => r.id == "mountain"), forest = regions.First(r => r.id == "west-forest");
+        rocks.charactersNeeded = 2; rocks.clearSeconds = 100000; rocks.goldCost = 200;
+        Vector3 inRocks = new Vector3(0.5f, 6.5f, 0);
+        World.Tick(0.1f);
+
+        T.Section("starting");
+        T.Check(clearing != null && clearing.Jobs.Count == 0, "the clearing manager is part of the Map's object");
+        t.rm.SetResourceAmount(ResourceManager.Gold, 150f);
+        T.Check(clearing.CanStart(rocks) == ClearingManager.StartResult.NotEnoughGold && !clearing.StartClearing(rocks) && t.rm.Get(ResourceManager.Gold) == 150f, "without the gold it cannot start, and nothing is taken");
+        T.Check(clearing.CanStart(river) == ClearingManager.StartResult.NotClearable && clearing.CanStart(mountain) == ClearingManager.StartResult.NotClearable, "a river and land that is not reachable yet cannot be started");
+        t.ClickWorld(inRocks); World.EndFrame();
+        List<string> rows = t.PanelRows("RegionPanel");
+        T.Check(rows.Any(r => r.StartsWith("Clear: not enough gold (50 more)")) && RowNamed(t.Content("RegionPanel"), "ClearRow") == null, "the panel says how much gold is missing and offers no button: " + string.Join(" | ", rows));
+
+        t.rm.SetResourceAmount(ResourceManager.Gold, 500f);
+        t.ui.CloseEverything(); t.ClickWorld(inRocks); World.EndFrame();
+        Transform button = RowNamed(t.Content("RegionPanel"), "ClearRow");
+        T.Check(button != null && Town.TextOf(button) == "Clear North Rocks for 200 gold", "with the gold there is a Clear button: " + (button != null ? Town.TextOf(button) : "none"));
+        Town.Click(button); World.EndFrame();
+        ClearingJob job = clearing.JobFor(rocks);
+        T.Check(job != null && t.rm.Get(ResourceManager.Gold) == 300f, "pressing it pays the gold up front and starts the job");
+        T.Check(job.site != null && job.site.WorkerSlots == 2 && !t.bm.Buildings.Contains(job.site) && job.site.Id == "clear:north-rocks", "the site is a workplace with a place for each character needed, but not a building of the town");
+        Vector2Int cell = job.site.Cell;
+        T.Check(mr.Map.RegionAt(cell) == rocks && cell.y == 4 && t.map.BuildingAt(cell) == null, "it stands on the region's edge, beside cleared ground: " + cell);
+        T.Check(clearing.CanStart(rocks) == ClearingManager.StartResult.AlreadyClearing && !clearing.StartClearing(rocks) && t.rm.Get(ResourceManager.Gold) == 300f, "no second job for the same region, and no second payment");
+        rows = t.PanelRows("RegionPanel");
+        T.Check(rows.Any(r => r.StartsWith("Clearing: 0% done, 0 of 2 places filled, nobody assigned")) && !rows.Any(r => r.StartsWith("Cost")) && RowNamed(t.Content("RegionPanel"), "ClearRow") == null, "the panel now shows the progress instead of the cost: " + string.Join(" | ", rows));
+
+        T.Section("assigning characters");
+        OwnedCharacter firsy = t.Hire(t.Firsy, 2, 2), condo = t.Hire(t.Condo, 3, 2);
+        t.ui.ShowCharacterDetails(firsy);
+        t.ui.GenerateAssignCharactertoBuildingButtons(); World.EndFrame();
+        List<string> list = t.ListRows();
+        T.Check(list.Any(r => r == "Clear North Rocks (0/2) 0%"), "the jobs list offers the region: " + string.Join(" | ", list));
+        Town.Click(RowNamed(t.listContent.transform, job.site.name + "AssignButton")); World.EndFrame();
+        T.Check(firsy.WorkBuilding == job.site && job.site.Workers.Count == 1 && t.ListRows().Contains("Clear North Rocks (1/2) 0%"), "picking it assigns the character, and the list's numbers move");
+        T.Check(firsy.WorkBuilding.DisplayName == "Clear North Rocks", "their Job reads " + firsy.WorkBuilding.DisplayName);
+
+        T.Section("working");
+        t.ui.CloseEverything(); // (the game is paused while a menu is open)
+        World.Run(30f);
+        T.Check(job.site.IsWorkerOnSite(firsy) && !firsy.Avatar.GetComponent<SpriteRenderer>().enabled, "in work hours the character walks to the site and goes in");
+        float p0 = job.progress;
+        World.Run(10f);
+        float rate = 1f * firsy.Productivity / 2f;
+        T.Check(System.Math.Abs((job.progress - p0) - 10f * rate) < 0.5f && rate > 0f, $"progress moves at their productivity shared over the 2 places: {job.progress - p0:0.0} in 10 s (expected {10f * rate:0.0})");
+        T.Check(clearing.Describe(job).StartsWith("Clearing: ") && clearing.Describe(job).Contains("1 of 2 places filled") && clearing.Describe(job).Contains("left"), "described: " + clearing.Describe(job));
+
+        t.cm.AssignWorker(condo, job.site);
+        World.Run(30f);
+        float both = clearing.WorkRate(job);
+        T.Check(job.site.WorkersOnSite.Count == 2 && both > rate * 1.5f, "a second character speeds it up: rate " + rate + " -> " + both);
+        condo.Type.specialties = new List<Specialty> { new Specialty { tag = ClearingManager.SpecialtyTag, multiplier = 2f } };
+        float special = clearing.WorkRate(job);
+        T.Check(special > both * 1.3f && System.Math.Abs(special - (firsy.Productivity + condo.Productivity * 2f) / 2f) < 0.001f, $"a character with a Clearing specialty counts for more: {both:0.00} -> {special:0.00}");
+        condo.Type.specialties = new List<Specialty>();
+
+        T.Section("pausing, nights");
+        World.Run(5f);
+        float beforePause = job.progress;
+        t.gm.currentGameState = GameManager.gameState.Menu;
+        World.Run(10f);
+        T.Check(job.progress == beforePause, "while a menu has the game paused nothing moves");
+        t.gm.currentGameState = GameManager.gameState.Normal;
+        World.Run(5f);
+        T.Check(job.progress > beforePause, "and it carries on after");
+        t.clock.Advance(); t.clock.Advance(); t.clock.Advance(); // Night: everyone goes home
+        World.Run(20f);
+        float night = job.progress;
+        World.Run(10f);
+        T.Check(job.site.WorkersOnSite.Count == 0 && job.progress == night, "at night nobody works there and nothing moves");
+        t.clock.Advance(); // Morning
+        World.Run(40f);
+        T.Check(job.site.WorkersOnSite.Count == 2 && job.progress > night, "in the morning they go back");
+
+        T.Section("finishing");
+        t.rm.SetResourceAmount("Stone", 0f); float wood0 = t.rm.Get(ResourceManager.Wood);
+        Notify.Center.Reset();
+        job.progress = rocks.clearSeconds - 1f;
+        World.Run(5f); World.EndFrame();
+        T.Check(mr.Map.IsCleared(rocks) && clearing.JobFor(rocks) == null && t.map.IsUsable(new Vector2Int(0, 6)), "when the work is done the region is cleared and usable");
+        T.Check(t.rm.Get("Stone") == 60f, "its yields are given: Stone " + t.rm.Get("Stone"));
+        T.Check(firsy.WorkBuilding == null && condo.WorkBuilding == null && job.site == null || job.site.destroyed, "the characters are free again and the site is gone");
+        T.Check(Notify.Center.History.Any(n => n.Text.StartsWith("North Rocks cleared: +60 Stone")), "a message says so");
+        T.Check(t.Place(t.Home, 0, 6) != null, "and a building can go up on it");
+        T.Check(mr.Map.IsRevealed(regions.First(r => r.id == "mountain")) == mr.Map.IsRevealed(mountain), "(the Map moves on)");
+
+        T.Section("cleared by other means");
+        t.rm.SetResourceAmount(ResourceManager.Gold, 1000f);
+        clearing.StartClearing(forest);
+        OwnedCharacter extra = t.Hire(t.Baker, 1, 1);
+        t.cm.AssignWorker(extra, clearing.JobFor(forest).site);
+        mr.Map.Clear(forest); World.EndFrame();
+        T.Check(clearing.Jobs.Count == 0 && extra.WorkBuilding == null, "a region cleared by a cheat or the story drops its job and frees the characters");
+        mr.Map.Lock(forest);
+        clearing.StartClearing(forest);
+        T.Check(Cheats.FinishClearing() == 1 && mr.Map.IsCleared(forest) && clearing.Jobs.Count == 0, "the cheat finishes every job");
+        mr.Map.Lock(forest);
+        clearing.StartClearing(forest);
+        Cheats.ResetRegions();
+        T.Check(clearing.Jobs.Count == 0, "locking every region drops the jobs");
+    }
+
+    public static void ClearingAway()
+    {
+        Town t = Town.Build();
+        List<Region> regions = t.UseSampleMap();
+        MapRegions mr = MapRegions.Existing;
+        ClearingManager clearing = ClearingManager.Instance;
+        Region rocks = regions.First(r => r.id == "north-rocks");
+        rocks.charactersNeeded = 1; rocks.clearSeconds = 100000; rocks.goldCost = 0;
+        t.rm.SetResourceAmount("Stone", 0f);
+        World.Tick(0.1f);
+        OwnedCharacter firsy = t.Hire(t.Firsy, 2, 2);
+        clearing.StartClearing(rocks);
+        ClearingJob job = clearing.JobFor(rocks);
+        t.cm.AssignWorker(firsy, job.site);
+
+        T.Section("time away");
+        DateTime utc = t.clock.UtcNow;
+        t.clock.LocalOffset = _ => utc.Date.AddHours(14) - utc; // 14:00: it was Afternoon (work time) the whole two hours
+        OfflineProgress.Apply(2 * 3600f);
+        float expected = 7200f * firsy.BaseProductivity;
+                T.Check(System.Math.Abs(job.progress - expected) < expected * 0.02f, $"two hours away at work by schedule: {job.progress:0} seconds of work (expected {expected:0})");
+
+        T.Section("finishing while away");
+        rocks.clearSeconds = 9000f;
+        OfflineProgress.Apply(2 * 3600f);
+        T.Check(mr.Map.IsCleared(rocks) && clearing.Jobs.Count == 0 && t.rm.Get("Stone") == 60f && firsy.WorkBuilding == null, "enough time away clears it, gives the yields and frees the character");
+
+        T.Section("not at work, not paid");
+        Region meadow = regions.First(r => r.id == "east-meadow"); meadow.charactersNeeded = 1; meadow.clearSeconds = 5000; meadow.goldCost = 0;
+        clearing.StartClearing(meadow);
+        ClearingJob job2 = clearing.JobFor(meadow);
+        t.cm.AssignWorker(firsy, job2.site);
+        t.clock.LocalOffset = _ => utc.Date.AddHours(5) - utc; // 05:00: the two hours before were Night, at home
+        OfflineProgress.Apply(2 * 3600f);
+        T.Check(job2.progress == 0f, "time away overnight, when the character is at home, moves nothing");
+        t.clock.LocalOffset = _ => utc.Date.AddHours(14) - utc;
+        firsy.WagePaid = false;
+        OfflineProgress.Apply(2 * 3600f);
+        T.Check(job2.progress == 0f, "an unpaid character does not work while away either");
+        T.Check(clearing.AdvanceAway(30f) == 0 && job2.progress == 0f, "a short absence counts for nothing");
+    }
+
+    public static void ClearingSaved()
+    {
+        Town t = Town.Build();
+        List<Region> regions = t.UseSampleMap();
+        MapRegions mr = MapRegions.Existing;
+        ClearingManager clearing = ClearingManager.Instance;
+        Region rocks = regions.First(r => r.id == "north-rocks"), debris = regions.First(r => r.id == "south-debris");
+        rocks.charactersNeeded = 2; rocks.goldCost = 0; debris.goldCost = 0;
+        World.Tick(0.1f);
+        OwnedCharacter firsy = t.Hire(t.Firsy, 2, 2);
+        clearing.StartClearing(rocks); clearing.StartClearing(debris);
+        clearing.JobFor(rocks).progress = 77f; clearing.JobFor(debris).progress = 5f;
+        t.cm.AssignWorker(firsy, clearing.JobFor(rocks).site);
+
+        T.Section("round trip");
+        T.Check(SaveSystem.Save("clear.json"), "saved");
+        GameData data = JsonUtility.FromJson<GameData>(System.IO.File.ReadAllText(System.IO.Path.Combine(Application.persistentDataPath, "clear.json")));
+        T.Check(SaveSystem.CurrentVersion >= 12 && data.version == SaveSystem.CurrentVersion && data.clearingJobs.Count == 2 && data.clearingJobs.Any(j => j.regionId == "north-rocks" && j.progress == 77f), "the save lists the jobs and their progress");
+        T.Check(data.characters.Any(c => c.workBuildingId == "clear:north-rocks"), "and the character's job is the clearing site");
+        clearing.ClearAll(); t.cm.ClearAll(); World.EndFrame();
+        T.Check(SaveSystem.Load("clear.json") && clearing.Jobs.Count == 2, "loading brings the jobs back");
+        ClearingJob job = clearing.JobFor(rocks);
+        T.Check(job != null && job.progress == 77f && job.site.Workers.Count == 1 && job.site.Workers[0].Type == t.Firsy && clearing.JobFor(debris).progress == 5f, "with their progress, and the character still on the job");
+        T.Check(t.rm.Get(ResourceManager.Gold) == t.rm.Get(ResourceManager.Gold) && !t.bm.Buildings.Any(b => b.Id.StartsWith("clear:")), "(sites are not saved as buildings)");
+
+        T.Section("older and odd saves");
+        System.IO.File.WriteAllText(System.IO.Path.Combine(Application.persistentDataPath, "v11.json"), "{\"version\":11,\"resources\":[],\"buildings\":[],\"roads\":[],\"characters\":[],\"clearedRegions\":[\"town-square\"]}");
+        T.Check(SaveSystem.Load("v11.json") && clearing.Jobs.Count == 0, "a version 11 save has no jobs (and loading drops those that were running)");
+        System.IO.File.WriteAllText(System.IO.Path.Combine(Application.persistentDataPath, "odd.json"), "{\"version\":12,\"resources\":[],\"buildings\":[],\"roads\":[],\"characters\":[],\"clearedRegions\":[\"town-square\",\"north-rocks\"],\"clearingJobs\":[{\"regionId\":\"north-rocks\",\"progress\":3},{\"regionId\":\"nowhere\",\"progress\":3},{\"regionId\":\"river\",\"progress\":3},{\"regionId\":\"mountain\",\"progress\":3}]}");
+        T.Check(SaveSystem.Load("odd.json") && clearing.Jobs.Count == 0 || clearing.Jobs.All(j => j.region.id == "mountain"), "jobs for a region already cleared, one that does not exist and a river are ignored");
+    }
+
+    public static void LeavingAClearing()
+    {
+        Town t = Town.Build();
+        List<Region> regions = t.UseSampleMap();
+        ClearingManager clearing = ClearingManager.Instance;
+        Region rocks = regions.First(r => r.id == "north-rocks");
+        rocks.charactersNeeded = 2; rocks.goldCost = 0;
+        World.Tick(0.1f);
+        Building mine = t.Place(t.Mine, -3, 0);
+        OwnedCharacter firsy = t.Hire(t.Firsy, 2, 2);
+        clearing.StartClearing(rocks);
+        ClearingJob job = clearing.JobFor(rocks);
+        t.cm.AssignWorker(firsy, job.site);
+
+        T.Section("no progress yet: no question");
+        t.ui.ShowCharacterDetails(firsy);
+        t.ui.GenerateAssignCharactertoBuildingButtons(); World.EndFrame();
+        Town.Click(RowNamed(t.listContent.transform, mine.name + "AssignButton")); World.EndFrame();
+        T.Check(firsy.WorkBuilding == mine, "leaving a clearing that has done nothing moves at once");
+
+        T.Section("half done: a second press");
+        void OpenList() { t.ui.CloseEverything(); t.ui.ShowCharacterDetails(firsy); t.ui.GenerateAssignCharactertoBuildingButtons(); World.EndFrame(); }
+        t.cm.AssignWorker(firsy, job.site);
+        job.progress = 30f;
+        OpenList();
+        Town.Click(RowNamed(t.listContent.transform, mine.name + "AssignButton")); World.EndFrame();
+        T.Check(firsy.WorkBuilding == job.site, "the first press does not move them");
+        List<string> list = t.ListRows();
+        T.Check(list.Count > 0 && list[0].Contains("is 12% through clearing North Rocks") && list[0].Contains("not refunded") && list[0].Contains("confirm"), "it explains the cost and asks to pick again: " + (list.Count > 0 ? list[0] : "no rows"));
+        Town.Click(RowNamed(t.listContent.transform, mine.name + "AssignButton")); World.EndFrame();
+        T.Check(firsy.WorkBuilding == mine && job.progress == 30f && clearing.JobFor(rocks) == job, "the second press moves them; the job keeps its progress (and the gold stays spent)");
+
+        T.Section("the answer is used up");
+        t.cm.AssignWorker(firsy, job.site);
+        Town.Click(RowNamed(t.listContent.transform, mine.name + "AssignButton")); World.EndFrame();
+        T.Check(firsy.WorkBuilding == job.site, "after a confirmed move, going back and leaving again asks again (even with the list still open)");
+
+        T.Section("a half-answered question is not remembered");
+        t.cm.AssignWorker(firsy, job.site);
+        OpenList();
+        Town.Click(RowNamed(t.listContent.transform, mine.name + "AssignButton")); World.EndFrame();
+        OpenList(); // closed and opened again
+        T.Check(!t.ListRows().Any(r => r.Contains("through clearing")), "opening the list again starts without the question");
+        Town.Click(RowNamed(t.listContent.transform, mine.name + "AssignButton")); World.EndFrame();
+        T.Check(firsy.WorkBuilding == job.site, "and pressing a job asks again instead of moving them");
+    }
+
     public static void SavingTheMap()
     {
         Town t = Town.Build();

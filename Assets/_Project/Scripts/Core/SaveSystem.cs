@@ -11,7 +11,7 @@ using UnityEngine;
 // so everything a loaded building or character needs (sprite, size, registration, assignments) is set up.
 public static class SaveSystem
 {
-    public const int CurrentVersion = 11; // 2 added roads, 3 added mood, 4 added wages (and recruitment), 5 the real-time clock, 6 the chosen recipe of each building (items are saved with the resources), 7 how full each character is, 8 what each character has been eating, 9 the story (finished chapters and values), 10 the quests, 11 the cleared Map regions; older saves still load with defaults
+    public const int CurrentVersion = 12; // 2 added roads, 3 added mood, 4 added wages (and recruitment), 5 the real-time clock, 6 the chosen recipe of each building (items are saved with the resources), 7 how full each character is, 8 what each character has been eating, 9 the story (finished chapters and values), 10 the quests, 11 the cleared Map regions, 12 the regions being cleared; older saves still load with defaults
     public const string DefaultFileName = "savegame.json";
 
     private static string SlotFor(string fileName)
@@ -129,6 +129,7 @@ public static class SaveSystem
         if (StoryManager.Instance != null) StoryManager.Instance.Export(data);
         if (QuestManager.Instance != null) QuestManager.Instance.Export(data);
         if (MapRegions.Existing != null && MapRegions.Existing.Map != null) data.clearedRegions = MapRegions.Existing.Map.ExportCleared();
+        if (ClearingManager.Instance != null) data.clearingJobs = ClearingManager.Instance.Export();
 
         return data;
     }
@@ -193,6 +194,10 @@ public static class SaveSystem
 
         // 4. Buildings (no cost is charged: they were already paid for)
         Dictionary<string, Building> buildingsById = new Dictionary<string, Building>();
+        if (ClearingManager.Instance != null) // (the jobs of regions being cleared: their sites are workplaces too)
+        {
+            foreach (KeyValuePair<string, Building> site in ClearingManager.Instance.Restore(data.version >= 12 ? data.clearingJobs : null)) buildingsById[site.Key] = site.Value;
+        }
         foreach (BuildingData saved in data.buildings)
         {
             if (!buildingTypes.TryGetValue(saved.typeId, out BuildingType type))

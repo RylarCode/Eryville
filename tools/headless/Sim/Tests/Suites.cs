@@ -33,6 +33,10 @@ public static partial class Suites
         ("Map regions in the game", MapTests.InTheGame),
         ("Map regions: decorations", MapTests.SeeingTheMap),
         ("Map regions: tapping one", MapTests.TappingARegion),
+        ("Clearing land", MapTests.ClearingLand),
+        ("Clearing land: time away", MapTests.ClearingAway),
+        ("Clearing land: saving", MapTests.ClearingSaved),
+        ("Clearing land: leaving a job", MapTests.LeavingAClearing),
         ("Saving the Map", MapTests.SavingTheMap),
         ("Project files", ProjectFileTests.Run),
     };

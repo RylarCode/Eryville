@@ -67,6 +67,7 @@ public class MapRegions : MonoBehaviour
         instance = this;
         mapGrid = GetComponent<MapGrid>();
         LoadFromAssets();
+        if (GetComponent<ClearingManager>() == null) gameObject.AddComponent<ClearingManager>(); // clearing land (jobs, progress)
     }
 
     private void OnDestroy()

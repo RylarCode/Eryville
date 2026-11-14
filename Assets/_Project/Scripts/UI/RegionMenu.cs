@@ -5,7 +5,8 @@ using UnityEngine;
 using UnityEngine.UI;
 
 // The Region panel: opened by tapping a region on the Map. Shows what it is, what clearing it costs and gives, and why it can or cannot be
-// cleared now. (The Clear button itself arrives with the clearing step; until then the last row says so.) Built at runtime like the other menus.
+// cleared now, and has the Clear button (pays the gold and starts the job; characters are then assigned from the jobs list). Built at runtime
+// like the other menus.
 public class RegionMenu
 {
     private readonly GameObject buttonPrefab;
@@ -37,6 +38,11 @@ public class RegionMenu
     // The rows for a region, as plain text (also what the tests read)
     public static List<string> Describe(Region region, MapRegions regions, float gold)
     {
+        return Describe(region, regions, gold, ClearingManager.Instance);
+    }
+
+    public static List<string> Describe(Region region, MapRegions regions, float gold, ClearingManager clearing)
+    {
         List<string> rows = new List<string>();
         if (region == null || regions == null || regions.Map == null) return rows;
         RegionMap map = regions.Map;
@@ -50,14 +56,27 @@ public class RegionMenu
         if (!string.IsNullOrWhiteSpace(region.description)) rows.Add(region.description.Trim().Replace("\n", " "));
         rows.Add($"Size: {cells} cells");
 
+        ClearingJob job = clearing != null ? clearing.JobFor(region) : null;
         if (map.CanClear(region)) // (what clearing costs is only shown for land you can clear now)
         {
-            rows.Add($"Cost: {region.goldCost} gold (you have {Mathf.FloorToInt(gold)})");
+            if (job == null) rows.Add($"Cost: {region.goldCost} gold (you have {Mathf.FloorToInt(gold)})");
             rows.Add($"Characters needed: {region.charactersNeeded}");
             rows.Add($"Time: {FormatTime(region.clearSeconds)} with every place filled");
             string gives = region.YieldText();
             if (gives.Length > 0) rows.Add($"Gives: {gives}");
-            rows.Add("Clear: coming in the next update");
+            if (job != null)
+            {
+                rows.Add(clearing.Describe(job));
+                rows.Add("To put characters on it: open a character, press Assign and pick \"" + job.site.DisplayName + "\"");
+            }
+            else if (clearing != null)
+            {
+                switch (clearing.CanStart(region))
+                {
+                    case ClearingManager.StartResult.NotEnoughGold: rows.Add($"Clear: not enough gold ({Mathf.CeilToInt(region.goldCost - gold)} more)"); break;
+                    case ClearingManager.StartResult.NoAccess: rows.Add("Clear: no free ground beside it to work from (move a building)"); break;
+                }
+            }
         }
         return rows;
     }
@@ -90,5 +109,12 @@ public class RegionMenu
         titleLabel.text = region.DisplayName;
         MenuPanels.ClearChildren(content);
         foreach (string row in rows) MenuPanels.MakeRow(buttonPrefab, content, "RegionRow", row, null, false);
+        ClearingManager clearing = ClearingManager.Instance;
+        if (clearing != null && clearing.CanStart(region) == ClearingManager.StartResult.Started)
+        {
+            Region captured = region;
+            GameObject row = MenuPanels.MakeRow(buttonPrefab, content, "ClearRow", $"Clear {region.DisplayName} for {region.goldCost} gold", null, true);
+            row.GetComponent<Button>().onClick.AddListener(() => { clearing.StartClearing(captured); Refresh(true); });
+        }
     }
 }
