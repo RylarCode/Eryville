@@ -37,6 +37,7 @@ public static partial class Suites
         ("Clearing land: time away", MapTests.ClearingAway),
         ("Clearing land: saving", MapTests.ClearingSaved),
         ("Clearing land: leaving a job", MapTests.LeavingAClearing),
+        ("Check Regions tool", MapTests.CheckRegionsTool),
         ("Map in the story and quests", MapTests.InTheStory),
         ("Stone and costs", MapTests.StoneCosts),
         ("Saving the Map", MapTests.SavingTheMap),

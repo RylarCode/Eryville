@@ -12,7 +12,14 @@ The **Map** is the ground the town is built on: a grid of cells (today 57 x 29).
 
 **Step 4 (this): Stone.** Stone is a real item now: it comes from clearing (North Rocks 60, Mountain 500), shows in the resource bar and the Stock tab, is stored up to 1000, and buildings can cost it.
 
-**Step 5 (this): story and quest hooks.** Chapters and quests can wait for regions to be cleared and can clear one. **Not built yet:** the editor tools. See "Planned" at the end.
+**Step 5 (this): story and quest hooks.** Chapters and quests can wait for regions to be cleared and can clear one.
+
+**Step 6 (this): the editor tools.** Eryville > **New Region** and Eryville > **Check Regions**. The Map roadmap is complete; what is left is yours to tune (the layout, names, costs, art) and to test in Unity.
+
+## The editor tools
+
+- **Eryville > New Region**: makes a Region asset in `Resources/Regions` with a **colour no other region has** (printed in the Console as hex and RGB). Paint the region in exactly that colour in `RegionMap.png`, then set its name, terrain, cost and yields.
+- **Eryville > Check Regions**: lists mistakes: no Region assets or no/unreadable image; the image not one pixel per cell of the Map; a colour in the image no region has, two regions with one colour or id; a region with no cells painted; no region (or more than one) that starts cleared; a clearable region that needs no characters or no time, a yield with no item or amount; a region that can never be cleared because no chain of clearable regions leads to it (a river in the way); Region assets outside a `Resources/Regions` folder. (The rules are in `RegionChecks.Problems`; the shipped sample is checked to be clean in the tests.)
 
 ## Story and quest hooks
 
@@ -119,7 +126,7 @@ The shipped image and nine sample regions (all placeholders: names, costs and la
 3. ~~Clearing~~ (built).
 4. ~~Stone~~ (built).
 5. ~~Story and quests~~ (built).
-6. **Tools**: Eryville > New Region and Check Regions.
+6. ~~Tools~~ (built).
 
 ## How it works (for changing the code)
 

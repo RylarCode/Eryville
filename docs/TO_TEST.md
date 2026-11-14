@@ -146,6 +146,12 @@ Give yourself gold first (Cheats > "+1000 gold") and have a character or two (Ch
 - [ ] Try it in a story chapter: add `@clear west-forest` and `[if cleared west-forest] ...` lines to a test chapter (or put a Region Cleared requirement on one); Eryville > Check Story reports nothing when the ids are right, and a message when you misspell one.
 - [ ] A Region Cleared / Regions Cleared / Cells Cleared condition in the inspector (chapter Requires or quest objectives) shows the Region field and works as above.
 
+## 8g. Region tools (Map step 6)
+
+- [ ] **Eryville > Check Regions** reports "nothing to report" for the samples (also check it does not complain about the image: Read/Write on).
+- [ ] **Eryville > New Region** makes `NewRegion` in `Resources/Regions` with a colour in its inspector; the Console prints the hex colour. Paint a test region in that colour in `RegionMap.png`, run Check Regions again: it should say nothing is wrong. Delete the test region afterwards (or keep it).
+- [ ] Misspell a region id in a story script or a quest (`@clear west-forset`): Check Story / Check Quests say so.
+
 ## 9. Older, never confirmed
 
 Built earlier in this project; tick them if you have already seen them working.

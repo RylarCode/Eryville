@@ -660,6 +660,50 @@ public static class MapTests
         T.Check(Notify.Center.History.Any(n => n.Text == pass.DisplayName + " can now be cleared") && !Notify.Center.History.Any(n => n.Text == "North Rocks can now be cleared"), "clearing the East Meadow opens only the Pass: " + string.Join(" | ", Notify.Center.History.Select(n => n.Text)));
     }
 
+    public static void CheckRegionsTool()
+    {
+        T.Section("the shipped map is clean");
+        List<Region> regions = SampleMap.ReadRegions();
+        SampleMap.Image image = SampleMap.ReadPng(System.IO.Path.Combine(SampleMap.Folder, "RegionMap.png"));
+        var min = new Vector2Int(-28, -17); var size = new Vector2Int(57, 29);
+        T.Check(RegionChecks.Problems(regions, image.Pixels, image.Width, image.Height, min, size).Count == 0, "Check Regions reports nothing for the samples: " + string.Join(" | ", RegionChecks.Problems(regions, image.Pixels, image.Width, image.Height, min, size)));
+
+        T.Section("what it catches");
+        List<string> Run(Action<List<Region>, Color32[]> change, int w = 0, int h = 0)
+        {
+            List<Region> copy = SampleMap.ReadRegions();
+            Color32[] pixels = (Color32[])image.Pixels.Clone();
+            change(copy, pixels);
+            return RegionChecks.Problems(copy, pixels, w > 0 ? w : image.Width, h > 0 ? h : image.Height, min, size);
+        }
+        bool Has(List<string> problems, string text) => problems.Any(p => p.Contains(text));
+        T.Check(Has(RegionChecks.Problems(new List<Region>(), image.Pixels, 57, 29, min, size), "no Region assets"), "no regions");
+        T.Check(Has(RegionChecks.Problems(regions, null, 0, 0, min, size), "no region image"), "no image");
+        T.Check(Has(Run((r, p) => { }, 40, 29), "one pixel per cell"), "an image of the wrong size");
+        T.Check(Has(Run((r, p) => r.First(x => x.id == "west-forest").color = new Color(0.123f, 0.5f, 0.9f)), "has no cells in the image") && Has(Run((r, p) => r.First(x => x.id == "west-forest").color = new Color(0.123f, 0.5f, 0.9f)), "no Region has it"), "a region whose colour is not in the image (and a colour no region has)");
+        T.Check(Has(Run((r, p) => r.First(x => x.id == "north-rocks").color = r.First(x => x.id == "west-forest").color), "same colour"), "two regions with one colour");
+        T.Check(Has(Run((r, p) => r.First(x => x.id == "north-rocks").id = "west-forest"), "same id") || Has(Run((r, p) => r.First(x => x.id == "north-rocks").id = "west-forest"), "the id"), "two regions with one id");
+        T.Check(Has(Run((r, p) => r.First(x => x.startsCleared).startsCleared = false), "no region starts cleared"), "no start region");
+        T.Check(Has(Run((r, p) => r.First(x => x.id == "west-forest").startsCleared = true), "2 regions start cleared"), "two start regions");
+        T.Check(Has(Run((r, p) => r.First(x => x.id == "west-forest").charactersNeeded = 0), "needs no characters") && Has(Run((r, p) => r.First(x => x.id == "west-forest").clearSeconds = 0), "takes no time"), "no characters or no time");
+        T.Check(Has(Run((r, p) => r.First(x => x.id == "mountain").yields.Add(new RegionYield { item = "", amount = 5 })), "yield with no item") && Has(Run((r, p) => r.First(x => x.id == "mountain").yields.Add(new RegionYield { item = "Stone", amount = 0 })), "no amount"), "bad yields");
+        T.Check(Has(Run((r, p) => r.First(x => x.id == "pass").terrain = RegionTerrain.River), "can never be cleared") , "land behind rivers only is never reached: " + string.Join(" | ", Run((r, p) => r.First(x => x.id == "pass").terrain = RegionTerrain.River)));
+
+        T.Section("a free colour for a new region");
+        var used = SampleMap.ReadRegions();
+        var seen = new HashSet<int>();
+        var list = new List<Region>(used);
+        bool distinct = true;
+        for (int i = 0; i < 30; i++)
+        {
+            Color32 c = RegionChecks.FreeColour(list);
+            int key = (c.r << 16) | (c.g << 8) | c.b;
+            if (!seen.Add(key) || used.Any(u => u.Color32.r == c.r && u.Color32.g == c.g && u.Color32.b == c.b) || c.a != 255) distinct = false;
+            Region added = ScriptableObject.CreateInstance<Region>(); added.color = c; list.Add(added);
+        }
+        T.Check(distinct, "thirty new colours are all different from each other and from the existing regions");
+    }
+
     public static void SavingTheMap()
     {
         Town t = Town.Build();
