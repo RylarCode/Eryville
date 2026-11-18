@@ -275,11 +275,13 @@ public class UIManager : MonoBehaviour
         BuildingPlacer buildings = BuildingPlacer.Instance;
         bool placingBuilding = buildings != null && buildings.IsPlacing;
         bool placingRoad = RoadPlacer.Instance != null && RoadPlacer.Instance.IsPlacing;
-        bool menuInTheWay = openPanel != null && openPanel.activeInHierarchy;
+        bool menuInTheWay = layout.IsPortrait && openPanel != null && openPanel.activeInHierarchy; // (on a computer the menu stays open beside it)
 
-        if (layout.IsPortrait && (placingBuilding || placingRoad) && !menuInTheWay)
+        if ((placingBuilding || placingRoad) && !menuInTheWay)
         {
-            bar.Show(placingBuilding ? (buildings.IsMoving ? "Move here" : "Place") : "Done", placingBuilding);
+            if (layout.IsPortrait) bar.Show(placingBuilding ? (buildings.IsMoving ? "Move here" : "Place") : "Done", placingBuilding);
+            else if (placingBuilding) bar.Show("", true, false); // a click places it; this is only for Cancel
+            else bar.Show("Done", false, true);
         }
         else
         {
@@ -327,6 +329,7 @@ public class UIManager : MonoBehaviour
             else if (BuildingPlacer.Instance != null && BuildingPlacer.Instance.IsMoving) BuildingPlacer.Instance.CancelMoving();
             else if (CharacterPanelsOpen) CloseCharacterPanels();
             else if (openPanel != null) TogglePanel(openPanel);
+            else CloseGameMenu();
         }
 
         // The Town list changes while you watch too (characters walk about, buildings fill up)
@@ -388,11 +391,20 @@ public class UIManager : MonoBehaviour
     private void HandleWorldClick(Vector2 screenPosition)
     {
         if (CharacterPanelsOpen) CloseCharacterPanels();
+        CloseGameMenu(); // tapping the ground closes the game menu (Save, Load, Quit...)
         if (regionMenu != null && regionMenu.Panel.activeInHierarchy) TogglePanel(regionMenu.Panel); // tapping the ground closes it (a tap on another region opens that one when the finger comes up)
         regionTapStart = screenPosition; // a tap on a region is decided when the finger comes up (a drag moves the camera instead)
     }
 
     private const float TapSlopPixels = 20f;
+
+    private Transform GameMenuPanel => characterPanel != null ? characterPanel.transform.parent.Find("MenuPanel") : null;
+
+    private void CloseGameMenu()
+    {
+        Transform menu = GameMenuPanel;
+        if (menu != null && menu.gameObject.activeSelf) menu.gameObject.SetActive(false);
+    }
 
     private void HandleWorldRelease(Vector2 screenPosition)
     {
@@ -886,6 +898,10 @@ public class UIManager : MonoBehaviour
         if (oldTestButton != null) oldTestButton.gameObject.SetActive(false);
 
         if (Cheats.Available) cheats = new CheatMenu(this, buttonPrefab, characterPanel, assignPanel);
+
+        // The game menu grows upward over its own Menu button: keep the button on top so it can always close it again
+        Transform menuButton = canvas.Find("OpenMenuButton");
+        if (menuButton != null) menuButton.SetAsLastSibling();
 
         AddGameMenuButton("NotificationsButton", "Notifications", ToggleNotificationMenu, 1);
         if (cheats != null) AddGameMenuButton("CheatsButton", "Cheats", ToggleCheatMenu, 2);

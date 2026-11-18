@@ -265,8 +265,21 @@ public class PerfOverlay : MonoBehaviour
         return 0;
     }
 
+    private bool sceneLoading;
+
+    // A scene is about to load (SceneTransition tells us): drop our event system now, because the new scene's own one would otherwise
+    // wake up beside it for a moment ("There can be only one active Event System")
+    public static void PrepareForSceneLoad()
+    {
+        PerfOverlay overlay = Instance;
+        if (overlay == null) return;
+        overlay.sceneLoading = true;
+        if (overlay.ownEvents != null) { DestroyImmediate(overlay.ownEvents); overlay.ownEvents = null; }
+    }
+
     private void KeepOneEventSystem()
     {
+        if (sceneLoading) return;
         int action = EventSystemAction(FindObjectsByType<EventSystem>(FindObjectsSortMode.None).Length, ownEvents != null);
         if (action < 0) { Destroy(ownEvents); ownEvents = null; }
         else if (action > 0) MakeOwnEventSystem();
@@ -274,6 +287,7 @@ public class PerfOverlay : MonoBehaviour
 
     private void OnSceneLoaded(UnityEngine.SceneManagement.Scene scene, UnityEngine.SceneManagement.LoadSceneMode mode)
     {
+        sceneLoading = false;
         KeepOneEventSystem();
     }
 

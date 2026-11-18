@@ -16,7 +16,7 @@ MonoBehaviour:
   typeId: 2
   sprite: {fileID: 3345032760514067189, guid: 5668c60d880770a47bc493a8b3fed4ee, type: 3}
   goldCost: 20
-  woodCost: 20
+  woodCost: 0
   size: {x: 2, y: 2}
   buildingcategoryprefab: {fileID: 8735228474764763001, guid: 4e17966a91236304b84b7d83934a3934, type: 3}
   goldGenerationPerSec: 0

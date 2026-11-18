@@ -66,6 +66,7 @@ public class SceneTransition : MonoBehaviour
         }
         SetAlpha(1f);
 
+        PerfOverlay.PrepareForSceneLoad();
         AsyncOperation load = SceneManager.LoadSceneAsync(sceneName);
         while (load != null && !load.isDone) yield return null;
         yield return null; // one frame for the new scene's managers to start before it is shown

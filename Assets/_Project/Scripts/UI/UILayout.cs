@@ -102,7 +102,18 @@ public class UILayout
         if (!IsPortrait)
         {
             RestoreAll();
-            if (Bar != null) Bar.Hide();
+            // On a computer the click places the building, so the strip only has Cancel (and Done for roads): small, bottom centre
+            if (Bar == null && fontSource != null) Bar = new PlacementBar(canvas, fontSource, () => OnBarConfirm?.Invoke(), () => OnBarCancel?.Invoke());
+            if (Bar != null)
+            {
+                Bar.Hide();
+                RectTransform strip = Bar.Rect;
+                strip.anchorMin = new Vector2(0.5f, 0f);
+                strip.anchorMax = new Vector2(0.5f, 0f);
+                strip.pivot = new Vector2(0.5f, 0f);
+                strip.anchoredPosition = new Vector2(0f, 20f);
+                strip.sizeDelta = new Vector2(360f, 70f);
+            }
             return;
         }
 

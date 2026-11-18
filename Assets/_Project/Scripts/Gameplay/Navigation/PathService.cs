@@ -36,6 +36,7 @@ public class PathService : MonoBehaviour
         public bool Found;
         public Vector3[] Waypoints;      // cell centres, first = where the walk starts, last = the entrance
         public bool StartsAtBuilding;    // the walk starts at the origin building's entrance (step out there)
+        public string Why;               // when nothing was found: what was missing (for the log)
     }
 
     public sealed class PathRequest
@@ -157,6 +158,13 @@ public class PathService : MonoBehaviour
             }
         }
 
+        if (!result.Found)
+        {
+            string why = startCells.Count == 0 ? $"no free ground beside {(from != null ? from.DisplayName : "the start")}"
+                : goalCells.Count == 0 ? $"no free ground beside {to.DisplayName} (cell {to.Cell.x},{to.Cell.y})"
+                : $"the ground beside {(from != null ? from.DisplayName : "the start")} (e.g. {startCells[0].x},{startCells[0].y}; {startCells.Count} cells) does not connect to the ground beside {to.DisplayName} (e.g. {goalCells[0].x},{goalCells[0].y}; {goalCells.Count} cells)";
+            result = new PathResult { Found = false, Waypoints = new Vector3[0], Why = why };
+        }
         if (fromBuilding) cache[CacheKey(from, to)] = result; // remembered until the map changes
         return result;
     }

@@ -4,21 +4,24 @@ Things built in the cloud (headless tests only, never seen in Unity) that need a
 
 Before starting: pull the branch `first-cleanup`, let Unity import (no restart needed), stop Play mode before scripts recompile. If Unity re-saves any of the hand-written assets, commit those changes.
 
+## 0. Found in your first look (fixed on 2026-11-18: please check again)
+
+- [ ] The **game menu** (Save, Load, Quit, Notifications, Cheats) can be closed: the **Menu** button stays visible on top of it, tapping the ground closes it, and Escape closes it.
+- [ ] Scrolling the **Build** menu (and other lists) with the wheel is gentle, and the camera does **not** zoom while the pointer is over a menu. The wheel over the ground still zooms. *(Open question for the phone: pinch zoom works anywhere on the ground; two fingers over a menu do nothing to the camera. Say if that feels wrong.)*
+- [ ] After choosing a building (menu still open, on a computer) a small **Cancel** strip appears at the bottom centre; it cancels. Escape still works. On the phone the Place / Cancel strip is as before.
+- [ ] The **Lumberyard** costs gold only (no wood), so you can never get stuck with no wood. (Home and Gold Mine still cost 10 wood; the Lumberyard makes wood.)
+- [ ] **"Firsy cannot find a way to Clear North Rocks"**: not fixed, but the Console line now says why, e.g. "no free ground beside Clear North Rocks" or "the ground beside Home (...) does not connect to the ground beside Clear North Rocks (...)". Reproduce it and send the whole line, plus a screenshot of the town with the Region panel open (so the roads and buildings next to the Town Square's top edge are visible).
+
 ## 1. After pulling: does it start cleanly?
 
-- [ ] No compile errors in the Console after the import.
-- [ ] No errors on Play from the title screen into GameScene.
-- [ ] "There are 2 event systems in the scene" no longer appears (fixed in 589b21a, never confirmed).
+- [ ] "There can be only one active Event System" no longer appears on the first launch from the title screen. (It still did on 2026-11-17; the overlay's own event system is now dropped before the scene loads.)
 - [ ] Re-save assets once (open and save GameScene; right-click the `ScriptableObjects` folder > Reimport, or change and revert a field) so Claude can remove the three `FormerlySerializedAs` attributes (BuildingType.buildingPrefab, BuildingType.role, Building.cell). Tell Claude when done.
 
 ## 1b. Names and times of day (the naming decisions)
 
 - [ ] **Your local save and settings will look empty after pulling.** The product name changed to Eryville, and Unity keeps the save file and PlayerPrefs in a folder named after the company and product. To keep your game: copy `savegame.json` from the old folder (`.../DefaultCompany/City Building Gacha/`, e.g. `%USERPROFILE%\AppData\LocalLow\DefaultCompany\City Building Gacha` on Windows) to the new one (`.../DefaultCompany/Eryville/`). Settings like the View choice reset once.
-- [ ] Names in the game: **Firsy** (was Darkie), **Condo** (was John), **Town Hall** (was City Hall).
 - [ ] Character details: **Satiety: ...**, **Job: ...**, **Awareness: ...** (no "Fed", "Working Location", "Self-awareness").
 - [ ] Recruit menu: "Guaranteed Rare in N pulls, Epic in N pulls". The reveal screen says "Duplicate: awareness 2/5".
-- [ ] Times of day: Evening now lasts until midnight, Night is 00:00-06:00 (toasts "Evening falls" at 18:00, "Night falls" at 00:00). Characters' Night schedule (home) starts at midnight now.
-- [ ] Lighting: dawn colours 06:00-08:00, full day from 08:00, dusk 18:00-20:00, dark from 20:00 (Cheats > "Look at an hour of the day" to check quickly).
 
 ## 2. Menus and layout (c3325ff)
 
@@ -48,9 +51,7 @@ The button does nothing until a building uses 3/4 art.
 
 ## 6. Notifications (35f801d)
 
-- [ ] Toasts appear at the **top centre**; several stack with the newest on top, pushing the others down; at most 4.
 - [ ] Each fades after a few seconds (warnings longer). Holding one keeps it.
-- [ ] **Tap** a "X is hungry" toast: opens that character and moves the camera to them.
 - [ ] **Swipe** a toast sideways to dismiss it; a short drag springs back. The **X** dismisses it (mouse).
 - [ ] A repeated message counts up ("(x2)") instead of stacking.
 - [ ] Messages seen: time of day changing, wages paid / not paid, chapter finished, building unlocked, hungry, "While you were away..." after tabbing out for over a minute (real-time clock), cheats ("Cheat: +1000 gold").
@@ -59,10 +60,7 @@ The button does nothing until a building uses 3/4 art.
 
 ## 7. Quests (ba4894d)
 
-- [ ] After the welcome chapter, the main quest "Your first building" starts (toast "New quest").
-- [ ] **Quests** button (bottom bar, after Story): the menu shows the main quest with `[ ]` / `[x]` objectives and its reward.
 - [ ] Place a building: toast "Quest ready (tap to claim)"; the button says "Quests (1)"; tapping the toast opens the menu.
-- [ ] **Claim**: gold is added, toast "Quest complete", the next main quest ("Someone to help") starts, and the side quest "Strike gold" is offered with **Accept**.
 - [ ] Claiming "Someone to help" with the local backend adds 1 letter.
 - [ ] Save, quit, reopen: quest states are kept.
 - [ ] Phone layout: six buttons fit in the bottom bar, including "Quests (2)".

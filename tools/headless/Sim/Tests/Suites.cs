@@ -21,6 +21,7 @@ public static partial class Suites
         ("Town life: a day, roads, payday", GameTests.TownLife),
         ("Saving and loading", GameTests.SaveAndLoad),
         ("Menus and layout", GameTests.Menus),
+        ("Menu feedback fixes", GameTests.MenuFeedback),
         ("Recruiting", GameTests.Recruiting),
         ("Time away (offline)", GameTests.Offline),
         ("Story in the game", FeatureTests.StoryInGame),

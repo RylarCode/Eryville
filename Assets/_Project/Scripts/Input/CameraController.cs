@@ -119,6 +119,8 @@ public class CameraController : MonoBehaviour
 
     private void Zoom(float scroll)
     {
+        // The wheel over a menu scrolls the menu, not the camera
+        if (Mouse.current != null && UiHit.IsOver(Mouse.current.position.ReadValue())) return;
         float size = cam.orthographicSize;
         size -= scroll * zoomSpeed * Time.deltaTime;
         size = Mathf.Clamp(size, zoomLimits.x, zoomLimits.y);

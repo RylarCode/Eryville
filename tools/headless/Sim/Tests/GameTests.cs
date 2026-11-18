@@ -154,6 +154,56 @@ public static class GameTests
         T.Check(!layout.IsPortrait && build.anchorMin == new Vector2(0.5f, 0.5f), "a wide screen puts it all back");
     }
 
+    public static void MenuFeedback()
+    {
+        Town t = Town.Build();
+        t.rm.SetResourceAmount(ResourceManager.Gold, 1000);
+        t.rm.SetResourceAmount(ResourceManager.Wood, 1000);
+
+        T.Section("the game menu can always be closed");
+        Transform menu = t.canvas.Find("OpenMenuButton"), menuPanel = t.canvas.Find("MenuPanel");
+        T.Check(menu.GetSiblingIndex() > menuPanel.GetSiblingIndex(), "the Menu button is drawn over the game menu (the menu grows up over it)");
+        menuPanel.gameObject.SetActive(true);
+        t.ClickWorld(new Vector3(20f, 20f, 0f));
+        T.Check(!menuPanel.gameObject.activeSelf, "tapping the ground closes the game menu");
+
+        T.Section("scrolling");
+        ScrollRect scroll = t.ui.buildingButtonContainer.parent.parent.GetComponent<ScrollRect>();
+        T.Check(scroll != null && scroll.scrollSensitivity <= 10f, "the build menu scrolls gently: " + scroll.scrollSensitivity);
+
+        T.Section("cancel while placing (on a computer)");
+        Transform cards = t.ui.buildingButtonContainer;
+        Town.Click(cards.Find("Gold MineButton"));
+        World.Tick(0.05f);
+        Transform bar = t.canvas.Find("PlacementBar");
+        T.Check(t.placer.IsPlacing && bar != null && bar.gameObject.activeSelf, "choosing a building shows the strip even though the menu stays open");
+        T.Check(!bar.Find("ConfirmButton").gameObject.activeSelf && bar.Find("CancelButton").gameObject.activeSelf, "with only Cancel (a click places it)");
+        Town.Click(bar.Find("CancelButton"));
+        World.Tick(0.05f);
+        T.Check(!t.placer.IsPlacing && !bar.gameObject.activeSelf, "Cancel stops placing and the strip goes");
+        Town.Click(t.canvas.Find("OpenBuildButton")); Town.Click(t.canvas.Find("OpenBuildButton")); // (menu closed again)
+        T.Check(t.roads != null && !t.canvas.Find("PlacementBar").gameObject.activeSelf, "nothing placing, no strip");
+
+        T.Section("the wheel over a menu does not zoom");
+        GameObject rig = new GameObject("CameraRig");
+        CameraController controller = rig.AddComponent<CameraController>();
+        World.Tick(0.02f);
+        PlayerInputActions mine = PlayerInputActions.Made[PlayerInputActions.Made.Count - 1];
+        UnityEngine.InputSystem.Mouse.current = new UnityEngine.InputSystem.Mouse();
+        float size = t.camera.orthographicSize;
+        UnityEngine.InputSystem.Mouse.current.position.value = new Vector2(2f, 2f); // a corner of the screen, in the ground
+        mine.Camera.CameraZoom.Perform(-120f);
+        World.Tick(0.02f);
+        T.Check(t.camera.orthographicSize != size, "the wheel over the ground zooms (" + size + " -> " + t.camera.orthographicSize + ")");
+        size = t.camera.orthographicSize;
+        Town.Click(t.canvas.Find("OpenBuildButton")); World.Tick(0.02f);
+        UnityEngine.EventSystems.EventSystem.OverUI = true; // the pointer is on a menu
+        mine.Camera.CameraZoom.Perform(-120f);
+        World.Tick(0.02f);
+        UnityEngine.EventSystems.EventSystem.OverUI = false;
+        T.Check(t.camera.orthographicSize == size, "over a menu it scrolls the menu and leaves the camera alone");
+    }
+
     public static void Recruiting()
     {
         Town t = Town.Build();

@@ -36,9 +36,10 @@ public class PlacementBar
     }
 
     // Shows the strip with the given text on the main button; the second button (Cancel) can be left out
-    public void Show(string confirmText, bool showCancel)
+    public void Show(string confirmText, bool showCancel, bool showConfirm = true)
     {
         confirmLabel.text = confirmText;
+        confirmButton.SetActive(showConfirm);
         cancelButton.SetActive(showCancel);
         root.SetActive(true);
     }

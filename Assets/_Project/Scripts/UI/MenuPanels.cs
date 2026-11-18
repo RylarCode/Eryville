@@ -209,7 +209,7 @@ public static class MenuPanels
         scroll.content = contentRect;
         scroll.horizontal = false;
         scroll.vertical = true;
-        scroll.scrollSensitivity = 40f;
+        scroll.scrollSensitivity = 8f; // (one wheel notch is already several pixels; 40 flew past)
         return content.transform;
     }
 

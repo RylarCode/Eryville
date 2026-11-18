@@ -260,7 +260,7 @@ public class Character : MonoBehaviour, IClickable
 
         if (!route.Found)
         {
-            Debug.Log($"{DisplayName} cannot find a way to {destination.DisplayName}.");
+            Debug.Log($"{DisplayName} cannot find a way to {destination.DisplayName}" + (string.IsNullOrEmpty(route.Why) ? "." : $": {route.Why}."));
             destination = null;
             ReleaseSeat();
             if (routeOrigin != null && (routeOriginActivity == Activity.Working || routeOriginActivity == Activity.Resting || routeOriginActivity == Activity.Eating))
