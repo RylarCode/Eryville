@@ -6,6 +6,13 @@ public static class Program
 {
     public static int Main(string[] args)
     {
+        if (args.Contains("--render"))
+        {
+            // --render <output folder> <scene ui json>: the UI as pictures (see render/README.md)
+            int at = Array.IndexOf(args, "--render");
+            Render.Run(args[at + 1], args[at + 2]);
+            return T.Failed == 0 ? 0 : 1;
+        }
         T.Verbose = args.Contains("-v");
         string filter = args.FirstOrDefault(a => !a.StartsWith("-")) ?? "";
         foreach (var (name, body) in Suites.All)

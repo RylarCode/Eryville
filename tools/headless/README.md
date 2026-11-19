@@ -18,6 +18,7 @@ Needs the .NET 8 SDK (`dotnet`). Unity does not see this folder (it is outside `
 | `Stubs/Runtime/PlayerInputActions.cs` | Stands in for the generated input actions class: the same maps and actions, which tests fire with `Perform` / `Cancel`. |
 | `Stubs/Editor/` | Empty stand-ins for the editor API, only so the editor scripts compile. Editor tools can only be tried in Unity. |
 | `Check/` | The compile check: every script in `Assets/_Project/Scripts`, editor ones included. |
+| `render.sh`, `render/`, `Sim/Render.cs`, `Sim/SceneUi.cs` | Draws the UI as PNG pictures without Unity: see `render/README.md`. |
 | `Sim/` | The simulation: `Harness.cs` (the runner: suites, checks, a clean slate before each suite), `Town.cs` (a small GameScene: managers, grid, camera, input, a canvas with the panels the UI looks for by name, a few building and character types), `Tests/` (the suites, listed in `Tests/Suites.cs`). |
 
 ## Driving the game in a test

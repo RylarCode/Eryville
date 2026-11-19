@@ -227,6 +227,7 @@ public class Town
         ui.characterPanel = detailsPanel;
         Set(ui, "characterText", detailsText);
         Set(ui, "GridlinesGO", new GameObject("Gridlines"));
+        SceneUi.Apply(canvas); // (only when the renderer asks for the scene's real objects)
         uiGO.SetActive(true);
     }
 
