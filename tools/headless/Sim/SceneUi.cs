@@ -75,6 +75,14 @@ public static class SceneUi
             label.alignment = (TextAlignmentOptions)(text.GetProperty("h").GetInt32() | text.GetProperty("v").GetInt32());
         }
 
+        // The stand-in canvas gives some objects a child label the scene does not have (the scene's text sits on the object itself)
+        if (node.TryGetProperty("text", out _))
+        {
+            HashSet<string> sceneChildren = new HashSet<string>();
+            foreach (JsonElement child in node.GetProperty("children").EnumerateArray()) sceneChildren.Add(child.GetProperty("name").GetString());
+            foreach (Transform extra in t.children) if (!extra.destroyed && extra.name == "Text (TMP)" && !sceneChildren.Contains("Text (TMP)")) extra.gameObject.SetActive(false);
+        }
+
         t.gameObject.SetActive(node.GetProperty("active").GetBoolean());
         foreach (JsonElement child in node.GetProperty("children").EnumerateArray())
         {

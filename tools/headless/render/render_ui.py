@@ -6,12 +6,67 @@ usage: render_ui.py <folder with .json dumps> [out folder]
 What it draws: every rectangle where the game's layout code puts it, with its colour and text. Pictures (sprites) are plain boxes, the
 font is a similar one (Liberation Sans, like Unity's default), and the world behind the UI is a flat green.
 """
-import json, os, sys
+import json, os, re, sys
 from PIL import Image, ImageDraw, ImageFont
+
+ASSETS = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../../Assets/_Project'))
 
 FONT = '/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf'
 BOLD = '/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf'
 BACKGROUND = (92, 140, 70, 255)
+
+# --- The project's pictures: "guid:fileID" -> the part of the texture file that sprite is -----------------------------------------------
+
+_textures = None   # guid -> (path, meta text)
+_sprite_cache = {}
+
+def _scan():
+    global _textures
+    _textures = {}
+    for root, _, files in os.walk(os.path.join(ASSETS, 'Art')):
+        for name in files:
+            if name.endswith('.meta') and name[:-5].lower().endswith(('.png', '.jpg', '.jpeg')):
+                meta = open(os.path.join(root, name), encoding='utf8').read()
+                guid = re.search(r'(?m)^guid: ([0-9a-f]{32})', meta)
+                if guid:
+                    _textures[guid.group(1)] = (os.path.join(root, name[:-5]), meta)
+
+def sprite(reference):
+    """The picture (RGBA) of a sprite reference, or None when it cannot be found."""
+    if not reference:
+        return None
+    if reference in _sprite_cache:
+        return _sprite_cache[reference]
+    if _textures is None:
+        _scan()
+    guid, _, file_id = reference.partition(':')
+    result = None
+    if guid in _textures:
+        path, meta = _textures[guid]
+        image = Image.open(path).convert('RGBA')
+        crop = None
+        for block in re.split(r'(?m)^    - serializedVersion: 2\n', meta)[1:]:
+            ident = re.search(r'internalID: (-?\d+)', block)
+            rect = re.search(r'x: (\d+)\n\s+y: (\d+)\n\s+width: (\d+)\n\s+height: (\d+)', block)
+            if ident and rect and ident.group(1) == file_id:
+                x, y, w, h = map(int, rect.groups())
+                crop = (x, image.height - (y + h), x + w, image.height - y)   # unity's y goes up
+                break
+        result = image.crop(crop) if crop else image
+    _sprite_cache[reference] = result
+    return result
+
+def tint(image, rgba):
+    r, g, b, a = [c / 255 for c in rgba]
+    channels = image.split()
+    return Image.merge('RGBA', (channels[0].point(lambda v: v * r), channels[1].point(lambda v: v * g), channels[2].point(lambda v: v * b), channels[3].point(lambda v: v * a)))
+
+def fit(image, w, h, keep_aspect):
+    if not keep_aspect:
+        return image.resize((max(1, round(w)), max(1, round(h))), Image.LANCZOS), 0, 0
+    scale = min(w / image.width, h / image.height)
+    nw, nh = max(1, round(image.width * scale)), max(1, round(image.height * scale))
+    return image.resize((nw, nh), Image.LANCZOS), (w - nw) / 2, (h - nh) / 2
 
 _fonts = {}
 def font(size, bold=False):
@@ -72,10 +127,81 @@ def draw_text(img, item, box, clip):
         layer.putalpha(Image.composite(layer.getchannel('A'), Image.new('L', img.size, 0), mask))
     img.alpha_composite(layer)
 
+GRASS = '__grass__'
+
+def grass_picture():
+    for name in ('Tiles/GrassBackground.png',):
+        path = os.path.join(ASSETS, 'Art/Sprites', name)
+        if os.path.exists(path):
+            return Image.open(path).convert('RGBA')
+    return None
+
+def draw_world(img, data):
+    """The ground, the Map's fog, roads, buildings and characters behind the UI (cells are one world unit)."""
+    cam = data.get('camera')
+    items = data.get('world') or []
+    if not cam or not items:
+        return
+    W, H = img.size
+    cx, cy, ortho = cam
+    ppu = H / (2 * ortho)
+    def screen(x, y):
+        return W / 2 + (x - cx) * ppu, H / 2 - (y - cy) * ppu
+    grass = grass_picture()
+    tile = grass.resize((max(1, round(ppu)), max(1, round(ppu))), Image.NEAREST) if grass else None
+    for it in items:
+        if it['kind'] != 'ground':
+            continue
+        sx, sy = screen(it['x'] - 0.5, it['y'] + 0.5)
+        if tile:
+            img.paste(tile, (round(sx), round(sy)))
+        if it.get('road'):
+            road = sprite(it['road'])
+            if road:
+                img.alpha_composite(road.resize((max(1, round(ppu)), max(1, round(ppu))), Image.LANCZOS), (round(sx), round(sy)))
+    for it in items:
+        if it['kind'] == 'overlay':
+            sx, sy = screen(it['x'] - 0.5, it['y'] + 0.5)
+            layer = Image.new('RGBA', (max(1, round(ppu)), max(1, round(ppu))), tuple(it['rgba']))
+            img.alpha_composite(layer, (round(sx), round(sy)))
+    import base64
+    pictures = {it['id']: Image.frombytes('RGBA', (it['size'], it['size']), base64.b64decode(it['rgba'])).transpose(Image.FLIP_TOP_BOTTOM) for it in items if it['kind'] == 'decorSprite'}
+    movers = [it for it in items if it['kind'] in ('building', 'character', 'decor')]
+    for it in sorted(movers, key=lambda i: -i['sortY']):      # further up the screen first, so lower things stand in front
+        if it['kind'] == 'decor':
+            base = pictures[it['id']]
+            size = max(1, round(ppu * it['scale']))
+            pic = base.resize((size, size), Image.NEAREST)
+            sx, sy = screen(it['x'], it['y'])               # the picture stands on its bottom centre
+            paste_clipped(img, pic, round(sx - size / 2), round(sy - size))
+            continue
+        picture = sprite(it.get('ref'))
+        if it['kind'] == 'building':
+            w, h = it['w'] * ppu, it['h'] * ppu
+            if picture is None:
+                picture = Image.new('RGBA', (10, 10), (200, 200, 200, 255))
+            pic, ox, oy = fit(picture, w, h, False)
+            sx, sy = screen(it['x'] - it['w'] / 2, it['y'] + it['h'] / 2)
+        else:
+            h = it['h'] * ppu
+            if picture is None:
+                picture = Image.new('RGBA', (10, 20), (200, 80, 80, 255))
+            w = h * picture.width / picture.height
+            pic, ox, oy = fit(picture, w, h, True)
+            sx, sy = screen(it['x'], it['y'])
+            sx -= w / 2; sy -= h / 2
+        img.alpha_composite(pic, (max(0, round(sx + ox)), max(0, round(sy + oy)))) if sx + ox >= 0 and sy + oy >= 0 else paste_clipped(img, pic, round(sx + ox), round(sy + oy))
+
+def paste_clipped(img, pic, x, y):
+    layer = Image.new('RGBA', img.size, (0, 0, 0, 0))
+    layer.paste(pic, (x, y))
+    img.alpha_composite(layer)
+
 def render(path, out):
     data = json.load(open(path))
     W, H = data['width'], data['height']
     img = Image.new('RGBA', (W, H), BACKGROUND)
+    draw_world(img, data)
     for item in data['items']:
         x, y, w, h = item['x'], item['y'], item['w'], item['h']
         top = H - (y + h)                       # unity's y goes up
@@ -89,7 +215,13 @@ def render(path, out):
             layer = Image.new('RGBA', img.size, (0, 0, 0, 0))
             d = ImageDraw.Draw(layer)
             rgba = tuple(im['rgba'])
-            if im['sprite'] and im['sliced']:
+            picture = sprite(im.get('ref'))
+            if picture is not None:
+                pic, ox, oy = fit(tint(picture, rgba), w, h, im.get('fit', False))
+                if clip:
+                    pass
+                layer.paste(pic, (round(x + ox), round(top + oy)))
+            elif im['sprite'] and im['sliced']:
                 d.rounded_rectangle((x, top, x + w, top + h), radius=min(10, h / 4, w / 4), fill=rgba)
             else:
                 d.rectangle((x, top, x + w, top + h), fill=rgba)

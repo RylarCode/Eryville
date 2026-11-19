@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using TMPro;
+using UnityEngine.Tilemaps;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -32,6 +33,10 @@ public static class Render
             new Scenario { Name = "landscape-build-menu", Width = 1280, Height = 720, Setup = t => OpenBuild(t) },
             new Scenario { Name = "landscape-placing", Width = 1280, Height = 720, Setup = t => { OpenBuild(t); Town.Click(t.ui.buildingButtonContainer.Find("Gold MineButton")); World.Tick(0.05f); } },
             new Scenario { Name = "landscape-region", Width = 1280, Height = 720, Setup = t => OpenRegion(t) },
+            new Scenario { Name = "landscape-world", Width = 1280, Height = 720, Setup = t => BuildWorld(t) },
+            new Scenario { Name = "portrait-world", Width = 1080, Height = 2340, Setup = t => BuildWorld(t) },
+            new Scenario { Name = "landscape-hire-menu", Width = 1280, Height = 720, Setup = t => UIManager.Instance.TogglePanel(t.canvas.Find("HireMenuPanel").gameObject) },
+            new Scenario { Name = "landscape-character", Width = 1280, Height = 720, Setup = t => { t.UseSampleMap(); OwnedCharacter f = t.Hire(t.Firsy, 0, 0); UIManager.Instance.ShowCharacterDetails(f); } },
             new Scenario { Name = "portrait-start", Width = 1080, Height = 2340, Setup = t => { } },
             new Scenario { Name = "portrait-build-menu", Width = 1080, Height = 2340, Setup = t => OpenBuild(t) },
             new Scenario { Name = "portrait-game-menu", Width = 1080, Height = 2340, Setup = t => t.canvas.Find("MenuPanel").gameObject.SetActive(true) },
@@ -44,7 +49,9 @@ public static class Render
             {
                 Screen.width = s.Width; Screen.height = s.Height;
                 Town t = Town.Build();
+                AddRealArt(t);
                 AddRealBuildings(t);
+                typeof(UIManager).GetField("characterText", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance)?.SetValue(t.ui, t.canvas.Find("CharacterPanel/CharacterInfo")?.GetComponent<TextMeshProUGUI>());
                 typeof(UIManager).GetField("resourceText", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance)?.SetValue(t.ui, t.canvas.Find("ResourceText").GetComponent<TMP_Text>());
                 t.rm.SetResourceAmount(ResourceManager.Gold, 1460); t.rm.SetResourceAmount(ResourceManager.Wood, 50); t.rm.SetResourceAmount(ResourceManager.Letters, 2);
                 World.Tick(0.1f);
@@ -60,6 +67,109 @@ public static class Render
     private static void OpenBuild(Town t)
     {
         UIManager.Instance.TogglePanel(t.canvas.Find("BuildingMenuPanel").gameObject);
+    }
+
+    private static string Assets => Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../../../Assets/_Project"));
+
+    // "guid:fileID" of a sprite reference in an asset file ("  sprite: {fileID: 123, guid: abc, type: 3}"): what render_ui.py looks the picture up by
+    private static string SpriteRef(string assetText, string field = "sprite")
+    {
+        Match m = Regex.Match(assetText, @"(?m)^  " + field + @": \{fileID: (-?\d+), guid: ([0-9a-f]{32})");
+        return m.Success ? m.Groups[2].Value + ":" + m.Groups[1].Value : null;
+    }
+
+    private static Sprite Named(string reference)
+    {
+        Sprite sprite = new Sprite(100, 100);
+        if (reference != null) sprite.name = reference;
+        return sprite;
+    }
+
+    // The characters' and the road's real pictures, so lists and the world show them
+    private static void AddRealArt(Town t)
+    {
+        foreach (string file in Directory.GetFiles(Path.Combine(Assets, "ScriptableObjects/Characters"), "*.asset"))
+        {
+            string text = File.ReadAllText(file);
+            string name = Regex.Match(text, @"(?m)^  displayName: (.+)$").Groups[1].Value.Trim();
+            CharacterType type = new[] { t.Firsy, t.Condo, t.Baker }.FirstOrDefault(c => c.displayName == name);
+            if (type == null) continue;
+            type.sprite = Named(SpriteRef(text));
+            Match scale = Regex.Match(text, @"(?m)^  bodyScale: ([\d.]+)");
+            if (scale.Success) type.bodyScale = float.Parse(scale.Groups[1].Value, System.Globalization.CultureInfo.InvariantCulture);
+        }
+        string road = Path.Combine(Assets, "ScriptableObjects/Roads/DirtRoad.asset");
+        if (File.Exists(road)) t.DirtRoad.sprite = Named(SpriteRef(File.ReadAllText(road)));
+    }
+
+    // A town to look at: the sample Map, a few buildings, roads and characters on the Town Square (the picture of the world behind the UI)
+    private static void BuildWorld(Town t)
+    {
+        t.UseSampleMap();
+        World.Tick(0.1f);
+        t.rm.SetResourceAmount(ResourceManager.Gold, 5000); t.rm.SetResourceAmount(ResourceManager.Wood, 500);
+        BuildingType Pick(string name) => t.placer.AllBuildings.First(b => b.buildingName == name);
+        t.Place(Pick("Home"), -4, 1); t.Place(Pick("Home"), -2, 1); t.Place(Pick("Gold Mine"), 2, 1); t.Place(Pick("Lumberyard"), -3, -2); t.Place(Pick("Farm"), 2, -2);
+        for (int x = -5; x <= 4; x++) t.roads.Build(t.DirtRoad, new Vector2Int(x, -1));
+        for (int y = -4; y <= 2; y++) t.roads.Build(t.DirtRoad, new Vector2Int(0, y));
+        t.Hire(t.Firsy, 1f, -0.5f); t.Hire(t.Condo, -1.5f, -1.5f); t.Hire(t.Baker, 3.5f, -3f);
+        t.camera.orthographicSize = 6.5f;
+        t.camera.transform.position = new Vector3(0f, 0.5f, -10f);
+    }
+
+    private static List<Dictionary<string, object>> WorldItems(Town t, Scenario s)
+    {
+        List<Dictionary<string, object>> items = new List<Dictionary<string, object>>();
+        float half = t.camera.orthographicSize, aspect = s.Width / (float)s.Height;
+        Vector3 c = t.camera.transform.position;
+        MapRegions mr = MapRegions.Existing;
+        for (int cy = Mathf.FloorToInt(c.y - half) - 1; cy <= Mathf.CeilToInt(c.y + half) + 1; cy++)
+            for (int cx = Mathf.FloorToInt(c.x - half * aspect) - 1; cx <= Mathf.CeilToInt(c.x + half * aspect) + 1; cx++)
+            {
+                Vector2Int cell = new Vector2Int(cx, cy);
+                if (!t.map.InBounds(cell)) continue;
+                Dictionary<string, object> cellItem = new Dictionary<string, object> { ["kind"] = "ground", ["x"] = cx + 0.5f, ["y"] = cy + 0.5f, ["w"] = 1f, ["h"] = 1f };
+                RoadType road = t.map.RoadAt(cell);
+                if (road != null) cellItem["road"] = road.sprite?.name;
+                items.Add(cellItem);
+                if (mr != null && mr.Active && mr.OverlayTileAt(cell) is Tile tile)
+                {
+                    Color32 col = B(tile.color);
+                    items.Add(new Dictionary<string, object> { ["kind"] = "overlay", ["x"] = cx + 0.5f, ["y"] = cy + 0.5f, ["w"] = 1f, ["h"] = 1f, ["rgba"] = new[] { (int)col.r, col.g, col.b, col.a } });
+                }
+            }
+        // The trees, rocks and rubble on locked land: the game's own little pictures, sent as raw pixels
+        Transform decor = t.grid.transform.Find("RegionDecor");
+        if (decor != null)
+        {
+            Dictionary<Sprite, int> ids = new Dictionary<Sprite, int>();
+            foreach (Transform child in decor.children)
+            {
+                SpriteRenderer sr = child.GetComponent<SpriteRenderer>();
+                if (child.destroyed || sr == null || sr.sprite == null) continue;
+                Vector3 p = child.position;
+                if (Math.Abs(p.x - c.x) > half * aspect + 2 || Math.Abs(p.y - c.y) > half + 2) continue;
+                if (!ids.TryGetValue(sr.sprite, out int id))
+                {
+                    id = ids.Count;
+                    ids[sr.sprite] = id;
+                    Color32[] px = sr.sprite.texture.GetPixels32();
+                    byte[] raw = new byte[px.Length * 4];
+                    for (int i = 0; i < px.Length; i++) { raw[i * 4] = px[i].r; raw[i * 4 + 1] = px[i].g; raw[i * 4 + 2] = px[i].b; raw[i * 4 + 3] = px[i].a; }
+                    items.Add(new Dictionary<string, object> { ["kind"] = "decorSprite", ["id"] = id, ["size"] = sr.sprite.texture.width, ["rgba"] = Convert.ToBase64String(raw) });
+                }
+                items.Add(new Dictionary<string, object> { ["kind"] = "decor", ["id"] = id, ["x"] = p.x, ["y"] = p.y, ["scale"] = child.localScale.x, ["sortY"] = p.y });
+            }
+        }
+        foreach (Building b in t.bm.Buildings)
+            items.Add(new Dictionary<string, object> { ["kind"] = "building", ["x"] = b.transform.position.x, ["y"] = b.transform.position.y, ["w"] = (float)b.buildingType.size.x, ["h"] = (float)b.buildingType.size.y, ["ref"] = b.buildingType.sprite?.name, ["sortY"] = b.transform.position.y - b.buildingType.size.y * 0.5f });
+        foreach (OwnedCharacter o in t.cm.Roster)
+        {
+            if (!o.HasAvatar) continue;
+            float scale = o.Type.bodyScale > 0f ? o.Type.bodyScale : 1f;
+            items.Add(new Dictionary<string, object> { ["kind"] = "character", ["x"] = o.Avatar.transform.position.x, ["y"] = o.Avatar.transform.position.y, ["h"] = 1f * scale, ["ref"] = o.Type.sprite?.name, ["sortY"] = o.Avatar.transform.position.y - 0.5f });
+        }
+        return items;
     }
 
     private static void OpenRegion(Town t)
@@ -84,6 +194,7 @@ public static class Render
             if (name.Length == 0) continue;
             int Num(string field) { Match m = Regex.Match(text, @"(?m)^  " + field + @": (\d+)"); return m.Success ? int.Parse(m.Groups[1].Value) : 0; }
             BuildingType b = Town.NewBuilding(name, id++, 2, goldCost: Num("goldCost"), woodCost: Num("woodCost"));
+            b.sprite = Named(SpriteRef(text));
             Match size = Regex.Match(text, @"(?m)^  size: \{x: (\d+), y: (\d+)\}");
             if (size.Success) b.size = new Vector2Int(int.Parse(size.Groups[1].Value), int.Parse(size.Groups[2].Value));
             Match stone = Regex.Match(text, @"extraCosts:\r?\n  - item: \{[^}]*\}\r?\n    amount: (\d+)");
@@ -222,7 +333,7 @@ public static class Render
         };
         if (clip.HasValue) item["clip"] = new[] { clip.Value.x * scale, clip.Value.y * scale, clip.Value.w * scale, clip.Value.h * scale };
         Image image = rt.GetComponent<Image>();
-        if (image != null && image.enabled) { Color32 c = B(image.color); item["image"] = new Dictionary<string, object> { ["rgba"] = new[] { (int)c.r, c.g, c.b, c.a }, ["sprite"] = image.sprite != null, ["sliced"] = image.type == Image.Type.Sliced, ["button"] = rt.GetComponent<Button>() != null }; }
+        if (image != null && image.enabled) { Color32 c = B(image.color); item["image"] = new Dictionary<string, object> { ["rgba"] = new[] { (int)c.r, c.g, c.b, c.a }, ["sprite"] = image.sprite != null, ["ref"] = image.sprite != null && image.sprite.name != null && image.sprite.name.Contains(":") ? image.sprite.name : null, ["fit"] = image.preserveAspect, ["sliced"] = image.type == Image.Type.Sliced, ["button"] = rt.GetComponent<Button>() != null }; }
         TMP_Text label = rt.GetComponent<TMP_Text>();
         if (label != null && label.enabled && !string.IsNullOrEmpty(label.text))
         {
@@ -275,7 +386,8 @@ public static class Render
         List<Dictionary<string, object>> items = new List<Dictionary<string, object>>();
         foreach (RectTransform child in ActiveChildren(canvas)) Walk(child, FromAnchors(child, root), scale, null, items, "");
         // The placement strip and other objects the game adds directly under the canvas are included above; the toasts live in ToastArea
-        string json = JsonSerializer.Serialize(new Dictionary<string, object> { ["name"] = s.Name, ["width"] = s.Width, ["height"] = s.Height, ["scale"] = scale, ["items"] = items }, new JsonSerializerOptions { WriteIndented = false });
+        Vector3 cam = t.camera.transform.position;
+        string json = JsonSerializer.Serialize(new Dictionary<string, object> { ["name"] = s.Name, ["width"] = s.Width, ["height"] = s.Height, ["scale"] = scale, ["camera"] = new[] { cam.x, cam.y, t.camera.orthographicSize }, ["world"] = WorldItems(t, s), ["items"] = items }, new JsonSerializerOptions { WriteIndented = false });
         File.WriteAllText(file, json);
     }
 }

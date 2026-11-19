@@ -11,9 +11,9 @@
 
 ## What it is, and what it is not
 
-- **Real:** positions, sizes, which things overlap, which menu covers what, colours and texts as the game sets them, the scene's canvas.
-- **Not real:** pictures (sprites are plain boxes), the font (Liberation Sans is used, close to Unity's default, so text can wrap a little differently and auto-sizing is approximate), the game world behind the UI (flat green), anything animated, and the scene's hand-wired button clicks (the render opens menus the way the buttons would).
-- Stand-in numbers: gold 1460, wood 50, letters 2, the project's real building types (names, sizes, costs) but no pictures.
+- **Real:** positions, sizes, which things overlap, which menu covers what, colours and texts as the game sets them, the scene's canvas, and **the project's own pictures** (building, character and road sprites are cut out of `Assets/_Project/Art` by their asset ids; the grass tile, roads, the Map's tint and fog, and the placeholder trees / rocks / rubble the game draws itself).
+- **Not real:** the font (Liberation Sans is used, close to Unity's default, so text can wrap a little differently and auto-sizing is approximate), anything animated (frames, walking, day / night light), lighting and shadows, characters in the world are drawn as their still picture about one cell tall (no animation, no body scale tuning), 3/4 building art (all buildings are drawn flat over their cells), the panels' own background pictures (rounded boxes), and the scene's hand-wired button clicks (the render opens menus the way the buttons would).
+- Stand-in numbers: gold 1460 / 5000, wood 50 / 500, letters 2, the project's real building types (names, sizes, costs, pictures) placed on the Town Square for the `*-world` screens.
 - It cannot tell you how something *feels*. Comparing with Unity is how to find where it is wrong; tell Claude what differs and it gets fixed in the renderer.
 
 Add a screen: add a `Scenario` in `Sim/Render.cs` (screen size and a few lines that open it).
