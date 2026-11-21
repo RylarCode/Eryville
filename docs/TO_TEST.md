@@ -4,6 +4,20 @@ Things built in the cloud (headless tests only, never seen in Unity) that need a
 
 Before starting: pull the branch `first-cleanup`, let Unity import (no restart needed), stop Play mode before scripts recompile. If Unity re-saves any of the hand-written assets, commit those changes.
 
+## 00. The new main screen (from your sketches, 2026-11-21): please look at all of this
+
+**Note: the older items below mention the bottom bar buttons (Build, Hire, Town, Recruit, Story, Quests), the View and Menu buttons. They are now: the Book's tabs (Buildings, Hire, Characters = the Town list, Recruit, Story, Quests, Notifications), "View" inside Settings, and the Settings button.**
+
+- [ ] Top left: a **Gold** counter and a **Food** counter (all edible items added up; the icon is a coloured square until you draw icons), and an **All** button. All drops a list of every resource; tapping it again, or the ground, closes it.
+- [ ] Top right: the **Settings** button above the **Book** button. On a wide screen they ride along on the left edge of whatever slides in; on a phone they stay in the corner.
+- [ ] **Settings** slides the game menu (Save, Load, Quit, **View**, Cheats) in from the right; the same button, or tapping the ground, slides it out. Notifications is no longer here: it is a tab.
+- [ ] **Book**: slides in from the right (wide screen) or up from the bottom (phone) and takes half the screen, brown cover and cream pages, with tabs along the top: Summary, Characters, Buildings, Hire, Recruit, Quests, Story, Notifications. Tapping a tab turns to that page; the active tab is lighter; "Quests (2)" counts quests waiting. The book button, tapping the ground and Escape all close it.
+- [ ] **Summary** page: "Needs attention" (quests waiting, recent warnings and alerts; tap one to go to it), "Resources", "Town" (characters, average happiness and the lowest, hungry and unpaid counts, buildings, land cleared).
+- [ ] Choosing a building on the **Buildings** page slides the book away so the map is free; placing or cancelling leaves it closed (the Cancel strip is at the bottom).
+- [ ] Tapping a **character** in the world opens the book at **Characters** with their details page (the picture, the text, Assign); tapping a region opens its page too.
+- [ ] All eight tabs fit on a wide screen and on a phone. Tell Claude if "Notifications" is too small, if you want fewer or different tabs, or other names.
+- [ ] Look and feel (all of it is open to change): the cover and page colours, the tab shapes (plain boxes for now, not bookmark shapes), the slide speed (0.2 s), the size of the buttons, no icons yet (the Settings and Book buttons say their names).
+
 ## 0. Found in your first look (fixed on 2026-11-18: please check again)
 
 - [ ] The **game menu** (Save, Load, Quit, Notifications, Cheats) can be closed: the **Menu** button stays visible on top of it, tapping the ground closes it, and Escape closes it.

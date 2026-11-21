@@ -114,10 +114,9 @@ public static class GameTests
             T.Check(b != null && b.GetSiblingIndex() == hire.GetSiblingIndex() + i + 1, order[i] + " is in the row after Hire");
         }
         T.Check(Town.TextOf(t.canvas.Find("OpenStoryButton")) == "Story" && Town.TextOf(t.canvas.Find("OpenQuestButton")) == "Quests", "labelled Story and Quests");
-        Transform view = t.canvas.Find("ViewButton"), menu = t.canvas.Find("OpenMenuButton");
-        T.Check(view != null && view.GetSiblingIndex() == 0 && ((RectTransform)view).anchoredPosition.x < ((RectTransform)menu).anchoredPosition.x, "the View button sits behind the panels, left of the Menu button");
+        T.Check(new[] { "OpenBuildButton", "OpenHireButton", "OpenTownButton", "OpenRecruitButton", "OpenStoryButton", "OpenQuestButton", "OpenMenuButton" }.All(n => !t.canvas.Find(n).gameObject.activeSelf), "the old bottom bar and Menu button are hidden (the book has their jobs now)");
         Transform menuPanel = t.canvas.Find("MenuPanel");
-        T.Check(menuPanel.Find("NotificationsButton") != null && menuPanel.Find("CheatsButton") != null, "the game menu has Notifications and Cheats below Quit");
+        T.Check(menuPanel.Find("ViewButton") != null && menuPanel.Find("CheatsButton") != null && menuPanel.Find("NotificationsButton") == null, "the settings menu has View and Cheats below Quit; Notifications is a tab of the book");
 
         T.Section("town menu");
         OwnedCharacter firsy = t.Hire(t.Firsy, 1, 1);
@@ -161,11 +160,14 @@ public static class GameTests
         t.rm.SetResourceAmount(ResourceManager.Wood, 1000);
 
         T.Section("the game menu can always be closed");
-        Transform menu = t.canvas.Find("OpenMenuButton"), menuPanel = t.canvas.Find("MenuPanel");
-        T.Check(menu.GetSiblingIndex() > menuPanel.GetSiblingIndex(), "the Menu button is drawn over the game menu (the menu grows up over it)");
-        menuPanel.gameObject.SetActive(true);
-        t.ClickWorld(new Vector3(20f, 20f, 0f));
-        T.Check(!menuPanel.gameObject.activeSelf, "tapping the ground closes the game menu");
+        Transform settings = t.canvas.Find("TopRightButtons/SettingsButton"), menuPanel = t.canvas.Find("MenuPanel");
+        Town.Click(settings); World.Run(0.5f);
+        T.Check(menuPanel.gameObject.activeSelf && t.ui.Book.SettingsOpen, "the settings button opens the game menu");
+        Town.Click(settings); World.Run(0.5f);
+        T.Check(!menuPanel.gameObject.activeSelf, "pressing it again closes it");
+        Town.Click(settings); World.Run(0.5f);
+        t.ClickWorld(new Vector3(20f, 20f, 0f)); World.Run(0.5f);
+        T.Check(!menuPanel.gameObject.activeSelf, "tapping the ground closes the game menu too");
 
         T.Section("scrolling");
         ScrollRect scroll = t.ui.buildingButtonContainer.parent.parent.GetComponent<ScrollRect>();
@@ -202,6 +204,86 @@ public static class GameTests
         World.Tick(0.02f);
         UnityEngine.EventSystems.EventSystem.OverUI = false;
         T.Check(t.camera.orthographicSize == size, "over a menu it scrolls the menu and leaves the camera alone");
+    }
+
+    public static void BookLandscape() => BookAndTop(false);
+    public static void BookPortrait() => BookAndTop(true);
+
+    private static void BookAndTop(bool portrait)
+    {
+        {
+            string shape = portrait ? "portrait" : "landscape";
+            Screen.width = portrait ? 1080 : 1280; Screen.height = portrait ? 2340 : 720;
+            Town t = Town.Build();
+            t.rm.SetResourceAmount(ResourceManager.Gold, 1234); t.rm.SetResourceAmount(ResourceManager.Wood, 50); t.rm.SetResourceAmount(ResourceManager.Letters, 2);
+            World.Run(0.5f);
+            Transform bookRoot = t.canvas.Find("Book"), top = t.canvas.Find("TopRightButtons"), bar = t.canvas.Find("ResourceBar");
+
+            T.Section(shape + ": the top of the screen");
+            RectTransform rtTop = (RectTransform)top;
+            T.Check(top != null && rtTop.anchorMin == Vector2.one && ((RectTransform)top.Find("SettingsButton")).anchoredPosition.y > ((RectTransform)top.Find("BookButton")).anchoredPosition.y, "the settings button sits above the book button, top right");
+            T.Check(Town.TextOf(bar.Find("GoldChip")) == "1234", "the gold counter shows the gold: " + Town.TextOf(bar.Find("GoldChip")));
+            T.Check(((RectTransform)bar).anchorMin == new Vector2(0f, 1f), "the resources are anchored top left");
+            T.Check(!bookRoot.gameObject.activeSelf, "the book is closed at the start");
+
+            T.Section(shape + ": opening the book");
+            Town.Click(top.Find("BookButton")); World.Run(0.5f);
+            Transform summary = t.Panel("SummaryPanel");
+            T.Check(bookRoot.gameObject.activeSelf && summary.gameObject.activeSelf && t.ui.ActiveTab == UIManager.BookTab.Summary, "the book button opens the Summary page");
+            RectTransform book = (RectTransform)bookRoot;
+            if (portrait) T.Check(book.anchorMin == new Vector2(0f, 0f) && book.anchorMax == new Vector2(1f, 0f) && System.Math.Abs(book.sizeDelta.y - ((RectTransform)t.canvas).rect.height * 0.5f) < 1f && book.anchoredPosition.y == 0f, "on a phone it comes up from the bottom and takes half the screen");
+            else T.Check(book.anchorMin == new Vector2(1f, 0f) && book.anchorMax == new Vector2(1f, 1f) && System.Math.Abs(book.sizeDelta.x - ((RectTransform)t.canvas).rect.width * 0.5f) < 1f && book.anchoredPosition.x == 0f, "on a wide screen it comes from the right and takes half the screen");
+            RectTransform page = (RectTransform)summary;
+            if (portrait) T.Check(page.anchoredPosition.y >= 0f && page.sizeDelta.y < book.sizeDelta.y, "the page sits inside the book, under the tabs");
+            else T.Check(page.sizeDelta.x < book.sizeDelta.x && -page.sizeDelta.y > 0f, "the page sits inside the book, under the tabs");
+            if (!portrait) T.Check(((RectTransform)top).anchoredPosition.x < -book.sizeDelta.x + 1f, "the two buttons ride along on the left edge of the book");
+            else T.Check(((RectTransform)top).anchoredPosition.x > -100f, "on a phone the two buttons stay in the corner");
+            T.Check(Town.Rows(summary.Find("Scroll/Viewport/Content")).Select(Town.TextOf).Any(r => r == "Needs attention") && t.PanelRows("SummaryPanel").Contains("Resources"), "the Summary page has its sections: " + string.Join(" | ", t.PanelRows("SummaryPanel")));
+
+            T.Section(shape + ": the tabs");
+            var tabs = bookRoot.Find("Tabs").children.Where(c => !c.destroyed).ToList();
+            T.Check(tabs.Select(Town.TextOf).SequenceEqual(new[] { "Summary", "Characters", "Buildings", "Hire", "Recruit", "Quests", "Story", "Notifications" }), "the tabs: " + string.Join(", ", tabs.Select(Town.TextOf)));
+            foreach (var pair in new[] { ("TabCharacters", "TownPanel"), ("TabBuildings", "BuildingMenuPanel"), ("TabHire", "HireMenuPanel"), ("TabRecruit", "RecruitPanel"), ("TabQuests", "QuestPanel"), ("TabStory", "StoryPanel"), ("TabNotifications", "NotificationPanel") })
+            {
+                Town.Click(bookRoot.Find("Tabs/" + pair.Item1)); World.Run(0.3f);
+                T.Check(t.Panel(pair.Item2).gameObject.activeSelf && !summary.gameObject.activeSelf && bookRoot.gameObject.activeSelf, pair.Item1 + " turns to " + pair.Item2);
+            }
+            T.Check(Enumerable.Range(0, tabs.Count).All(i => ((RectTransform)tabs[i]).anchorMin.x == i / (float)tabs.Count), "the tabs share the width equally");
+
+            T.Section(shape + ": closing it");
+            Town.Click(top.Find("BookButton")); World.Run(0.5f);
+            T.Check(!bookRoot.gameObject.activeSelf && !t.Panel("NotificationPanel").gameObject.activeSelf && t.gm.currentGameState == GameManager.gameState.Normal, "the book button closes it");
+            Town.Click(top.Find("BookButton")); World.Run(0.5f);
+            t.ClickWorld(new Vector3(30f, 30f, 0f)); World.Run(0.5f);
+            T.Check(!bookRoot.gameObject.activeSelf, "so does tapping the ground");
+            Town.Click(top.Find("BookButton")); World.Run(0.5f);
+            Town.Click(top.Find("SettingsButton")); World.Run(0.5f);
+            T.Check(!bookRoot.gameObject.activeSelf && t.canvas.Find("MenuPanel").gameObject.activeSelf, "opening the settings closes the book (one at a time)");
+            Town.Click(top.Find("BookButton")); World.Run(0.5f);
+            T.Check(bookRoot.gameObject.activeSelf && !t.ui.Book.SettingsOpen, "...and the other way round");
+
+            T.Section(shape + ": the resource list");
+            Town.Click(top.Find("BookButton")); World.Run(0.5f);
+            Town.Click(bar.Find("AllResourcesButton"));
+            Transform drop = t.canvas.Find("ResourceDropdown");
+            T.Check(drop.gameObject.activeSelf && drop.children.Count(c => !c.destroyed) >= 3 && Town.TextOf(drop.children.First(c => !c.destroyed)).StartsWith("Gold: 1234"), "the All button drops a list of every resource: " + string.Join(" | ", drop.children.Where(c => !c.destroyed).Select(Town.TextOf)));
+            Town.Click(bar.Find("AllResourcesButton"));
+            T.Check(!drop.gameObject.activeSelf, "and closes it again");
+            Town.Click(bar.Find("AllResourcesButton")); t.ClickWorld(new Vector3(30f, 30f, 0f));
+            T.Check(!drop.gameObject.activeSelf, "tapping the ground closes it too");
+
+            T.Section(shape + ": choosing a building and a character");
+            t.rm.SetResourceAmount(ResourceManager.Gold, 5000);
+            Town.Click(top.Find("BookButton")); World.Run(0.4f);
+            Town.Click(bookRoot.Find("Tabs/TabBuildings")); World.Run(0.4f);
+            Town.Click(t.ui.buildingButtonContainer.Find("Gold MineButton")); World.Run(0.5f);
+            T.Check(t.placer.IsPlacing && !bookRoot.gameObject.activeSelf, "choosing a building slides the book away so the map is free");
+            t.placer.CancelPlacing(); World.Run(0.3f);
+            OwnedCharacter firsy = t.Hire(t.Firsy, 1, 1);
+            World.Run(0.5f);
+            t.ui.ShowCharacterDetails(firsy); World.Run(0.5f);
+            T.Check(bookRoot.gameObject.activeSelf && t.ui.ActiveTab == UIManager.BookTab.Characters && t.Panel("CharacterPanel").gameObject.activeSelf, "a character's details are a page of the book, under Characters");
+        }
     }
 
     public static void Recruiting()

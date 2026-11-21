@@ -22,6 +22,8 @@ public static partial class Suites
         ("Saving and loading", GameTests.SaveAndLoad),
         ("Menus and layout", GameTests.Menus),
         ("Menu feedback fixes", GameTests.MenuFeedback),
+        ("The book and the top: landscape", GameTests.BookLandscape),
+        ("The book and the top: portrait", GameTests.BookPortrait),
         ("Recruiting", GameTests.Recruiting),
         ("Time away (offline)", GameTests.Offline),
         ("Story in the game", FeatureTests.StoryInGame),

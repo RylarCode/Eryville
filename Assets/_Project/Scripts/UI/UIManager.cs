@@ -56,9 +56,16 @@ public class UIManager : MonoBehaviour
     private float nextConnectionRefresh;
     // The Quests menu and its button (which says when something is waiting)
     private QuestMenu questMenu;
+    private SummaryMenu summary;
+    private BookUi book;
+
+    // The pages of the book, in the order of its tabs
+    public enum BookTab { Summary, Characters, Buildings, Hire, Recruit, Quests, Story, Notifications }
+    public BookUi Book => book;
     private RegionMenu regionMenu;
     private Vector2? regionTapStart; // where a press began that may turn out to be a tap on a region
     private float nextRegionRefresh;
+    private float nextSummaryRefresh;
     private float nextQuestRefresh;
     private TMP_Text questButtonLabel;
     private string shownQuestLabel;
@@ -149,7 +156,6 @@ public class UIManager : MonoBehaviour
         toasts = ToastView.Create(characterPanel.transform.parent, buttonPrefab);
         CreateMoveButton();
         CreateConnectionButton();
-        CreateViewButton();
         town = new TownMenu(this, buttonPrefab, characterPanel, assignPanel);
         CreateMenuButton("OpenTownButton", "Town", 1, ToggleTownMenu);
         recruit = new RecruitMenu(this, buttonPrefab, characterPanel, assignPanel);
@@ -162,6 +168,7 @@ public class UIManager : MonoBehaviour
         connectionMenu = new ConnectionMenu(this, buttonPrefab, characterPanel, assignPanel);
         questButtonLabel = characterPanel.transform.parent.Find("OpenQuestButton")?.GetComponentInChildren<TMP_Text>();
         notificationMenu = new NotificationMenu(this, buttonPrefab, characterPanel, assignPanel);
+        summary = new SummaryMenu(this, buttonPrefab, characterPanel, assignPanel);
         SetUpCheats();
         if (BuildingPlacer.Instance != null) BuildingPlacer.Instance.MovingEnded += OnMovingEnded;
 
@@ -181,6 +188,73 @@ public class UIManager : MonoBehaviour
 
         layout.Apply();
         ApplyTouchMode();
+        book = new BookUi(this, characterPanel.transform.parent, buttonPrefab, layout, dialogue != null ? dialogue.transform : null);
+        book.Relayout();
+    }
+
+    // --- The book ---
+
+    // The panel that is the page of a tab
+    private GameObject PageOf(BookTab tab)
+    {
+        Transform canvas = characterPanel.transform.parent;
+        switch (tab)
+        {
+            case BookTab.Summary: return summary?.Panel;
+            case BookTab.Characters: return town?.Panel;
+            case BookTab.Buildings: return canvas.Find("BuildingMenuPanel")?.gameObject;
+            case BookTab.Hire: return canvas.Find("HireMenuPanel")?.gameObject;
+            case BookTab.Recruit: return recruit?.Panel;
+            case BookTab.Quests: return questMenu?.Panel;
+            case BookTab.Story: return storyMenu?.Panel;
+            default: return notificationMenu?.Panel;
+        }
+    }
+
+    // Which tab the open page belongs to (a character's details, its Connection and the job list are the Characters route)
+    public BookTab ActiveTab
+    {
+        get
+        {
+            foreach (BookTab tab in (BookTab[])System.Enum.GetValues(typeof(BookTab)))
+            {
+                GameObject page = PageOf(tab);
+                if (page != null && page.activeSelf) return tab;
+            }
+            if (characterPanel.activeSelf || (connectionMenu != null && connectionMenu.Panel.activeSelf)) return BookTab.Characters;
+            return BookTab.Summary;
+        }
+    }
+
+    // Opens a page of the book (the book slides in if it is not there yet)
+    public void OpenBookTab(BookTab tab)
+    {
+        GameObject page = PageOf(tab);
+        if (page == null) return;
+        book?.CloseSettings();
+        book?.CloseDropdown();
+        if (page.activeSelf) return;
+        switch (tab)
+        {
+            case BookTab.Summary: TogglePanel(page); summary.Show(); break;
+            case BookTab.Characters: ToggleTownMenu(); break;
+            case BookTab.Recruit: ToggleRecruitMenu(); break;
+            case BookTab.Quests: ToggleQuestMenu(); break;
+            case BookTab.Story: ToggleStoryMenu(); break;
+            case BookTab.Notifications: ToggleNotificationMenu(); break;
+            default: TogglePanel(page); break; // Buildings, Hire
+        }
+    }
+
+    // Shuts the book (whatever page is open). A building being placed is left alone.
+    public void CloseBook()
+    {
+        if (CharacterPanelsOpen) CloseCharacterPanels();
+        if (openPanel != null && openPanel.activeSelf) TogglePanel(openPanel);
+        foreach (GameObject page in new[] { regionMenu?.Panel, connectionMenu?.Panel, summary?.Panel }) if (page != null && page.activeSelf) page.SetActive(false);
+        if (openPanel != null) { openPanel = null; }
+        if (!panelCollapsed && GameManager.Instance != null && !(BuildingPlacer.Instance != null && BuildingPlacer.Instance.IsPlacing)) GameManager.Instance.currentGameState = GameManager.gameState.Normal;
+        if (GridlinesGO != null && !(BuildingPlacer.Instance != null && BuildingPlacer.Instance.IsPlacing)) GridlinesGO.SetActive(false);
     }
 
     // On a phone the finger only aims and a Place button builds
@@ -192,7 +266,7 @@ public class UIManager : MonoBehaviour
     // The screen changed between portrait and landscape: menus and cards were sized for the old shape, so make them again
     private void RebuildForNewLayout()
     {
-        if (openPanel != null && (openPanel == town.Panel || openPanel == recruit.Panel || openPanel == storyMenu.Panel || openPanel == questMenu.Panel || openPanel == notificationMenu.Panel || openPanel == connectionMenu.Panel || openPanel == regionMenu.Panel)) TogglePanel(openPanel);
+        if (openPanel != null && (openPanel == town.Panel || openPanel == recruit.Panel || openPanel == storyMenu.Panel || openPanel == questMenu.Panel || openPanel == notificationMenu.Panel || openPanel == connectionMenu.Panel || openPanel == regionMenu.Panel || openPanel == summary.Panel)) TogglePanel(openPanel);
         if (cheats != null && openPanel == cheats.Panel) TogglePanel(openPanel);
         recruit.Dispose();
         reveal.Destroy();
@@ -202,7 +276,7 @@ public class UIManager : MonoBehaviour
             Destroy(dialogue.gameObject);
             dialogue = DialogueBox.Create(characterPanel.transform.parent, buttonPrefab);
         }
-        List<GameObject> oldPanels = new List<GameObject> { town.Panel, recruit.Panel, storyMenu.Panel, questMenu.Panel, notificationMenu.Panel, connectionMenu.Panel, regionMenu.Panel };
+        List<GameObject> oldPanels = new List<GameObject> { town.Panel, recruit.Panel, storyMenu.Panel, questMenu.Panel, notificationMenu.Panel, connectionMenu.Panel, regionMenu.Panel, summary.Panel };
         if (cheats != null) oldPanels.Add(cheats.Panel);
         foreach (GameObject old in oldPanels)
         {
@@ -217,6 +291,7 @@ public class UIManager : MonoBehaviour
         regionMenu = new RegionMenu(this, buttonPrefab, characterPanel, assignPanel);
         connectionMenu = new ConnectionMenu(this, buttonPrefab, characterPanel, assignPanel);
         notificationMenu = new NotificationMenu(this, buttonPrefab, characterPanel, assignPanel);
+        summary = new SummaryMenu(this, buttonPrefab, characterPanel, assignPanel);
         if (cheats != null) cheats = new CheatMenu(this, buttonPrefab, characterPanel, assignPanel);
 
         foreach (Transform container in new[] { buildingButtonContainer, hireButtonContainer })
@@ -240,7 +315,7 @@ public class UIManager : MonoBehaviour
     // Choosing something to place hides the menu so the map is visible; the game stays paused until placing ends
     private void CollapsePanelForPlacement()
     {
-        if (!layout.IsPortrait || openPanel == null || !openPanel.activeSelf) return;
+        if (openPanel == null || !openPanel.activeSelf) return;
         openPanel.SetActive(false);
         panelCollapsed = true;
     }
@@ -309,7 +384,9 @@ public class UIManager : MonoBehaviour
         {
             ApplyTouchMode();
             RebuildForNewLayout();
+            book?.Relayout();
         }
+        book?.Tick(Time.unscaledDeltaTime);
         if (layout != null) UpdatePlacementBar();
         SyncPortraitVisibility();
         if (cheats != null && cheats.Panel.activeInHierarchy && Time.unscaledTime >= nextCheatRefresh)
@@ -344,6 +421,11 @@ public class UIManager : MonoBehaviour
             questMenu.Refresh();
         }
         UpdateQuestButton();
+        if (summary != null && summary.Panel.activeInHierarchy && Time.unscaledTime >= nextSummaryRefresh)
+        {
+            nextSummaryRefresh = Time.unscaledTime + BuildingRefreshInterval;
+            summary.Refresh();
+        }
         if (regionMenu != null && regionMenu.Panel.activeInHierarchy && Time.unscaledTime >= nextRegionRefresh)
         {
             nextRegionRefresh = Time.unscaledTime + BuildingRefreshInterval;
@@ -391,7 +473,9 @@ public class UIManager : MonoBehaviour
     private void HandleWorldClick(Vector2 screenPosition)
     {
         if (CharacterPanelsOpen) CloseCharacterPanels();
-        CloseGameMenu(); // tapping the ground closes the game menu (Save, Load, Quit...)
+        CloseGameMenu(); // tapping the ground closes the game menu (Save, Load, Quit...), the resource list and the book
+        book?.CloseDropdown();
+        if (book != null && book.PageOpen) CloseBook();
         if (regionMenu != null && regionMenu.Panel.activeInHierarchy) TogglePanel(regionMenu.Panel); // tapping the ground closes it (a tap on another region opens that one when the finger comes up)
         regionTapStart = screenPosition; // a tap on a region is decided when the finger comes up (a drag moves the camera instead)
     }
@@ -402,6 +486,7 @@ public class UIManager : MonoBehaviour
 
     private void CloseGameMenu()
     {
+        if (book != null) { book.CloseSettings(); return; }
         Transform menu = GameMenuPanel;
         if (menu != null && menu.gameObject.activeSelf) menu.gameObject.SetActive(false);
     }
@@ -903,19 +988,21 @@ public class UIManager : MonoBehaviour
         Transform menuButton = canvas.Find("OpenMenuButton");
         if (menuButton != null) menuButton.SetAsLastSibling();
 
-        AddGameMenuButton("NotificationsButton", "Notifications", ToggleNotificationMenu, 1);
+        viewButton = AddGameMenuButton("ViewButton", "View: 3/4", () => { if (CityView.Instance != null) CityView.Instance.Toggle(); }, 1);
+        viewLabel = viewButton != null ? viewButton.GetComponentInChildren<TMP_Text>() : null;
         if (cheats != null) AddGameMenuButton("CheatsButton", "Cheats", ToggleCheatMenu, 2);
+        UpdateViewButton();
     }
 
     // Adds a button to the game menu as a copy of its Quit button, below it (slot 1 is the first place below Quit, slot 2 the next...)
-    private void AddGameMenuButton(string buttonName, string text, UnityAction onClick, int slot)
+    private GameObject AddGameMenuButton(string buttonName, string text, UnityAction onClick, int slot)
     {
         Transform menuPanel = characterPanel.transform.parent.Find("MenuPanel");
         Transform quit = menuPanel != null ? menuPanel.Find("QuitButton") : null;
         if (quit == null)
         {
             Debug.LogWarning($"Could not find the game menu's Quit button to copy, so there is no {text} button.");
-            return;
+            return null;
         }
 
         GameObject copy = Instantiate(quit.gameObject, menuPanel);
@@ -941,6 +1028,7 @@ public class UIManager : MonoBehaviour
             label.fontSizeMax = Mathf.Max(label.fontSize, 8f);
             label.fontSizeMin = 8f;
         }
+        return copy;
     }
 
     public void ToggleCheatMenu()
@@ -1018,30 +1106,6 @@ public class UIManager : MonoBehaviour
     private GameObject viewButton;
     private TMP_Text viewLabel;
     private string shownViewLabel;
-
-    private void CreateViewButton()
-    {
-        // A copy of the Menu button (same look), just to its left
-        Transform canvas = characterPanel.transform.parent;
-        Transform source = canvas.Find("OpenMenuButton");
-        if (source == null) return;
-
-        viewButton = Instantiate(source.gameObject, canvas);
-        viewButton.name = "ViewButton";
-        viewButton.transform.SetAsFirstSibling(); // behind every panel and menu, so it never covers them
-        RectTransform sourceRect = source.GetComponent<RectTransform>();
-        RectTransform rect = viewButton.GetComponent<RectTransform>();
-        if (sourceRect != null && rect != null) rect.anchoredPosition = sourceRect.anchoredPosition + new Vector2(-(sourceRect.sizeDelta.x + 10f), 0f);
-
-        Button button = viewButton.GetComponent<Button>();
-        if (button != null)
-        {
-            for (int i = 0; i < button.onClick.GetPersistentEventCount(); i++) button.onClick.SetPersistentListenerState(i, UnityEventCallState.Off);
-            button.onClick.AddListener(() => { if (CityView.Instance != null) CityView.Instance.Toggle(); });
-        }
-        viewLabel = viewButton.GetComponentInChildren<TMP_Text>();
-        UpdateViewButton();
-    }
 
     // "View: 3/4", "View: Flat", or "Flat (editing)" while placing something (then it cannot be changed)
     private void UpdateViewButton()

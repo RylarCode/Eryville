@@ -209,6 +209,7 @@ def render(path, out):
         clip = None
         if 'clip' in item:
             cx, cy, cw, ch = item['clip']
+            cw, ch = max(0, cw), max(0, ch)
             clip = (cx, H - (cy + ch), cx + cw, H - cy)
         if 'image' in item and w > 0 and h > 0:
             im = item['image']

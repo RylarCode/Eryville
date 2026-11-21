@@ -227,7 +227,7 @@ public static class FeatureTests
 
         T.Section("history");
         Notify.Center.Reset(); Notify.Show("old one"); Notify.Show("new one", NotifyKind.Success, null, () => runs += 10);
-        Town.Click(t.canvas.Find("MenuPanel/NotificationsButton"));
+        Town.Click(t.canvas.Find("Book/Tabs/TabNotifications"));
         List<string> rows = t.PanelRows("NotificationPanel");
         T.Check(rows.Count == 2 && rows[0].EndsWith("new one") && rows[1].EndsWith("old one"), "the history lists them newest first, with the time: " + string.Join(" | ", rows));
         Town.Click(Town.Rows(t.Content("NotificationPanel"))[0]);

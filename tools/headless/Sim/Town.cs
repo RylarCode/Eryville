@@ -178,6 +178,8 @@ public class Town
 
         GameObject canvasGO = new GameObject("Canvas", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler));
         canvas = canvasGO.transform;
+        RectTransform canvasRect = (RectTransform)canvas; // (a real canvas is as big as the screen)
+        canvasRect.anchorMin = Vector2.zero; canvasRect.anchorMax = Vector2.one; canvasRect.sizeDelta = Vector2.zero;
         Vector2 mid = new Vector2(0.5f, 0.5f);
 
         Ui("ResourceText", mid, mid, new Vector2(-454, 187), new Vector2(200, 50));

@@ -114,6 +114,7 @@ public class UILayout
                 strip.anchoredPosition = new Vector2(0f, 20f);
                 strip.sizeDelta = new Vector2(360f, 70f);
             }
+            PlaceDetails(); // the character's page of the book is laid out the same way as on a phone, just smaller
             return;
         }
 
@@ -213,6 +214,7 @@ public class UILayout
         RectTransform details = Find("CharacterPanel");
         if (details == null) return;
 
+        float k = IsPortrait ? 1f : 0.5f; // text and button sizes: a phone's are big for fingers
         float textLeft = detailsHavePortrait ? 0.4f : 0f;
         RectTransform info = Child(details, "CharacterInfo");
         if (info != null)
@@ -221,7 +223,7 @@ public class UILayout
             info.offsetMin = new Vector2(24f, 0f);
             info.offsetMax = new Vector2(-24f, -24f);
             TMP_Text text = info.GetComponentInChildren<TMP_Text>();
-            if (text != null) { Touch(text); text.enableAutoSizing = true; text.fontSizeMin = 26f; text.fontSizeMax = 56f; }
+            if (text != null) { Touch(text); text.enableAutoSizing = true; text.fontSizeMin = 26f * k; text.fontSizeMax = 56f * k; }
         }
         RectTransform picture = Child(details, "PortraitImage");
         if (picture != null)
@@ -236,8 +238,8 @@ public class UILayout
         {
             RectTransform button = Child(details, buttons[i]);
             if (button == null) continue;
-            Place(button, new Vector2(places[i] * 0.5f, 0f), new Vector2((places[i] + 1) * 0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, Gap), new Vector2(-2f * Gap, 120f));
-            Fit(button, 20f, 56f);
+            Place(button, new Vector2(places[i] * 0.5f, 0f), new Vector2((places[i] + 1) * 0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, Gap), new Vector2(-2f * Gap, 120f * k));
+            Fit(button, 20f * k, 56f * k);
         }
         RectTransform list = Child(details, "AssignPanel");
         if (list != null)
@@ -262,7 +264,7 @@ public class UILayout
     {
         if (detailsHavePortrait == has) return;
         detailsHavePortrait = has;
-        if (laidOut && IsPortrait) PlaceDetails();
+        if (laidOut) PlaceDetails();
     }
 
     // Drops the part of the layout that belongs to the old shape (the strip is rebuilt for the new sizes)

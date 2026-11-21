@@ -26,22 +26,25 @@ public static class Render
     {
         Directory.CreateDirectory(outDir);
         SceneUi.JsonPath = sceneJson;
-        List<Scenario> scenarios = new List<Scenario>
+        Action<UIManager.BookTab> tab = null;
+        List<Scenario> scenarios = new List<Scenario>();
+        void Add(string name, int w, int h, Action<Town> setup) => scenarios.Add(new Scenario { Name = name, Width = w, Height = h, Setup = setup });
+        foreach (bool portrait in new[] { false, true })
         {
-            new Scenario { Name = "landscape-start", Width = 1280, Height = 720, Setup = t => { } },
-            new Scenario { Name = "landscape-game-menu", Width = 1280, Height = 720, Setup = t => t.canvas.Find("MenuPanel").gameObject.SetActive(true) },
-            new Scenario { Name = "landscape-build-menu", Width = 1280, Height = 720, Setup = t => OpenBuild(t) },
-            new Scenario { Name = "landscape-placing", Width = 1280, Height = 720, Setup = t => { OpenBuild(t); Town.Click(t.ui.buildingButtonContainer.Find("Gold MineButton")); World.Tick(0.05f); } },
-            new Scenario { Name = "landscape-region", Width = 1280, Height = 720, Setup = t => OpenRegion(t) },
-            new Scenario { Name = "landscape-world", Width = 1280, Height = 720, Setup = t => BuildWorld(t) },
-            new Scenario { Name = "portrait-world", Width = 1080, Height = 2340, Setup = t => BuildWorld(t) },
-            new Scenario { Name = "landscape-hire-menu", Width = 1280, Height = 720, Setup = t => UIManager.Instance.TogglePanel(t.canvas.Find("HireMenuPanel").gameObject) },
-            new Scenario { Name = "landscape-character", Width = 1280, Height = 720, Setup = t => { t.UseSampleMap(); OwnedCharacter f = t.Hire(t.Firsy, 0, 0); UIManager.Instance.ShowCharacterDetails(f); } },
-            new Scenario { Name = "portrait-start", Width = 1080, Height = 2340, Setup = t => { } },
-            new Scenario { Name = "portrait-build-menu", Width = 1080, Height = 2340, Setup = t => OpenBuild(t) },
-            new Scenario { Name = "portrait-game-menu", Width = 1080, Height = 2340, Setup = t => t.canvas.Find("MenuPanel").gameObject.SetActive(true) },
-            new Scenario { Name = "portrait-region", Width = 1080, Height = 2340, Setup = t => OpenRegion(t) },
-        };
+            string p = portrait ? "portrait" : "landscape";
+            int w = portrait ? 1080 : 1280, h = portrait ? 2340 : 720;
+            Add(p + "-start", w, h, t => { });
+            Add(p + "-world", w, h, t => BuildWorld(t));
+            Add(p + "-book-summary", w, h, t => { BuildWorld(t); UIManager.Instance.OpenBookTab(UIManager.BookTab.Summary); });
+            Add(p + "-book-buildings", w, h, t => { BuildWorld(t); UIManager.Instance.OpenBookTab(UIManager.BookTab.Buildings); });
+            Add(p + "-book-characters", w, h, t => { BuildWorld(t); UIManager.Instance.OpenBookTab(UIManager.BookTab.Characters); });
+            Add(p + "-book-character-details", w, h, t => { BuildWorld(t); UIManager.Instance.ShowCharacterDetails(t.cm.Roster[0]); });
+            Add(p + "-book-hire", w, h, t => { BuildWorld(t); UIManager.Instance.OpenBookTab(UIManager.BookTab.Hire); });
+            Add(p + "-book-region", w, h, t => { BuildWorld(t); OpenRegion(t); });
+            Add(p + "-settings", w, h, t => { BuildWorld(t); UIManager.Instance.Book.ToggleSettings(); });
+            Add(p + "-resources", w, h, t => { BuildWorld(t); UIManager.Instance.Book.ToggleDropdown(); });
+            Add(p + "-placing", w, h, t => { BuildWorld(t); UIManager.Instance.OpenBookTab(UIManager.BookTab.Buildings); Town.Click(t.ui.buildingButtonContainer.Find("Gold MineButton")); World.Tick(0.05f); });
+        }
 
         foreach (Scenario s in scenarios)
         {
